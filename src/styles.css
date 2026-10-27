@@ -287,14 +287,21 @@ a.nav-item {
 }
 .skip-link {
   position: fixed;
-  top: -80px;
+  top: 10px;
   left: 20px;
+  width: 1px;
+  height: 1px;
+  clip-path: inset(50%);
+  overflow: hidden;
   z-index: 100;
   background: #fff;
   padding: 12px;
 }
 .skip-link:focus {
-  top: 10px;
+  width: auto;
+  height: auto;
+  clip-path: none;
+  overflow: visible;
 }
 .topbar-separator {
   margin: 0 14px;

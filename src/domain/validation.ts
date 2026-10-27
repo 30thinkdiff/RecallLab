@@ -7,8 +7,11 @@ export const projectInputSchema = z.object({
   learningGoal: z.string().trim().max(1000),
   targetDate: z.string().refine((value) => {
     if (!value) return true;
+    const timestamp = Date.parse(value);
     return (
-      /^\d{4}-\d{2}-\d{2}$/.test(value) && new Date(value).toISOString().slice(0, 10) === value
+      /^\d{4}-\d{2}-\d{2}$/.test(value) &&
+      Number.isFinite(timestamp) &&
+      new Date(timestamp).toISOString().slice(0, 10) === value
     );
   }, '请输入有效日期'),
   dailyTimeBudget: z.number().int().min(1).max(1440),
