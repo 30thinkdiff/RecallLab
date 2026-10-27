@@ -32,3 +32,15 @@ B–E 尚在开发。各阶段提交、推送与最终 PR 信息以交付回复�
 - 体验：原启动命令与地址不变。学习时从另一页新增/修改/归档，再回学习页处理提示。
 - 主要文件：repository、Study、SessionControls、study-draft、Forms、Archive、Workspace，以及 revisions.spec.ts。
 - 后续：专项并发压力与恢复测试、题目历史/图表和 CI 报告。
+
+## C · 多标签页可靠性
+
+- 根因：旧答题组件仅在挂载时用数据库值初始化 useState；liveQuery 后续更新未同步到这些本地字段，且写入没有基础版本比较。
+- 草稿控制器串行保存同一页面的快速输入，接收 Dexie 跨标签页通知；干净页面可采用最新草稿，未保存输入冲突时保留本页副本并拒绝覆盖。
+- 所有揭晓、提交、队列更新重新验证 generation、planVersion、draftVersion 与 revisionId；晚到写入不能修改揭晓后的证据。
+- 冲突可另存到题目暂存记录并载入最新值，也可下载本页输入副本；未解决输入有每标签页 sessionStorage 保护。
+- 恢复备份生成新的轮次 generation；旧页面即使观察到同 ID 数据，也需明确处理状态更新。
+- 本地验证：44 项单元/组件测试及类型/Lint/格式/构建通过；3 项多标签页浏览器专项通过（累计 12 项场景）。
+- 体验：两页打开同一学习地址，同时输入、揭晓或提交，观察冲突提示和副本保护；不提供多人逐字合并。
+- 主要文件：study-draft、repository、backup-format，study-draft.test.ts、concurrency.spec.ts。
+- 后续：题目维度历史、修订差异、有效证据统计及公开可复现测试说明。

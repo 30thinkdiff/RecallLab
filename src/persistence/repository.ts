@@ -302,6 +302,8 @@ export class Repository {
       const item = await this.db.practiceItems.get(snapshot.id);
       if (!session || !item || item.projectId !== session.projectId)
         throw new Error('原记录已变化，请下载本页输入副本');
+      if (!(await this.db.revisions.get(revisionId(snapshot.id, snapshot.revision))))
+        throw new Error('原修订已不在当前数据中，请下载本页输入副本');
       await this.retain(session, '另一标签页更新：本页输入副本', draft, snapshot);
     });
   }

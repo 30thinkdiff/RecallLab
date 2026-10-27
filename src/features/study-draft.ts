@@ -103,7 +103,12 @@ export class StudyDraftController {
       session.planVersion === this.base.planVersion
     )
       return;
-    if (this.pending || this.conflict || this.hasLocalEdits) {
+    if (
+      session.generation !== this.base.generation ||
+      this.pending ||
+      this.conflict ||
+      this.hasLocalEdits
+    ) {
       this.conflict = true;
       this.error = '另一页面已更新状态。本页输入已保留，未覆盖最新草稿。';
       this.buffer();

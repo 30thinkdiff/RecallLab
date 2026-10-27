@@ -298,6 +298,13 @@ export function validateBackup(raw: unknown): Backup {
   for (const recovery of data.draftRecoveries) {
     requireRef('sessions', recovery.sessionId, '暂存作答');
     requireRef('practiceItems', recovery.practiceItemId, '暂存作答');
+    if (!revisions.has(`${recovery.practiceItemId}:r${recovery.revision}`))
+      throw new Error('暂存作答引用的修订不存在');
+    if (
+      data.sessions.find((session) => session.id === recovery.sessionId)?.projectId !==
+      items.get(recovery.practiceItemId)?.projectId
+    )
+      throw new Error('暂存作答跨项目引用');
   }
   return backup;
 }
