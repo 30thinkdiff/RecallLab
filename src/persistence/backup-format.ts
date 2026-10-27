@@ -1,3 +1,4 @@
+import { decide } from '../scheduling/policy';
 import { z } from 'zod';
 import {
   memorySchema,
@@ -323,6 +324,40 @@ export function validateBackup(raw: unknown): Backup {
       throw new Error('FSRS 日志缺少真实更新证据');
     if (log.decision.grade === null && (log.before || log.after || log.fsrsLog))
       throw new Error('无评分事件不能伪造 FSRS 日志');
+  }
+  for (const log of data.schedulingLogs) {
+    const event = eventsById.get(log.eventId)!;
+    const expected = decide(
+      event,
+      log.decision.reason !== 'practice',
+      log.decision.difficulty ?? 'good',
+    );
+    for (const field of ['grade', 'reason', 'source', 'criteriaMet', 'difficulty'] as const)
+      if (expected[field] !== log.decision[field]) throw new Error('调度评分与实际回忆证据矛盾');
+  }
+  for (const memory of data.memoryStates) {
+    const logs = data.schedulingLogs.filter((l) => l.learningStateId === memory.id);
+    const graded = logs
+      .filter((l) => l.decision.grade !== null)
+      .sort((a, b) => a.versionAfter - b.versionAfter);
+    if (
+      memory.card.reps !== graded.length ||
+      memory.version !== Math.max(0, ...logs.map((l) => l.versionAfter))
+    )
+      throw new Error('记忆状态缺少对应的真实调度日志');
+    if (
+      graded.length &&
+      JSON.stringify(graded[graded.length - 1]!.after) !== JSON.stringify(memory.card)
+    )
+      throw new Error('记忆状态与最近一次调度结果不一致');
+    if (
+      !graded.length &&
+      (memory.card.state !== 0 ||
+        memory.card.last_review ||
+        memory.card.stability !== 0 ||
+        memory.card.difficulty !== 0)
+    )
+      throw new Error('未复习的新状态不能伪造掌握记录');
   }
   for (const event of data.reviewEvents)
     if (event.scheduling && !data.schedulingLogs.some((l) => l.eventId === event.id))

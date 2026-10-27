@@ -33,6 +33,7 @@ export const decisionSchema = z.object({
   retestDue: date.optional(),
 });
 export const planSchema = z.object({
+  practiceOnly: z.boolean().optional(),
   mode: z.enum(['daily', 'due', 'new', 'weak', 'chapter', 'custom']),
   timezone: z.string().min(1).max(100),
   createdAt: date,

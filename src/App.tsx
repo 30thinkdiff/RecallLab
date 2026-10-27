@@ -8,7 +8,7 @@ import { useAction } from './components/actions';
 import { CardForm, ProjectForm } from './features/Forms';
 import { History, Overview, ProjectDetail, Projects } from './features/Workspace';
 import { PendingPrompts } from './features/PendingPrompts';
-import { Study } from './features/Study';
+const Study = lazy(() => import('./features/Study').then((m) => ({ default: m.Study })));
 import type { LearningProject, PracticeItem } from './domain/models';
 const ImportPage = lazy(() =>
   import('./features/ImportPage').then((module) => ({ default: module.ImportPage })),
@@ -242,14 +242,16 @@ function Workspace() {
               }
             />
           ) : section === 'study' && session ? (
-            <Study
-              session={session}
-              events={data.events}
-              cards={data.allCards}
-              projectName={
-                data.projects.find((project) => project.id === session.projectId)?.name ?? ''
-              }
-            />
+            <Suspense fallback={<p role="status">正在准备学习页面…</p>}>
+              <Study
+                session={session}
+                events={data.events}
+                cards={data.allCards}
+                projectName={
+                  data.projects.find((project) => project.id === session.projectId)?.name ?? ''
+                }
+              />
+            </Suspense>
           ) : (
             <div className="empty-card spacious">
               <h1>没有找到此内容</h1>

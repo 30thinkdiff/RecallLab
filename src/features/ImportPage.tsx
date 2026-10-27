@@ -531,7 +531,7 @@ export function ImportPage({
                 void action.run(async () => {
                   const id = await repository.startSession(result.projectId);
                   const session = await repository.db.sessions.get(id);
-                  if (session && session.index < session.queue.length)
+                  if (session && !session.reviewPlan && session.index < session.queue.length)
                     await repository.syncSession(id, session.index, tokenOf(session), {
                       includeNew: true,
                     });

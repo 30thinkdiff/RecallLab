@@ -11,6 +11,7 @@ export interface PlanEntry {
   canSchedule: boolean;
 }
 export interface ReviewPlan {
+  practiceOnly?: boolean;
   mode: ReviewMode;
   timezone: string;
   createdAt: string;

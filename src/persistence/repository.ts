@@ -19,6 +19,7 @@ import type {
   SubjectiveMastery,
   SourceReference,
 } from '../domain/models';
+import type { Difficulty } from '../scheduling/types';
 import { promptProblem } from '../domain/readiness';
 import { assertSourceReference } from '../domain/sources';
 
@@ -37,6 +38,10 @@ export type DraftPatch = Partial<
 
 export class Repository {
   constructor(readonly db: RecallDatabase = defaultDb) {}
+  private async schedulingHooks(id: string) {
+    const session = await this.db.sessions.get(id);
+    return session?.reviewPlan ? import('../scheduling/service') : null;
+  }
   // All business transitions use the same local transaction boundary. No network awaits here.
   private write<T>(task: () => Promise<T>) {
     return this.db.transaction('rw', this.db.tables, task);
@@ -188,6 +193,7 @@ export class Repository {
         confusionWarnings: input.confusionWarnings,
         sourceReferences,
         practiceType: 'free_recall',
+        ...(existing?.focus === undefined ? {} : { focus: existing.focus }),
         verificationStatus: 'user_authored',
         revision: number,
         currentRevisionId: revisionId(itemId, number),
@@ -393,8 +399,11 @@ export class Repository {
     token: SessionToken,
     options: { includeNew?: boolean; reloadCurrent?: boolean } = {},
   ) {
+    const scheduling = await this.schedulingHooks(sessionId);
     return this.write(async () => {
       const session = await this.requireSession(sessionId, index, token, false);
+      if (session.reviewPlan && options.includeNew)
+        throw new Error('今日计划按预算安排，新题请在今日复习中选择。');
       const items = await this.available(session.projectId);
       const byId = new Map(items.map((item) => [item.id, item]));
       const oldCurrent = session.queue[index];
@@ -423,6 +432,7 @@ export class Repository {
         status: remaining.length ? 'active' : 'completed',
         completedAt: remaining.length ? null : now,
       };
+      if (scheduling) await scheduling.refreshReviewPlan(this.db, updated, new Date(now));
       await this.db.sessions.put(updated);
       return updated;
     });
@@ -453,7 +463,9 @@ export class Repository {
     performance: Performance,
     mastery: SubjectiveMastery | null,
     token: SessionToken,
+    difficulty: Difficulty = 'good',
   ) {
+    const scheduling = await this.schedulingHooks(sessionId);
     return this.write(async () => {
       const existing = await this.db.sessions.get(sessionId);
       if (!existing || existing.status !== 'active' || existing.index !== index) return false;
@@ -461,7 +473,18 @@ export class Repository {
       const item = session.queue[index];
       if (!item) throw new Error('学习队列损坏');
       const now = new Date().toISOString();
-      await this.db.reviewEvents.add(buildReviewEvent(session, item, performance, mastery, now));
+      let event = buildReviewEvent(session, item, performance, mastery, now);
+      if (session.reviewPlan) {
+        if (!scheduling) throw new ConflictError();
+        event = await scheduling.applyScheduling(
+          this.db,
+          session,
+          event,
+          difficulty,
+          new Date(now),
+        );
+      }
+      await this.db.reviewEvents.add(event);
       const nextIndex = index + 1;
       const available = new Map(
         (await this.available(session.projectId)).map((item) => [item.id, item]),
