@@ -154,13 +154,13 @@ export async function parsePdfBytes(
         ) {
           if (++ocrPages > 20)
             throw new PdfImportError('本地 OCR 单次最多处理 20 页，请拆分扫描资料。');
-          if (!ocr) {
-            const { createLocalOcr } = await import('./ocr');
-            ocr = await createLocalOcr(controller.signal, (f) =>
-              options.onOcrProgress?.(currentPage, total, f),
-            );
-          }
           try {
+            if (!ocr) {
+              const { createLocalOcr } = await import('./ocr');
+              ocr = await createLocalOcr(controller.signal, (f) =>
+                options.onOcrProgress?.(currentPage, total, f),
+              );
+            }
             const recognized = await ocr.recognize(page);
             check();
             const outcome = reconcileOcrText(textLayer, recognized.text);

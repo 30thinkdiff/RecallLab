@@ -359,3 +359,32 @@ describe('repository transitions and revision evidence', () => {
     expect((await session(sessionId)).draft.userResponse).toBe('');
   });
 });
+
+it('keeps pending prompts out of learning and completes them atomically with a fresh content state', async () => {
+  const pid = await repo.saveProject({
+    name: '虚构待完善',
+    description: '',
+    learningGoal: '',
+    targetDate: '',
+    dailyTimeBudget: 30,
+  });
+  const raw = {
+    question: '待完善题干（条目 1）',
+    standardAnswer: '虚构原文答案。',
+    hints: '',
+    answerCriteria: '',
+    mnemonics: '',
+    confusionWarnings: '',
+    sourceLabel: '公开虚构',
+  };
+  const id = await repo.saveCard(pid, raw);
+  const old = (await db.practiceItems.get(id))!;
+  await expect(repo.startSession(pid)).rejects.toThrow('至少一道');
+  await repo.completePrompts(pid, [
+    { id, question: '虚构规则是什么？', expectedRevisionId: old.currentRevisionId },
+  ]);
+  const current = (await db.practiceItems.get(id))!;
+  expect(current.learningStateId).not.toBe(old.learningStateId);
+  expect(current.standardAnswer).toBe(old.standardAnswer);
+  expect((await db.sessions.get(await repo.startSession(pid)))?.queue).toHaveLength(1);
+});

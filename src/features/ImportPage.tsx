@@ -8,6 +8,7 @@ import { repository } from '../persistence/repository';
 import { errorMessage, useAction } from '../components/actions';
 import { ErrorNotice } from '../components/shared';
 import { SourceReader } from './SourceReader';
+import { promptProblem } from '../domain/readiness';
 import { tokenOf } from '../domain/revisions';
 
 export function ImportPage({
@@ -27,6 +28,7 @@ export function ImportPage({
       : (projects[0]?.id ?? 'new'),
   );
   const [projectName, setProjectName] = useState('');
+  const [dirty, setDirty] = useState(false);
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState('');
   const [error, setError] = useState('');
@@ -46,6 +48,7 @@ export function ImportPage({
   const invalid = selected.filter((row) => !cardInputSchema.safeParse(row).success);
   const selectedDuplicates = selected.filter((row) => duplicates.has(row.id));
   function reset() {
+    setDirty(false);
     action.clearError();
     version.current++;
     parseController.current?.abort();
@@ -61,6 +64,9 @@ export function ImportPage({
     if (fileInput.current) fileInput.current.value = '';
   }
   async function read(file: File, ocr = false) {
+    if (dirty && !window.confirm('重新解析会替换尚未保存的候选编辑。确定放弃这些修改并继续吗？'))
+      return;
+    setDirty(false);
     parseController.current?.abort();
     const controller = new AbortController();
     parseController.current = controller;
@@ -104,6 +110,7 @@ export function ImportPage({
     }
   }
   function addSelection(source: SourceReference) {
+    setDirty(true);
     const row: ImportCandidate = {
       id: crypto.randomUUID(),
       selected: true,
@@ -121,6 +128,7 @@ export function ImportPage({
     setPage(Math.floor(rows.length / 10));
   }
   function change(id: string, patch: Partial<ImportCandidate>) {
+    setDirty(true);
     setRows((rows) => rows.map((row) => (row.id === id ? { ...row, ...patch } : row)));
   }
   return (
@@ -329,7 +337,7 @@ export function ImportPage({
               </span>
             </div>
             <p className="muted">
-              问题与答案都可修改。相同问题的候选仅提示，不覆盖旧题；导入不会继承旧学习成绩。
+              待完善题干会保留为知识草稿，完善前不会进入学习队列。问题与答案都可修改。相同问题的候选仅提示，不覆盖旧题；导入不会继承旧学习成绩。
             </p>
             <div className="button-row">
               <button
@@ -365,6 +373,7 @@ export function ImportPage({
                   </label>
                   {duplicates.has(row.id) && <span className="tag">{duplicates.get(row.id)}</span>}
                 </div>
+                {promptProblem(row) && <p className="info-note">待完善：{promptProblem(row)}</p>}
                 {row.reviewNotes?.map((note) => (
                   <p className="info-note" key={note}>
                     {note}

@@ -19,6 +19,7 @@ import type {
   SubjectiveMastery,
   SourceReference,
 } from '../domain/models';
+import { promptProblem } from '../domain/readiness';
 import { assertSourceReference } from '../domain/sources';
 
 export interface RevisionInput {
@@ -228,6 +229,42 @@ export class Repository {
       return item.id;
     });
   }
+  async completePrompts(
+    projectId: string,
+    changes: { id: string; question: string; expectedRevisionId: string }[],
+  ) {
+    return this.write(async () => {
+      for (const change of changes) {
+        const card = await this.db.practiceItems.get(change.id);
+        if (
+          !card ||
+          card.projectId !== projectId ||
+          card.currentRevisionId !== change.expectedRevisionId
+        )
+          throw new ConflictError('待完善题目已变化，请保留编辑并重新载入。');
+        if (promptProblem({ ...card, question: change.question }))
+          throw new Error('请填写不会直接透露答案的有效题干');
+        await this.saveCard(
+          projectId,
+          {
+            ...card,
+            question: change.question,
+            hints: card.hints.join('\n'),
+            answerCriteria: card.answerCriteria.join('\n'),
+            sourceLabel: card.sourceReferences[0]?.label ?? '',
+          },
+          card.id,
+          {
+            expectedRevisionId: change.expectedRevisionId,
+            changeType: 'substantive',
+            changeSummary: '完善题干，避免题面透露答案',
+            impactOnLearningState: 'reset',
+          },
+        );
+      }
+      return changes.length;
+    });
+  }
   async archiveCard(projectId: string, id: string) {
     await this.write(async () => {
       await this.requireProject(projectId);
@@ -246,7 +283,7 @@ export class Repository {
   }
   private async available(projectId: string) {
     return (await this.db.practiceItems.where('projectId').equals(projectId).toArray())
-      .filter((item) => !item.archivedAt)
+      .filter((item) => !item.archivedAt && !promptProblem(item))
       .sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id));
   }
   async startSession(projectId: string): Promise<string> {
@@ -258,7 +295,7 @@ export class Repository {
         .first();
       if (active) return active.id;
       const items = await this.available(projectId);
-      if (!items.length) throw new Error('请先添加至少一道题目');
+      if (!items.length) throw new Error('请先添加至少一道可学习题目，或完善待完善题干');
       const now = new Date().toISOString();
       const session: StudySession = {
         id: crypto.randomUUID(),

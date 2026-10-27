@@ -398,6 +398,9 @@ export function ProjectDetail({
         </p>
       )}
       {active && <SessionControls session={active} cards={data.allCards} />}
+      <a className="text-link" href={`#pending/${project.id}`}>
+        批量管理待完善题干
+      </a>
       <div className="section-heading">
         <h2>
           问答题库 <span>{cards.length}</span>

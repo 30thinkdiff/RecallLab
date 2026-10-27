@@ -7,6 +7,7 @@ import { DataBoundary, ConfirmDialog, ErrorNotice } from './components/shared';
 import { useAction } from './components/actions';
 import { CardForm, ProjectForm } from './features/Forms';
 import { History, Overview, ProjectDetail, Projects } from './features/Workspace';
+import { PendingPrompts } from './features/PendingPrompts';
 import { Study } from './features/Study';
 import type { LearningProject, PracticeItem } from './domain/models';
 const ImportPage = lazy(() =>
@@ -220,6 +221,8 @@ function Workspace() {
             <ArchivePage projects={data.allProjects} cards={data.allCards} />
           ) : section === 'backup' ? (
             <BackupPage />
+          ) : section === 'pending' && id ? (
+            <PendingPrompts projectId={id} cards={data.allCards} />
           ) : section === 'project' && project ? (
             <ProjectDetail
               key={project.id}

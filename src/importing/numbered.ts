@@ -91,7 +91,7 @@ export function extractNumbered(text: string, pages: DocumentPage[], id: string,
     const statement = !!question && !standardAnswer && !start.explicit && !/[？?]/u.test(question);
     if (statement) {
       standardAnswer = main;
-      question = `请复述：${main.split('\n')[0]!.slice(0, 120)}`;
+      question = `待完善题干（条目 ${i + 1}）`;
     }
     const first = [...pages].reverse().find((p) => p.startOffset <= start.start);
     const last = [...pages].reverse().find((p) => p.startOffset < end);
@@ -99,7 +99,9 @@ export function extractNumbered(text: string, pages: DocumentPage[], id: string,
       (p) => p.number >= (first?.number ?? 1) && p.number <= (last?.number ?? 1),
     );
     const reviewNotes = [
-      ...(statement ? ['未发现明确问答分隔；答案保留完整条目，复述问题需核对。'] : []),
+      ...(statement
+        ? ['未发现明确问答分隔；答案和来源已保留，请人工完善题干。完善前不进入学习队列。']
+        : []),
       ...(!question || !standardAnswer ? ['未找到完整问题与答案，请补全。'] : []),
       ...(affected.some((p) => p.status !== 'ready')
         ? ['来源页面存在提取疑点，请对照原文件。']
