@@ -41,5 +41,14 @@ export function unreadablePdfMessage(
   const failures = statuses.filter((status) => status === 'failed').length;
   if (failures)
     return `未能从 PDF 提取文字：${failures}/${statuses.length} 页解析失败。可能是字体、字符映射或 PDF.js 兼容性问题，不能认定文件是扫描件。请保留原 PDF 并报告此问题。`;
-  return '未提取到可用文字，可能是扫描件或空白 PDF。当前没有 OCR；请换用文字型 PDF 或导出 TXT。';
+  return '未提取到可用文字，不能仅凭文字数量区分扫描件与空白页。请查看页面类型，必要时在本机运行 OCR。';
+}
+
+export function classifyPdfPage(
+  status: 'ready' | 'empty' | 'suspect' | 'failed',
+  images: boolean,
+): 'text' | 'mixed' | 'image' | 'blank' | 'failed' {
+  if (status === 'failed') return 'failed';
+  if (status === 'empty') return images ? 'image' : 'blank';
+  return images ? 'mixed' : 'text';
 }

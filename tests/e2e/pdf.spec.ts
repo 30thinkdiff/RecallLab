@@ -90,10 +90,7 @@ test('text PDF page selection, source trace, learning, revision and backup round
   await page.screenshot({ path: 'test-results/pdf-source-desktop.png', fullPage: true });
 });
 
-for (const [filename, pattern] of [
-  ['scanned.pdf', /没有 OCR/],
-  ['broken.pdf', /PDF 文字提取失败/],
-] as const) {
+for (const [filename, pattern] of [['broken.pdf', /PDF 文字提取失败/]] as const) {
   test(`${filename} cannot be silently imported as extracted text`, async ({ page }) => {
     await page.goto('/#import');
     await page.getByLabel('选择学习资料').setInputFiles(fixture(filename));
@@ -143,4 +140,19 @@ test('mobile PDF source selection is usable without horizontal overflow', async 
   await page.getByRole('checkbox', { name: '我已核对警告，确认要保存的内容', exact: true }).check();
   await page.getByRole('button', { name: '确认导入 1 道题', exact: true }).click();
   await expect(page.getByRole('heading', { name: '导入完成', exact: true })).toBeVisible();
+});
+
+test('image-only PDF requires explicit OCR and cannot be saved as extracted text', async ({
+  page,
+}) => {
+  await page.goto('/#import');
+  await page.getByLabel('选择学习资料').setInputFiles(fixture('scanned.pdf'));
+  await expect(page.getByLabel('PDF 页面类型')).toContainText('图片页 1');
+  await expect(page.getByRole('button', { name: '仅保存资料', exact: true })).toBeDisabled();
+  await expect(
+    page.getByRole('button', { name: '在本机识别图片文字（OCR）', exact: true }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: '取消本次导入', exact: true }).click();
+  await page.getByRole('link', { name: '学习资料', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '还没有学习资料', exact: true })).toBeVisible();
 });
