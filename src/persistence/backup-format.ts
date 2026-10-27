@@ -173,6 +173,20 @@ export function validateBackup(raw: unknown): Backup {
   }
   const items = new Map(data.practiceItems.map((item) => [item.id, item]));
   const revisions = new Map(data.revisions.map((revision) => [revision.id, revision]));
+  const fields = [
+    'id',
+    'knowledgeUnitId',
+    'question',
+    'standardAnswer',
+    'answerCriteria',
+    'hints',
+    'mnemonics',
+    'confusionWarnings',
+    'sourceReferences',
+    'revision',
+  ] as const;
+  const sameContent = (a: z.infer<typeof snapshot>, b: z.infer<typeof snapshot>) =>
+    fields.every((field) => JSON.stringify(a[field]) === JSON.stringify(b[field]));
   for (const unit of data.knowledgeUnits) requireRef('projects', unit.projectId, '知识单元');
   for (const item of data.practiceItems) {
     requireRef('projects', item.projectId, '题目');
@@ -191,12 +205,7 @@ export function validateBackup(raw: unknown): Backup {
         revision.learningStateId !== item.learningStateId
       )
         throw new Error('当前修订引用不一致');
-      if (
-        revision.snapshot.standardAnswer !== item.standardAnswer ||
-        revision.snapshot.question !== item.question ||
-        JSON.stringify(revision.snapshot.answerCriteria) !== JSON.stringify(item.answerCriteria)
-      )
-        throw new Error('当前题目与修订快照不一致');
+      if (!sameContent(revision.snapshot, item)) throw new Error('当前题目与修订快照不一致');
     }
   }
   for (const revision of data.revisions) {
@@ -207,6 +216,28 @@ export function validateBackup(raw: unknown): Backup {
       revision.snapshot.revision !== revision.revisionNumber
     )
       throw new Error('修订快照身份不一致');
+    if (
+      revision.id !== `${revision.practiceItemId}:r${revision.revisionNumber}` ||
+      (revision.snapshot.revisionId && revision.snapshot.revisionId !== revision.id) ||
+      (revision.snapshot.learningStateId &&
+        revision.snapshot.learningStateId !== revision.learningStateId)
+    )
+      throw new Error('修订标识不一致');
+    if (
+      ['substantive', 'replacement'].includes(revision.changeType) &&
+      revision.impactOnLearningState !== 'reset'
+    )
+      throw new Error('实质性更正不能继承旧学习状态');
+    if (
+      revision.impactOnLearningState === 'reset' &&
+      data.revisions.some(
+        (previous) =>
+          previous.practiceItemId === revision.practiceItemId &&
+          previous.revisionNumber < revision.revisionNumber &&
+          previous.learningStateId === revision.learningStateId,
+      )
+    )
+      throw new Error('重新学习状态不能复用旧标识');
     if (revision.previousRevisionId) {
       const previous = revisions.get(revision.previousRevisionId);
       if (
@@ -259,6 +290,11 @@ export function validateBackup(raw: unknown): Backup {
           revisions.get(snapshot.revisionId)?.learningStateId !== snapshot.learningStateId)
       )
         throw new Error('轮次修订引用无效');
+      if (
+        backup.databaseVersion === 2 &&
+        !sameContent(snapshot, revisions.get(snapshot.revisionId!)!.snapshot)
+      )
+        throw new Error('轮次与修订内容不一致');
     }
     const current = session.queue[session.index];
     if (current && session.draft.hintLevelUsed > current.hints.length)
@@ -294,7 +330,28 @@ export function validateBackup(raw: unknown): Backup {
       )
     )
       throw new Error('历史修订引用不存在');
+    if (
+      backup.databaseVersion === 2 &&
+      !sameContent(
+        event.snapshot,
+        revisions.get(
+          event.snapshot.revisionId ?? `${event.practiceItemId}:r${event.snapshot.revision}`,
+        )!.snapshot,
+      )
+    )
+      throw new Error('历史事件与修订快照不一致');
+    if (!sameContent(event.snapshot, session.queue[event.queueIndex]!))
+      throw new Error('事件与已完成队列快照不一致');
+    if (
+      event.hintLevelUsed > event.snapshot.hints.length ||
+      (event.wasIndependentRecall && event.hintLevelUsed > 0) ||
+      (event.assessmentResult === 'skipped' && event.subjectiveMastery !== null)
+    )
+      throw new Error('复习证据条件不一致');
   }
+  for (const session of data.sessions)
+    for (let index = 0; index < session.index; index++)
+      if (!positions.has(`${session.id}:${index}`)) throw new Error('已完成进度缺少学习事件');
   for (const recovery of data.draftRecoveries) {
     requireRef('sessions', recovery.sessionId, '暂存作答');
     requireRef('practiceItems', recovery.practiceItemId, '暂存作答');

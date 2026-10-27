@@ -33,11 +33,7 @@
         "title": "虚构协议甲：蓝晶对应哪种颜色？",
         "knowledgeType": "fact",
         "canonicalContent": "新版答案：蓝色",
-        "sourceReferences": [
-          {
-            "label": "公开虚构测试手册"
-          }
-        ],
+        "sourceReferences": [{ "label": "公开虚构测试手册" }],
         "importance": 1,
         "difficulty": null,
         "tags": [],
@@ -51,11 +47,7 @@
         "title": "虚构流程：完整列举四个阶段。",
         "knowledgeType": "fact",
         "canonicalContent": "第一阶段收集蓝晶。\n第二阶段核对图谱。\n第三阶段登记状态。\n第四阶段归还蓝晶。",
-        "sourceReferences": [
-          {
-            "label": "公开虚构测试手册"
-          }
-        ],
+        "sourceReferences": [{ "label": "公开虚构测试手册" }],
         "importance": 1,
         "difficulty": null,
         "tags": [],
@@ -69,11 +61,7 @@
         "title": "虚构协议乙：蓝晶对应哪种颜色？",
         "knowledgeType": "fact",
         "canonicalContent": "绿色（与协议甲不同）",
-        "sourceReferences": [
-          {
-            "label": "公开虚构测试手册"
-          }
-        ],
+        "sourceReferences": [{ "label": "公开虚构测试手册" }],
         "importance": 1,
         "difficulty": null,
         "tags": [],
@@ -87,11 +75,7 @@
         "title": "已归档的虚构问题",
         "knowledgeType": "fact",
         "canonicalContent": "归档答案",
-        "sourceReferences": [
-          {
-            "label": "公开虚构测试手册"
-          }
-        ],
+        "sourceReferences": [{ "label": "公开虚构测试手册" }],
         "importance": 1,
         "difficulty": null,
         "tags": [],
@@ -105,11 +89,7 @@
         "title": "项目乙的独立问题",
         "knowledgeType": "fact",
         "canonicalContent": "项目乙专用答案",
-        "sourceReferences": [
-          {
-            "label": "公开虚构测试手册"
-          }
-        ],
+        "sourceReferences": [{ "label": "公开虚构测试手册" }],
         "importance": 1,
         "difficulty": null,
         "tags": [],
@@ -130,11 +110,7 @@
         "hints": ["先回想颜色", "再回想协议名称", "核对顺序"],
         "mnemonics": "虚构助记",
         "confusionWarnings": "不要混淆甲乙",
-        "sourceReferences": [
-          {
-            "label": "公开虚构测试手册"
-          }
-        ],
+        "sourceReferences": [{ "label": "公开虚构测试手册" }],
         "verificationStatus": "user_authored",
         "revision": 2,
         "createdAt": "2026-10-20T08:00:00.000Z",
@@ -151,11 +127,7 @@
         "hints": ["先回想颜色", "再回想协议名称", "核对顺序"],
         "mnemonics": "虚构助记",
         "confusionWarnings": "不要混淆甲乙",
-        "sourceReferences": [
-          {
-            "label": "公开虚构测试手册"
-          }
-        ],
+        "sourceReferences": [{ "label": "公开虚构测试手册" }],
         "verificationStatus": "user_authored",
         "revision": 1,
         "createdAt": "2026-10-20T08:00:00.000Z",
@@ -172,11 +144,7 @@
         "hints": ["先回想颜色", "再回想协议名称", "核对顺序"],
         "mnemonics": "虚构助记",
         "confusionWarnings": "不要混淆甲乙",
-        "sourceReferences": [
-          {
-            "label": "公开虚构测试手册"
-          }
-        ],
+        "sourceReferences": [{ "label": "公开虚构测试手册" }],
         "verificationStatus": "user_authored",
         "revision": 1,
         "createdAt": "2026-10-20T08:00:00.000Z",
@@ -193,11 +161,7 @@
         "hints": ["先回想颜色", "再回想协议名称", "核对顺序"],
         "mnemonics": "虚构助记",
         "confusionWarnings": "不要混淆甲乙",
-        "sourceReferences": [
-          {
-            "label": "公开虚构测试手册"
-          }
-        ],
+        "sourceReferences": [{ "label": "公开虚构测试手册" }],
         "verificationStatus": "user_authored",
         "revision": 1,
         "createdAt": "2026-10-20T08:00:00.000Z",
@@ -215,11 +179,7 @@
         "hints": ["先回想颜色", "再回想协议名称", "核对顺序"],
         "mnemonics": "虚构助记",
         "confusionWarnings": "不要混淆甲乙",
-        "sourceReferences": [
-          {
-            "label": "公开虚构测试手册"
-          }
-        ],
+        "sourceReferences": [{ "label": "公开虚构测试手册" }],
         "verificationStatus": "user_authored",
         "revision": 1,
         "createdAt": "2026-10-20T08:00:00.000Z",
@@ -257,11 +217,7 @@
           "hints": ["先回想颜色", "再回想协议名称", "核对顺序"],
           "mnemonics": "虚构助记",
           "confusionWarnings": "不要混淆甲乙",
-          "sourceReferences": [
-            {
-              "label": "公开虚构测试手册"
-            }
-          ],
+          "sourceReferences": [{ "label": "公开虚构测试手册" }],
           "revision": 1
         }
       },
@@ -295,11 +251,7 @@
           "hints": ["先回想颜色", "再回想协议名称", "核对顺序"],
           "mnemonics": "虚构助记",
           "confusionWarnings": "不要混淆甲乙",
-          "sourceReferences": [
-            {
-              "label": "公开虚构测试手册"
-            }
-          ],
+          "sourceReferences": [{ "label": "公开虚构测试手册" }],
           "revision": 1
         }
       },
@@ -333,11 +285,7 @@
           "hints": ["先回想颜色", "再回想协议名称", "核对顺序"],
           "mnemonics": "虚构助记",
           "confusionWarnings": "不要混淆甲乙",
-          "sourceReferences": [
-            {
-              "label": "公开虚构测试手册"
-            }
-          ],
+          "sourceReferences": [{ "label": "公开虚构测试手册" }],
           "revision": 1
         }
       },
@@ -371,11 +319,7 @@
           "hints": ["先回想颜色", "再回想协议名称", "核对顺序"],
           "mnemonics": "虚构助记",
           "confusionWarnings": "不要混淆甲乙",
-          "sourceReferences": [
-            {
-              "label": "公开虚构测试手册"
-            }
-          ],
+          "sourceReferences": [{ "label": "公开虚构测试手册" }],
           "revision": 1
         }
       }
@@ -394,11 +338,7 @@
             "hints": ["先回想颜色", "再回想协议名称", "核对顺序"],
             "mnemonics": "虚构助记",
             "confusionWarnings": "不要混淆甲乙",
-            "sourceReferences": [
-              {
-                "label": "公开虚构测试手册"
-              }
-            ],
+            "sourceReferences": [{ "label": "公开虚构测试手册" }],
             "revision": 1
           },
           {
@@ -410,11 +350,7 @@
             "hints": ["先回想颜色", "再回想协议名称", "核对顺序"],
             "mnemonics": "虚构助记",
             "confusionWarnings": "不要混淆甲乙",
-            "sourceReferences": [
-              {
-                "label": "公开虚构测试手册"
-              }
-            ],
+            "sourceReferences": [{ "label": "公开虚构测试手册" }],
             "revision": 1
           }
         ],
@@ -446,11 +382,7 @@
             "hints": ["先回想颜色", "再回想协议名称", "核对顺序"],
             "mnemonics": "虚构助记",
             "confusionWarnings": "不要混淆甲乙",
-            "sourceReferences": [
-              {
-                "label": "公开虚构测试手册"
-              }
-            ],
+            "sourceReferences": [{ "label": "公开虚构测试手册" }],
             "revision": 1
           }
         ],
@@ -482,11 +414,7 @@
             "hints": ["先回想颜色", "再回想协议名称", "核对顺序"],
             "mnemonics": "虚构助记",
             "confusionWarnings": "不要混淆甲乙",
-            "sourceReferences": [
-              {
-                "label": "公开虚构测试手册"
-              }
-            ],
+            "sourceReferences": [{ "label": "公开虚构测试手册" }],
             "revision": 1
           },
           {
@@ -498,11 +426,7 @@
             "hints": ["先回想颜色", "再回想协议名称", "核对顺序"],
             "mnemonics": "虚构助记",
             "confusionWarnings": "不要混淆甲乙",
-            "sourceReferences": [
-              {
-                "label": "公开虚构测试手册"
-              }
-            ],
+            "sourceReferences": [{ "label": "公开虚构测试手册" }],
             "revision": 1
           },
           {
@@ -514,11 +438,7 @@
             "hints": ["先回想颜色", "再回想协议名称", "核对顺序"],
             "mnemonics": "虚构助记",
             "confusionWarnings": "不要混淆甲乙",
-            "sourceReferences": [
-              {
-                "label": "公开虚构测试手册"
-              }
-            ],
+            "sourceReferences": [{ "label": "公开虚构测试手册" }],
             "revision": 1
           }
         ],

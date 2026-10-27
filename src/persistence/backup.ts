@@ -26,22 +26,26 @@ export async function inspectBeforeUpgrade(name: string): Promise<Backup | null>
   }
 }
 
-export async function exportBackup(db: RecallDatabase): Promise<Backup> {
+async function captureBackup(db: RecallDatabase) {
   return db.transaction(
     'r',
     dataTables.map((name) => db.table(name)),
     async () => {
       const data: Record<string, unknown[]> = {};
       for (const name of dataTables) data[name] = await db.table(name).toArray();
-      return validateBackup({
+      return {
         format: 'RecallLabBackup',
         formatVersion: 1,
         databaseVersion: 2,
         createdAt: new Date().toISOString(),
         data,
-      });
+      };
     },
   );
+}
+
+export async function exportBackup(db: RecallDatabase): Promise<Backup> {
+  return validateBackup(await captureBackup(db));
 }
 
 export function parseBackup(text: string) {
@@ -65,7 +69,8 @@ export async function restoreBackup(db: RecallDatabase, input: Backup) {
     generation: crypto.randomUUID(),
   }));
   await db.transaction('rw', db.tables, async () => {
-    const current = await exportBackup(db);
+    // Even a damaged current dataset can be protected verbatim before restoring a valid backup.
+    const current = await captureBackup(db);
     await db.recoveryBackups.add({
       id: crypto.randomUUID(),
       createdAt: new Date().toISOString(),

@@ -17,7 +17,7 @@
 - 主要文件：persistence/backup*、migration、database，domain/models、revisions，features/Storage，测试夹具与生成脚本。
 - 已知限制：旧系统没有修改原因，迁移不会猜测纯文字修改；无法从已有数据还原从未保存过的中间修订。
 
-B–E 尚在开发。各阶段提交、推送与最终 PR 信息以交付回复和 Git 历史为准。
+以下继续记录 B–E 的交付。各阶段提交、推送与最终 PR 信息以交付回复和 Git 历史为准。
 
 ## B · 知识修订与轮次更新
 
@@ -56,3 +56,22 @@ B–E 尚在开发。各阶段提交、推送与最终 PR 信息以交付回复�
 - 体验：点击题目标题或“查看学习历史与版本”，切换统计范围并比较不同修订。
 - 主要文件：domain/analytics、ItemDetail、EventHistory、Workspace、App，以及历史与统计测试。
 - 已知限制：人工核对仍非独立客观测量；图表不推断长期记忆或错误记忆。
+
+## E · 可复现测试与交付设施
+
+- 固定虚构夹具由脚本生成，check 校验可复现性；必要浏览器时钟、时区和原版 native 数据库结构可控。
+- 完成任务书 A–N 验收，以及原 M0/M1、过期编辑、当前归档与文件选择竞态回归。
+- 进一步校验恢复的修订/快照、学习状态、已完成事件和暂存引用；有效备份可恢复当前损坏数据，同时保留其原始副本。
+- CI 输出 SHA 关联摘要、HTML/JSON/JUnit，失败时保留截图和 Trace，始终上传报告并排除临时浏览器配置。
+- 提供测试 UI、单步调试、报告阅读与 Trace 命令；无生产清库或自动演示资料入口。
+- 本地验证：53 项单元/组件测试、18 项浏览器验收，以及类型/Lint/格式/夹具/构建全部通过；最终远程 CI 结果见交付回复，A–N 定位与范围限制见 TESTING.md。
+- 主要文件：backup-format/backup 与测试、backup.spec.ts、Playwright 配置、夹具脚本、CI 和全套产品/架构/进度文档。
+- 启动仍为 `npm ci && npm run dev`，访问 http://127.0.0.1:5173；测试使用独立 5174。新版本首次遇旧库请先保存备份。
+- 后续建议：先体验与审查 PR #2，再决定修复或下一阶段；本轮不扩展 FSRS、AI、PDF、账户或同步。
+
+## 交付信息读取
+
+每个阶段均已按功能提交，分支始终为 `feat/knowledge-revision-and-session-sync`。
+PR：https://github.com/30thinkdiff/RecallLab/pull/2，基础：https://github.com/30thinkdiff/RecallLab/pull/1 的 `feat/project-foundation`。
+A–D SHA 见 PROGRESS.md，E 的最终 SHA、推送状态及 CI 运行地址以 Git 历史与本轮交付回复为准。
+文档内的“完成”指该范围已实现并按记录验证，不表示已通过用户实际体验、独立代码审查或所有可能环境。

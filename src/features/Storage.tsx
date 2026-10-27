@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { db } from '../persistence/database';
 import {
   downloadJson,
@@ -86,6 +86,8 @@ export function StorageGate({ children }: { children: ReactNode }) {
 export function BackupPage() {
   const [candidate, setCandidate] = useState<Backup | null>(null);
   const [fileError, setFileError] = useState('');
+  const [filename, setFilename] = useState('');
+  const readVersion = useRef(0);
   const [confirmed, setConfirmed] = useState(false);
   const [message, setMessage] = useState('');
   const action = useAction();
@@ -124,6 +126,8 @@ export function BackupPage() {
             disabled={action.busy}
             onChange={(event) => {
               const file = event.target.files?.[0];
+              const version = ++readVersion.current;
+              setFilename(file?.name ?? '');
               setCandidate(null);
               setConfirmed(false);
               setFileError('');
@@ -135,8 +139,12 @@ export function BackupPage() {
                 }
                 void file
                   .text()
-                  .then((text) => setCandidate(parseBackup(text)))
-                  .catch((cause: unknown) => setFileError(errorMessage(cause)));
+                  .then((text) => {
+                    if (version === readVersion.current) setCandidate(parseBackup(text));
+                  })
+                  .catch((cause: unknown) => {
+                    if (version === readVersion.current) setFileError(errorMessage(cause));
+                  });
               }
             }}
           />
@@ -144,6 +152,9 @@ export function BackupPage() {
         {candidate && (
           <div className="restore-preview">
             <h3>备份预览 · 数据库 v{candidate.databaseVersion}</h3>
+            <p className="muted">
+              {filename} · 导出时间 {candidate.createdAt}
+            </p>
             <p>
               {candidate.data.projects.length} 个项目 · {candidate.data.practiceItems.length} 道题 ·{' '}
               {candidate.data.reviewEvents.length} 条事件 · {candidate.data.revisions.length} 个修订

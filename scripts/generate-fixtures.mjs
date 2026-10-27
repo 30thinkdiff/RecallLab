@@ -1,6 +1,8 @@
 // Public fictional material only. Fixed IDs/dates make migrations and reports reproducible.
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, writeFile, readFile } from 'node:fs/promises';
 import { URL } from 'node:url';
+import process from 'node:process';
+import { format } from 'prettier';
 const day = '2026-10-20T08:00:00.000Z';
 const projects = ['p-alpha', 'p-beta'].map((id, index) => ({
   id,
@@ -175,8 +177,17 @@ const backup = {
   createdAt: '2026-10-26T08:00:00.000Z',
   data: { projects, knowledgeUnits, practiceItems, reviewEvents, sessions },
 };
-await mkdir(new URL('../tests/fixtures/', import.meta.url), { recursive: true });
-await writeFile(
-  new URL('../tests/fixtures/legacy-v1.json', import.meta.url),
-  JSON.stringify(backup, null, 2) + '\n',
-);
+const output = new URL('../tests/fixtures/legacy-v1.json', import.meta.url);
+const content = await format(JSON.stringify(backup), {
+  ...JSON.parse(await readFile(new URL('../.prettierrc.json', import.meta.url), 'utf8')),
+  parser: 'json',
+});
+if (process.argv.includes('--check')) {
+  if ((await readFile(output, 'utf8')) !== content)
+    throw new Error(
+      'Fixture differs from generator; run npm run fixtures and review the public data diff.',
+    );
+} else {
+  await mkdir(new URL('../tests/fixtures/', import.meta.url), { recursive: true });
+  await writeFile(output, content);
+}

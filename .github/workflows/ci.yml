@@ -7,6 +7,7 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-22.04
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -14,14 +15,23 @@ jobs:
           node-version: '20.20.2'
           cache: npm
       - run: npm ci
-      - run: npm run check
-      - run: npx playwright install --with-deps chromium
-      - run: npm run test:e2e
+      - name: Fixture reproducibility, types, lint, formatting, unit tests and build
+        run: npm run check
+      - name: Install isolated browser
+        run: npx playwright install --with-deps chromium
+      - name: Browser acceptance on port 5174 / RecallLab-test
+        run: npm run test:e2e
+      - name: Commit-associated test summary
+        if: always()
+        run: npm run test:summary
       - uses: actions/upload-artifact@v7
-        if: failure()
+        if: always()
         with:
-          name: playwright-report
+          name: playwright-report-${{ github.sha }}
           path: |
             playwright-report/
             test-results/
-          retention-days: 7
+            !test-results/**/profile/**
+            !test-results/**/browser-profile/**
+          retention-days: 14
+          if-no-files-found: warn

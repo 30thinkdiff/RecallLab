@@ -98,7 +98,14 @@ function Workspace() {
     : 'projects';
   return (
     <div className="app-shell">
-      <a href="#main-content" className="skip-link">
+      <a
+        href="#main-content"
+        className="skip-link"
+        onClick={(event) => {
+          event.preventDefault();
+          document.getElementById('main-content')?.focus();
+        }}
+      >
         跳到主要内容
       </a>
       <aside className="sidebar">
@@ -140,18 +147,22 @@ function Workspace() {
           </p>
         </div>
         <div className="sidebar-footer">
-          RECALL. REFLECT. REPEAT.<span>M1 · 主动回忆学习闭环</span>
+          RECALL. REFLECT. REPEAT.<span>0.2 · 知识与学习记录</span>
         </div>
       </aside>
       <main id="main-content" tabIndex={-1}>
         <header className="topbar">
           <span>
             个人学习空间 <span className="topbar-separator">/</span>{' '}
-            {activePage === 'home'
-              ? '学习概览'
-              : activePage === 'history'
-                ? '学习记录'
-                : '学习项目'}
+            {
+              {
+                home: '学习概览',
+                history: '学习记录',
+                projects: '学习项目',
+                backup: '备份与恢复',
+                archive: '归档内容',
+              }[activePage ?? 'projects']
+            }
           </span>
           <span className="local-badge">
             <i /> 数据保存在当前浏览器

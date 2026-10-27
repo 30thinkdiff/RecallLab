@@ -36,6 +36,7 @@ test('K/L: question detail shows all versions, differences, original answers and
   await expect(
     page.getByText('数据不足：当前范围尚无练习记录，不生成趋势。', { exact: true }),
   ).toBeVisible();
+  await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({ path: 'test-results/item-history-desktop.png', fullPage: true });
 });
 

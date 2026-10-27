@@ -132,4 +132,44 @@ describe('backup and real v1 upgrade', () => {
     ).toEqual(['reset', 'reset']);
     expect(data.reviewEvents).toEqual(legacyJson.data.reviewEvents);
   });
+  it.each(['eventSnapshot', 'currentHints', 'missingEvent', 'substantiveInheritance'] as const)(
+    'rejects inconsistent backup semantics: %s',
+    (scenario) => {
+      const input = validateBackup({
+        ...legacyJson,
+        databaseVersion: 2,
+        data: migrateBackup(validateBackup(legacyJson)),
+      });
+      const bad = structuredClone(input);
+      if (scenario === 'eventSnapshot')
+        bad.data.reviewEvents[0]!.snapshot.standardAnswer = '被篡改的历史答案';
+      if (scenario === 'currentHints') bad.data.practiceItems[0]!.hints = ['与修订矛盾的提示'];
+      if (scenario === 'missingEvent') bad.data.reviewEvents.pop();
+      if (scenario === 'substantiveInheritance') {
+        const current = bad.data.revisions.find((revision) => revision.id === 'q-crystal:r2')!;
+        const previous = bad.data.revisions.find((revision) => revision.id === 'q-crystal:r1')!;
+        current.changeType = 'substantive';
+        current.impactOnLearningState = 'preserve';
+        current.learningStateId = previous.learningStateId;
+        bad.data.practiceItems.find((item) => item.id === 'q-crystal')!.learningStateId =
+          previous.learningStateId;
+      }
+      expect(() => validateBackup(bad)).toThrow();
+    },
+  );
+  it('can recover a damaged current dataset while retaining its exact pre-restore copy', async () => {
+    const name = `damaged-${crypto.randomUUID()}`;
+    names.push(name);
+    const db = new RecallDatabase(name);
+    await restoreBackup(db, validateBackup(legacyJson));
+    const good = await exportBackup(db);
+    await db.practiceItems.update('q-long', { standardAnswer: '损坏后的内容' });
+    await expect(exportBackup(db)).rejects.toThrow('快照');
+    await restoreBackup(db, good);
+    expect((await db.practiceItems.get('q-long'))?.standardAnswer).not.toBe('损坏后的内容');
+    const copies = await db.recoveryBackups.toArray();
+    expect(copies.some((copy) => copy.json.includes('损坏后的内容'))).toBe(true);
+    expect((await exportBackup(db)).data.reviewEvents).toEqual(good.data.reviewEvents);
+    db.close();
+  });
 });
