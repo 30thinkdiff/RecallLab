@@ -130,7 +130,7 @@ export class Repository {
       const impact = change?.impactOnLearningState ?? 'reset';
       // A user-supplied label is not sufficient proof that a revision is only cosmetic.
       // Never carry earlier recall evidence over to a different question, answer, or rubric.
-      const comparable = (value: string) => value.replace(/\s+/g, '');
+      const comparable = (value: string) => value.replace(/\s+/g, '').replace(/。$/u, '');
       if (existing && impact === 'preserve') {
         const unchangedQuestion = comparable(existing.question) === comparable(input.question);
         const unchangedAnswer =
