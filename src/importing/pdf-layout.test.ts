@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { pageText, textQuality, unreadablePdfMessage } from './pdf-layout';
+import { pageText, textQuality, unreadablePdfMessage , reconcileOcrText } from './pdf-layout';
 it('keeps extraction order, line changes and word gaps without inventing content', () => {
   expect(
     pageText([
@@ -31,4 +31,27 @@ it('distinguishes text, mixed, image-only, blank and decoder errors', async () =
   expect(classifyPdfPage('empty', true)).toBe('image');
   expect(classifyPdfPage('empty', false)).toBe('blank');
   expect(classifyPdfPage('failed', true)).toBe('failed');
+});
+
+it('keeps native text usable if OCR finds no text or is unavailable', () => {
+  const native = 'Fictional native footer, still usable.';
+  expect(reconcileOcrText(native, '')).toEqual({
+    text: native,
+    hasOcrText: false,
+    preservedNativeText: true,
+  });
+  expect(reconcileOcrText(native, '   ')).toMatchObject({
+    text: native,
+    preservedNativeText: true,
+  });
+  expect(reconcileOcrText('', '')).toEqual({
+    text: '',
+    hasOcrText: false,
+    preservedNativeText: false,
+  });
+  expect(reconcileOcrText(native, 'OCR words')).toEqual({
+    text: 'OCR words',
+    hasOcrText: true,
+    preservedNativeText: false,
+  });
 });
