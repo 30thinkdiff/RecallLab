@@ -48,6 +48,16 @@ export function unreadablePdfMessage(
   return '未提取到可用文字，不能仅凭文字数量区分扫描件与空白页。请查看页面类型，必要时在本机运行 OCR。';
 }
 
+// An unsuccessful OCR attempt must not discard a usable native PDF text layer.
+export function reconcileOcrText(nativeText: string, recognizedText: string) {
+  const ocrText = recognizedText.trim();
+  return {
+    text: ocrText || nativeText,
+    hasOcrText: !!ocrText,
+    preservedNativeText: !ocrText && !!nativeText.trim(),
+  };
+}
+
 export function classifyPdfPage(
   status: 'ready' | 'empty' | 'suspect' | 'failed',
   images: boolean,
