@@ -75,6 +75,9 @@ it('does not route a free-learning action into an active FSRS review session', a
   expect((await db.sessions.get(freeId))?.reviewPlan).toBeUndefined();
   expect(await repo.startSession(projectId)).toBe(freeId);
   expect(await scheduler.start(projectId)).toBe(scheduledId);
+  const before = await exportBackup(db);
+  await restoreBackup(db, before);
+  expect((await db.sessions.toArray()).filter((s) => s.status === 'active')).toHaveLength(2);
 });
 it('initializes only when explicitly starting review, atomically schedules a real independent success and restores it', async () => {
   expect(await db.memoryStates.count()).toBe(0);

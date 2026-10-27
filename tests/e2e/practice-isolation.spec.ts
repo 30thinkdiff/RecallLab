@@ -21,9 +21,16 @@ test('free practice and scheduled review resume separately and only the latter c
   const counts = await page.evaluate(async () => {
     const path = '/src/persistence/database.ts';
     const { db } = await import(path);
-    return { events: await db.reviewEvents.count(), logs: await db.schedulingLogs.count() };
+    const backupPath = '/src/persistence/backup.ts';
+    const { exportBackup } = await import(backupPath);
+    const backup = await exportBackup(db);
+    return {
+      events: await db.reviewEvents.count(),
+      logs: await db.schedulingLogs.count(),
+      active: backup.data.sessions.filter((s: { status: string }) => s.status === 'active').length,
+    };
   });
-  expect(counts).toEqual({ events: 1, logs: 0 });
+  expect(counts).toEqual({ events: 1, logs: 0, active: 2 });
   await page.getByRole('link', { name: '今日复习', exact: true }).click();
   await page.getByRole('button', { name: '继续未完成复习', exact: true }).click();
   await expect(page).toHaveURL(formal);

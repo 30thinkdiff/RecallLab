@@ -547,9 +547,10 @@ export function validateBackup(raw: unknown): Backup {
     )
       throw new Error('学习进度超出队列');
     if (session.status === 'active') {
-      if (activeProjects.has(session.projectId) || session.index === session.queue.length)
+      const activeKey = `${session.projectId}:${session.reviewPlan ? 'scheduled' : 'free'}`;
+      if (activeProjects.has(activeKey) || session.index === session.queue.length)
         throw new Error('活动轮次无效或重复');
-      activeProjects.add(session.projectId);
+      activeProjects.add(activeKey);
     }
     if (
       backup.databaseVersion >= 2 &&
