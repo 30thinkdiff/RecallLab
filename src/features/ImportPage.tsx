@@ -209,6 +209,25 @@ export function ImportPage({
               </label>
             </section>
           )}
+          {parsed.coverage && (
+            <section className="info-note" aria-label="内容核查">
+              <h2>内容核查</h2>
+              <p>
+                已处理 {parsed.coverage.readablePages} / {parsed.coverage.totalPages} 页 · 识别{' '}
+                {parsed.coverage.sections} 个章节 · {rows.length} 个候选条目
+              </p>
+              <p>
+                尚未归类 {parsed.coverage.unassignedCharacters} 个非空白字符 ·{' '}
+                {parsed.coverage.reviewItems} 个条目需重点核对 · {parsed.coverage.crossPageItems}{' '}
+                个跨页条目
+              </p>
+              <p>
+                {parsed.coverage.problemPages.length
+                  ? `可能缺失或异常的页面：${parsed.coverage.problemPages.join('、')}`
+                  : '所有页面均有可读文字；这不代表知识提取已经完整，请抽查原文。'}
+              </p>
+            </section>
+          )}
           <section>
             <div className="section-heading">
               <h2>候选题目（{rows.length}）</h2>
@@ -254,6 +273,12 @@ export function ImportPage({
                   </label>
                   {duplicates.has(row.id) && <span className="tag">{duplicates.get(row.id)}</span>}
                 </div>
+                {row.reviewNotes?.map((note) => (
+                  <p className="info-note" key={note}>
+                    {note}
+                  </p>
+                ))}
+                <p className="source-note">{row.source.label}</p>
                 <div className="form-grid">
                   <label>
                     问题

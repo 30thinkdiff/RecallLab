@@ -20,14 +20,16 @@
     "test:e2e": "playwright test",
     "check": "npm run fixtures:check && npm run typecheck && npm run lint && npm run format:check && npm test && npm run build",
     "test:serve": "vite --mode test --host 127.0.0.1 --port 5174 --strictPort",
-    "fixtures": "node scripts/generate-fixtures.mjs && node scripts/generate-import-fixtures.mjs && node scripts/generate-pdf-fixtures.mjs",
-    "fixtures:check": "node scripts/generate-fixtures.mjs --check && node scripts/generate-import-fixtures.mjs --check && node scripts/generate-pdf-fixtures.mjs --check",
+    "fixtures": "node scripts/generate-fixtures.mjs && node scripts/generate-import-fixtures.mjs && node scripts/generate-pdf-fixtures.mjs && node scripts/generate-chinese-pdf-fixtures.mjs",
+    "fixtures:check": "node scripts/generate-fixtures.mjs --check && node scripts/generate-import-fixtures.mjs --check && node scripts/generate-pdf-fixtures.mjs --check && node scripts/generate-chinese-pdf-fixtures.mjs --check",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:debug": "playwright test --debug",
     "test:report": "playwright show-report",
     "test:summary": "node scripts/test-summary.mjs"
   },
   "dependencies": {
+    "@tesseract.js-data/chi_sim": "1.0.0",
+    "@tesseract.js-data/eng": "1.0.0",
     "dexie": "4.2.1",
     "dexie-react-hooks": "4.2.0",
     "lucide-react": "0.468.0",
@@ -35,6 +37,7 @@
     "pdfjs-dist": "5.5.207",
     "react": "19.2.0",
     "react-dom": "19.2.0",
+    "tesseract.js": "7.0.0",
     "zod": "^4.0.0"
   },
   "devDependencies": {
@@ -58,6 +61,7 @@
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.0",
     "vite": "7.3.7",
+    "vite-plugin-static-copy": "3.4.0",
     "vitest": "4.1.12"
   }
 }

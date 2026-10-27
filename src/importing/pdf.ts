@@ -1,8 +1,9 @@
-import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist';
-import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
-import { sha256, sectionsOf } from './text';
+import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist/legacy/build/pdf.mjs';
+import workerUrl from 'pdfjs-dist/legacy/build/pdf.worker.min.mjs?url';
+import { sha256 } from './text';
 import { MAX_PDF_BYTES, type ParsedMaterial } from './types';
 import type { DocumentPage } from '../domain/models';
+import { extractNumbered } from './numbered';
 import { pageText, textQuality, unreadablePdfMessage } from './pdf-layout';
 
 GlobalWorkerOptions.workerSrc = workerUrl;
@@ -23,6 +24,10 @@ export async function parsePdfBytes(
     isEvalSupported: false,
     stopAtErrors: true,
     useSystemFonts: true,
+    cMapUrl: `${import.meta.env.BASE_URL}pdf-assets/5.5.207/cmaps/`,
+    cMapPacked: true,
+    standardFontDataUrl: `${import.meta.env.BASE_URL}pdf-assets/5.5.207/standard_fonts/`,
+    wasmUrl: `${import.meta.env.BASE_URL}pdf-assets/5.5.207/wasm/`,
   });
   let timer: ReturnType<typeof setTimeout> | undefined;
   let timedOut = false;
@@ -72,8 +77,10 @@ export async function parsePdfBytes(
       ];
       for (const page of pages)
         for (const warning of page.warnings) warnings.push(`第 ${page.number} 页：${warning}`);
+      const organized = extractNumbered(content, pages, id, filename);
       return {
-        candidates: [],
+        candidates: organized.candidates,
+        coverage: organized.coverage,
         document: {
           id,
           filename,
@@ -82,14 +89,12 @@ export async function parsePdfBytes(
           byteLength: bytes.length,
           extractedContent: content,
           pages,
-          sections: pages.flatMap((page) =>
-            sectionsOf(page.text, id, page.number, page.startOffset),
-          ),
+          sections: organized.sections,
           extractionStatus: pages.some((page) => page.status !== 'ready')
             ? 'partial'
             : 'needs_review',
           warnings,
-          parserVersion: 'PDF.js-5.5.207-text-1',
+          parserVersion: 'PDF.js-5.5.207-legacy-structured-2',
         },
       };
     };

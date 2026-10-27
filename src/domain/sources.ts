@@ -18,13 +18,21 @@ export function assertSourceReference(
     document.extractedContent.slice(start, end) !== ref.excerpt
   )
     throw new Error('来源原文与位置不一致，请重新选择原文');
+  if (ref.endPage && (!ref.page || ref.endPage < ref.page)) throw new Error('来源跨页范围无效');
   if (ref.page) {
-    const page = document.pages.find((page) => page.number === ref.page);
+    const first = document.pages.find((page) => page.number === ref.page);
+    const last = document.pages.find((page) => page.number === (ref.endPage ?? ref.page));
     if (
-      !page ||
-      page.status === 'failed' ||
-      start < page.startOffset ||
-      end > page.startOffset + page.text.length
+      !first ||
+      !last ||
+      start < first.startOffset ||
+      start >= first.startOffset + first.text.length ||
+      end > last.startOffset + last.text.length ||
+      end <= last.startOffset ||
+      document.pages.some(
+        (page) =>
+          page.number >= first.number && page.number <= last.number && page.status === 'failed',
+      )
     )
       throw new Error('来源页码与原文位置不一致');
   }

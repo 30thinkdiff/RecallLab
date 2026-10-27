@@ -9,8 +9,10 @@ export interface ImportCandidate extends CardInput {
   selected: boolean;
   source: SourceReference;
   origin: 'rule' | 'selection';
+  reviewNotes?: string[];
 }
 export interface ParsedMaterial {
+  coverage?: import('./numbered').ContentCoverage;
   document: MaterialDraft;
   candidates: ImportCandidate[];
 }
