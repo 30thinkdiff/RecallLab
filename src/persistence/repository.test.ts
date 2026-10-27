@@ -168,7 +168,18 @@ describe('repository transitions and revision evidence', () => {
     const { projectId, items, sessionId } = await setup();
     await reveal(sessionId);
     await repo.submitReview(sessionId, 0, 'correct', 2, await token(sessionId));
-    await edit(projectId, items[0]!, 'cosmetic', 'preserve');
+    const old = (await db.practiceItems.get(items[0]!))!;
+    await repo.saveCard(
+      projectId,
+      { ...card, question: old.question, standardAnswer: '旧答案 红色' },
+      old.id,
+      {
+        expectedRevisionId: old.currentRevisionId,
+        changeType: 'cosmetic',
+        changeSummary: '调整空格',
+        impactOnLearningState: 'preserve',
+      },
+    );
     const event = (await db.reviewEvents.toArray())[0]!;
     expect(
       evidenceIsCurrent(
