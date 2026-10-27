@@ -300,6 +300,7 @@ export class Repository {
       const active = await this.db.sessions
         .where('[projectId+status]')
         .equals([projectId, 'active'])
+        .filter((session) => !session.reviewPlan)
         .first();
       if (active) return active.id;
       const items = await this.available(projectId);
