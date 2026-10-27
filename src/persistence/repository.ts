@@ -89,6 +89,8 @@ export class Repository {
       const existing = id ? await this.requireProject(id) : undefined;
       const project = {
         ...input,
+        priority: input.priority ?? existing?.priority ?? 2,
+        newCardLimit: input.newCardLimit ?? existing?.newCardLimit ?? 10,
         id: existing?.id ?? crypto.randomUUID(),
         createdAt: existing?.createdAt ?? now,
         updatedAt: now,

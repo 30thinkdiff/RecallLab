@@ -523,7 +523,22 @@ export function ImportPage({
           <p>
             已追加 {result.itemIds.length} 道题，跳过 {result.skipped} 道候选。已有学习历史保留。
           </p>
+          <p className="muted">
+            按计划学习会建立间隔安排；完整轮次作为临时练习。待完善题干保存后可批量处理，不进入学习队列。
+          </p>
           <div className="button-row">
+            <button
+              className="button"
+              disabled={action.busy || !result.itemIds.length}
+              onClick={() =>
+                void action.run(async () => {
+                  const { scheduleService } = await import('../scheduling/service');
+                  location.hash = `study/${await scheduleService.start(result.projectId, { mode: 'new' })}`;
+                })
+              }
+            >
+              按计划学习新题（FSRS）
+            </button>
             <button
               className="button"
               disabled={action.busy || !result.itemIds.length}

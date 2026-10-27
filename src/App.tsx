@@ -8,6 +8,9 @@ import { useAction } from './components/actions';
 import { CardForm, ProjectForm } from './features/Forms';
 import { History, Overview, ProjectDetail, Projects } from './features/Workspace';
 import { PendingPrompts } from './features/PendingPrompts';
+const DailyReview = lazy(() =>
+  import('./features/DailyReview').then((m) => ({ default: m.DailyReview })),
+);
 const Study = lazy(() => import('./features/Study').then((m) => ({ default: m.Study })));
 import type { LearningProject, PracticeItem } from './domain/models';
 const ImportPage = lazy(() =>
@@ -105,6 +108,7 @@ function Workspace() {
     'archive',
     'import',
     'documents',
+    'daily',
     'document',
   ].includes(section ?? '')
     ? section
@@ -134,6 +138,7 @@ function Workspace() {
         <nav aria-label="主导航">
           {[
             { name: '学习概览', route: 'home', icon: LayoutDashboard },
+            { name: '今日复习', route: 'daily', icon: Clock3 },
             { name: '学习项目', route: 'projects', icon: BookOpen },
             { name: '学习记录', route: 'history', icon: Clock3 },
             { name: '备份与恢复', route: 'backup', icon: ShieldCheck },
@@ -192,6 +197,17 @@ function Workspace() {
             <p role="status">正在读取本地学习数据…</p>
           ) : section === 'home' ? (
             <Overview data={data} onCreate={createProject} />
+          ) : section === 'daily' ? (
+            <Suspense fallback={<p role="status">正在准备今日复习…</p>}>
+              <DailyReview
+                key={id ?? 'daily'}
+                initialProjectId={id}
+                onEditProject={(pid) => {
+                  const p = data.projects.find((p) => p.id === pid);
+                  if (p) setModal({ type: 'project', project: p });
+                }}
+              />
+            </Suspense>
           ) : section === 'projects' ? (
             <Projects data={data} onCreate={createProject} />
           ) : section === 'history' ? (
@@ -269,7 +285,7 @@ function Workspace() {
           onClose={() => setModal(null)}
           onSaved={(id) => {
             setModal(null);
-            location.hash = `project/${id}`;
+            location.hash = section === 'daily' ? `daily/${id}` : `project/${id}`;
           }}
         />
       )}

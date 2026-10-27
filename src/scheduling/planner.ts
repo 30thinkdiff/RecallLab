@@ -12,6 +12,7 @@ export function localDay(date: Date, timezone = Intl.DateTimeFormat().resolvedOp
 }
 export function isDue(memory: MemoryState, now: Date, timezone: string) {
   return (
+    !memory.retestDue &&
     memory.card.reps > 0 &&
     (memory.card.state === 2
       ? localDay(new Date(memory.due), timezone) <= localDay(now, timezone)
@@ -139,6 +140,14 @@ export function buildPlan(
     selected,
     due: ready.filter(due).length,
     retest: ready.filter(retry).length,
+    upcomingToday: ready.filter((c) => {
+      const m = current(c);
+      if (!m || due(c) || retry(c)) return false;
+      const next = m.retestDue ?? (m.card.reps > 0 ? m.due : null);
+      return (
+        !!next && Date.parse(next) > now.getTime() && localDay(new Date(next), timezone) === day
+      );
+    }).length,
     newCount: ready.filter(fresh).length,
     pending: all.length - ready.length,
     relearn: ready.filter(

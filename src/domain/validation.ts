@@ -15,6 +15,8 @@ export const projectInputSchema = z.object({
     );
   }, '请输入有效日期'),
   dailyTimeBudget: z.number().int().min(1).max(1440),
+  priority: z.number().int().min(1).max(3).optional(),
+  newCardLimit: z.number().int().min(0).max(1000).optional(),
 });
 export type ProjectInput = z.infer<typeof projectInputSchema>;
 

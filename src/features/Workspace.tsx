@@ -1,3 +1,4 @@
+import { ReviewOverview } from './ReviewOverview';
 import { useState } from 'react';
 import {
   ArrowRight,
@@ -72,6 +73,7 @@ export function Overview({ data, onCreate }: { data: WorkspaceData; onCreate: ()
   const recent = data.events.slice(-4).reverse();
   return (
     <>
+      <ReviewOverview />
       <div className="eyebrow">YOUR LEARNING, WITH EVIDENCE</div>
       <div className="page-heading">
         <div>
@@ -398,6 +400,9 @@ export function ProjectDetail({
         </p>
       )}
       {active && <SessionControls session={active} cards={data.allCards} />}
+      <a className="button" href={`#daily/${project.id}`}>
+        按间隔计划复习
+      </a>
       <a className="text-link" href={`#pending/${project.id}`}>
         批量管理待完善题干
       </a>
