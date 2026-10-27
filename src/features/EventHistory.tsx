@@ -6,6 +6,7 @@ import type {
 } from '../domain/models';
 import { dateTime } from '../components/actions';
 import { masteryLabels, performanceLabels } from '../domain/review';
+import { SourceLinks } from './Documents';
 import { evidenceIsCurrent } from '../domain/revisions';
 
 export function EventHistory({
@@ -99,9 +100,7 @@ export function EventHistory({
               </>
             )}
             {event.snapshot.sourceReferences.length > 0 && (
-              <p className="source-note">
-                来源：{event.snapshot.sourceReferences.map((source) => source.label).join('；')}
-              </p>
+              <SourceLinks sources={event.snapshot.sourceReferences} />
             )}
           </div>
         </details>

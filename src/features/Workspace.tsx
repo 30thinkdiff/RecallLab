@@ -412,6 +412,9 @@ export function ProjectDetail({
               onChange={(event) => setSearch(event.target.value)}
             />
           </label>
+          <a className="button secondary" href={`#import/${project.id}`}>
+            导入资料
+          </a>
           <button className="button" onClick={onAddCard}>
             <Plus size={16} /> 添加问答题
           </button>
@@ -486,9 +489,14 @@ export function ProjectDetail({
           <h3>{search ? '没有找到相关问题' : '先添加第一道问答题'}</h3>
           <p>{search ? '试试其他关键词。' : '写下问题与标准答案，就可以开始一轮学习。'}</p>
           {!search && (
-            <button className="button" onClick={onAddCard}>
-              <Plus size={16} /> 添加问答题
-            </button>
+            <>
+              <a className="button secondary" href={`#import/${project.id}`}>
+                导入资料
+              </a>
+              <button className="button" onClick={onAddCard}>
+                <Plus size={16} /> 添加问答题
+              </button>
+            </>
           )}
         </div>
       )}

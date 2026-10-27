@@ -10,6 +10,7 @@ import { changeLabels } from '../domain/revisions';
 import { masteryLabels, performanceLabels } from '../domain/review';
 import { dateTime } from '../components/actions';
 import { downloadJson } from '../persistence/backup';
+import { SourceLinks } from './Documents';
 import { EventHistory } from './EventHistory';
 import type { WorkspaceData } from './Workspace';
 
@@ -44,6 +45,7 @@ export function ItemDetail({ item, data }: { item: PracticeItem; data: Workspace
       <section className="answer-panel">
         <span className="section-kicker">当前标准答案</span>
         <p className="preserve-lines">{item.standardAnswer}</p>
+        {item.sourceReferences.length > 0 && <SourceLinks sources={item.sourceReferences} />}
         {item.answerCriteria.length > 0 && (
           <ul>
             {item.answerCriteria.map((text, index) => (

@@ -1,3 +1,4 @@
+import { webcrypto } from 'node:crypto';
 import '@testing-library/jest-dom/vitest';
 import 'fake-indexeddb/auto';
 import { cleanup } from '@testing-library/react';
@@ -16,3 +17,5 @@ Object.defineProperty(HTMLDialogElement.prototype, 'close', {
     this.removeAttribute('open');
   },
 });
+
+Object.defineProperty(globalThis, 'crypto', { value: webcrypto, configurable: true });

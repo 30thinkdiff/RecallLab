@@ -1936,3 +1936,160 @@ select:focus {
     gap: 8px;
   }
 }
+.import-steps {
+  display: flex;
+  gap: 12px;
+  padding: 0;
+  list-style: none;
+  margin: 25px 0;
+  font-size: 11px;
+  color: #8b977c;
+  flex-wrap: wrap;
+}
+.import-steps li {
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 7px 15px;
+}
+.import-steps li.active {
+  background: #e5edd9;
+  border-color: #b7c79e;
+  color: #516941;
+  font-weight: 600;
+}
+.import-target {
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 10px;
+  margin: 24px 0;
+  padding: 20px 25px;
+}
+.candidate-card {
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 10px;
+  margin: 15px 0;
+  padding: 20px 25px;
+}
+.candidate-card > .section-heading {
+  margin: 0;
+}
+.candidate-card .checkbox-label {
+  margin: 6px 0;
+}
+.candidate-card details,
+.source-reader details {
+  font-size: 11px;
+  color: #798b65;
+}
+.candidate-card details summary,
+.source-reader details summary {
+  cursor: pointer;
+}
+.candidate-card details .preserve-lines {
+  max-height: 200px;
+  overflow: auto;
+  background: #f5f7ef;
+  padding: 15px;
+  font-size: 11px;
+}
+.field-error {
+  color: #ae5144;
+  font-size: 11px;
+}
+.import-confirm {
+  border: 1px solid #cedbb9;
+  background: #edf3e4;
+  padding: 22px;
+  border-radius: 10px;
+  margin: 30px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+.import-confirm p {
+  font-size: 12px;
+  color: #758660;
+  margin: 0;
+}
+.format-example {
+  font-size: 11px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  padding: 15px;
+  background: #f0f4e8;
+  border-radius: 7px;
+}
+.pagination {
+  justify-content: center;
+  font-size: 12px;
+  margin: 20px;
+}
+.source-page {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 20px;
+  margin: 20px 0;
+  scroll-margin-top: 20px;
+}
+.source-page textarea {
+  font-size: 12px;
+  line-height: 1.9;
+  white-space: pre-wrap;
+}
+.source-page button {
+  margin-top: 15px;
+}
+.source-page h3 {
+  font-size: 13px;
+  color: #8c9b79;
+  margin: 0 0 15px;
+}
+.source-reader > h2 {
+  margin-top: 35px;
+}
+.file-information {
+  font-size: 11px;
+  margin: 20px 0;
+  color: #8a9878;
+  overflow-wrap: anywhere;
+}
+.file-information summary {
+  cursor: pointer;
+}
+.source-note > a {
+  overflow-wrap: anywhere;
+}
+.page-content h1 {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 800px) {
+  .candidate-card,
+  .import-target {
+    padding: 18px;
+  }
+  .candidate-card .form-grid {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  .candidate-card .section-heading {
+    align-items: flex-start;
+  }
+  .import-steps {
+    gap: 6px;
+  }
+  .import-steps li {
+    font-size: 9px;
+    padding: 6px 9px;
+  }
+  .import-confirm {
+    padding: 18px;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .source-page {
+    padding: 17px;
+  }
+}
