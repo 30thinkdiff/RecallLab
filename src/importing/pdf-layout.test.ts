@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { pageText, textQuality, unreadablePdfMessage , reconcileOcrText } from './pdf-layout';
+import { pageText, textQuality, unreadablePdfMessage, reconcileOcrText } from './pdf-layout';
 it('keeps extraction order, line changes and word gaps without inventing content', () => {
   expect(
     pageText([
