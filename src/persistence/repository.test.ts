@@ -178,6 +178,37 @@ describe('repository transitions and revision evidence', () => {
       ),
     ).toBe(true);
   });
+  it('rejects a cosmetic label when the answer or required criteria changes', async () => {
+    const { projectId, items } = await setup();
+    const itemId = items[0]!;
+    const current = (await db.practiceItems.get(itemId))!;
+    const claim = {
+      expectedRevisionId: current.currentRevisionId,
+      changeType: 'cosmetic' as const,
+      changeSummary: '声称仅调整格式',
+      impactOnLearningState: 'preserve' as const,
+    };
+    await expect(
+      repo.saveCard(projectId, { ...card, question: current.question, standardAnswer: '另一个答案' }, itemId, claim),
+    ).rejects.toThrow('不能继承旧成绩');
+    await expect(
+      repo.saveCard(projectId, { ...card, question: current.question, answerCriteria: '不同的核对要求' }, itemId, claim),
+    ).rejects.toThrow('不能继承旧成绩');
+    expect((await db.practiceItems.get(itemId))?.currentRevisionId).toBe(current.currentRevisionId);
+    expect(await db.revisions.count()).toBe(1);
+  });
+  it('allows formatting-only adjustments to retain learning evidence', async () => {
+    const { projectId, items } = await setup();
+    const itemId = items[0]!;
+    const current = (await db.practiceItems.get(itemId))!;
+    await repo.saveCard(projectId, { ...card, question: current.question, standardAnswer: '旧答案 红色' }, itemId, {
+      expectedRevisionId: current.currentRevisionId,
+      changeType: 'cosmetic',
+      changeSummary: '插入空格',
+      impactOnLearningState: 'preserve',
+    });
+    expect((await db.practiceItems.get(itemId))?.learningStateId).toBe(current.learningStateId);
+  });
   it('does not allow a substantive correction to inherit a learning state', async () => {
     const { projectId, items } = await setup();
     await expect(edit(projectId, items[0]!, 'substantive', 'preserve')).rejects.toThrow('重新学习');
