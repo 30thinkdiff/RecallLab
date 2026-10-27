@@ -1,7 +1,7 @@
 {
   "name": "recalllab",
   "private": true,
-  "version": "0.4.0",
+  "version": "0.4.1",
   "type": "module",
   "engines": {
     "node": ">=20.19.0",
@@ -26,7 +26,8 @@
     "test:e2e:debug": "playwright test --debug",
     "test:report": "playwright show-report",
     "test:summary": "node scripts/test-summary.mjs",
-    "test:production": "playwright test --config playwright.production.config.ts"
+    "test:production": "playwright test --config playwright.production.config.ts",
+    "test:firefox": "playwright test --config playwright.firefox.config.ts"
   },
   "dependencies": {
     "@tesseract.js-data/chi_sim": "1.0.0",

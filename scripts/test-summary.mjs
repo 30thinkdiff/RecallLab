@@ -38,5 +38,12 @@ try {
   summary +=
     '\nNo production PDF/OCR report was produced; do not assume this verification passed.\n';
 }
+try {
+  const firefox = JSON.parse(await readFile('test-results/firefox/results.json', 'utf8'));
+  const s = firefox.stats;
+  summary += `\nFirefox: Passed ${s.expected}; Failed ${s.unexpected}; Flaky ${s.flaky}; Skipped ${s.skipped}. See firefox subreport in the same artifact.\n`;
+} catch {
+  summary += '\nNo Firefox report was produced; do not assume this verification passed.\n';
+}
 if (process.env.GITHUB_STEP_SUMMARY) await appendFile(process.env.GITHUB_STEP_SUMMARY, summary);
 else process.stdout.write(summary);

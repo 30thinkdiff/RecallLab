@@ -338,6 +338,7 @@ export function ProjectDetail({
   busy: boolean;
 }) {
   const [search, setSearch] = useState('');
+  const [limit, setLimit] = useState(100);
   const cards = data.cards.filter((card) => card.projectId === project.id);
   const matching = cards.filter((card) =>
     card.question.toLowerCase().includes(search.toLowerCase()),
@@ -435,7 +436,7 @@ export function ProjectDetail({
       </div>
       {matching.length ? (
         <div className="card-list">
-          {matching.map((card, index) => {
+          {matching.slice(0, limit).map((card, index) => {
             const last = events
               .filter(
                 (event) =>
@@ -512,6 +513,11 @@ export function ProjectDetail({
             </>
           )}
         </div>
+      )}
+      {matching.length > limit && (
+        <button className="button secondary" onClick={() => setLimit(limit + 100)}>
+          继续显示题目（已显示 {limit} / {matching.length}）
+        </button>
       )}
     </>
   );

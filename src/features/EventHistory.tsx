@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { markLabels } from '../domain/assessment';
 import { reasonLabels, gradeLabels } from '../scheduling/policy';
 import type {
@@ -22,9 +23,10 @@ export function EventHistory({
   cards: PracticeItem[];
   revisions: PracticeItemRevision[];
 }) {
+  const [limit, setLimit] = useState(100);
   return (
     <div className="history-list">
-      {events.map((event) => (
+      {events.slice(0, limit).map((event) => (
         <details className="history-entry" key={event.id}>
           <summary>
             <div>
@@ -151,6 +153,11 @@ export function EventHistory({
           </div>
         </details>
       ))}
+      {events.length > limit && (
+        <button className="button secondary" onClick={() => setLimit(limit + 100)}>
+          继续显示记录（已显示 {limit} / {events.length}）
+        </button>
+      )}
     </div>
   );
 }

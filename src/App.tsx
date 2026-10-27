@@ -1,7 +1,7 @@
+import { OfflineStatus } from './features/OfflineStatus';
 import { useEffect, useState, lazy, Suspense } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
+import { useWorkspaceData } from './features/workspace-data';
 import { BookOpen, Clock3, FlaskConical, LayoutDashboard, ShieldCheck } from 'lucide-react';
-import { db } from './persistence/database';
 import { repository } from './persistence/repository';
 import { DataBoundary, ConfirmDialog, ErrorNotice } from './components/shared';
 import { useAction } from './components/actions';
@@ -50,30 +50,7 @@ function Workspace() {
     window.addEventListener('hashchange', onChange);
     return () => window.removeEventListener('hashchange', onChange);
   }, []);
-  const rawData = useLiveQuery(async () => {
-    return db.transaction(
-      'r',
-      [
-        db.projects,
-        db.practiceItems,
-        db.reviewEvents,
-        db.sessions,
-        db.revisions,
-        db.draftRecoveries,
-      ],
-      async () => {
-        const [projects, cards, events, sessions, revisions, draftRecoveries] = await Promise.all([
-          db.projects.toArray(),
-          db.practiceItems.toArray(),
-          db.reviewEvents.toArray(),
-          db.sessions.toArray(),
-          db.revisions.toArray(),
-          db.draftRecoveries.toArray(),
-        ]);
-        return { projects, cards, events, sessions, revisions, draftRecoveries };
-      },
-    );
-  });
+  const rawData = useWorkspaceData(route);
   const projects =
     rawData?.projects
       .filter((project) => !project.archivedAt)
@@ -170,7 +147,8 @@ function Workspace() {
           </p>
         </div>
         <div className="sidebar-footer">
-          RECALL. REFLECT. REPEAT.<span>0.4 · 证据与间隔复习</span>
+          RECALL. REFLECT. REPEAT.<span>0.4.1 · 学习质量与可靠性</span>
+          <OfflineStatus />
         </div>
       </aside>
       <main id="main-content" tabIndex={-1}>

@@ -18,6 +18,7 @@ test('detailed criterion evidence survives pause and refresh, overrides mastery,
   await expect(page.getByTestId('draft-status')).toContainText('草稿已保存');
   await page.getByRole('link', { name: '暂停并返回今日复习', exact: true }).click();
   await page.getByRole('button', { name: '继续未完成复习', exact: true }).click();
+  await expect(page).toHaveURL(/#study\//);
   await page.reload();
   await expect(page.getByLabel('必需要点 2 核对')).toHaveValue('omitted');
   await expect(page.getByRole('radio', { name: '4 完全掌握', exact: true })).toHaveAttribute(
