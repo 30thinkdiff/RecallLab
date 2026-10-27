@@ -111,6 +111,7 @@ export interface SessionToken {
   planVersion: number;
   draftVersion: number;
   revisionId: string;
+  writerId?: string;
 }
 
 export interface StudyDraft {
@@ -136,6 +137,7 @@ export interface StudySession {
   generation: string;
   planVersion: number;
   draftVersion: number;
+  lastWriterId?: string;
 }
 
 export interface ReviewEvent {

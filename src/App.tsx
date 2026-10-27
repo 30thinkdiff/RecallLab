@@ -9,6 +9,7 @@ import { CardForm, ProjectForm } from './features/Forms';
 import { History, Overview, ProjectDetail, Projects } from './features/Workspace';
 import { Study } from './features/Study';
 import type { LearningProject, PracticeItem } from './domain/models';
+import { ArchivePage } from './features/Archive';
 import { StorageGate, BackupPage } from './features/Storage';
 
 type ModalState =
@@ -40,18 +41,24 @@ function Workspace() {
   const rawData = useLiveQuery(async () => {
     return db.transaction(
       'r',
-      db.projects,
-      db.practiceItems,
-      db.reviewEvents,
-      db.sessions,
+      [
+        db.projects,
+        db.practiceItems,
+        db.reviewEvents,
+        db.sessions,
+        db.revisions,
+        db.draftRecoveries,
+      ],
       async () => {
-        const [projects, cards, events, sessions] = await Promise.all([
+        const [projects, cards, events, sessions, revisions, draftRecoveries] = await Promise.all([
           db.projects.toArray(),
           db.practiceItems.toArray(),
           db.reviewEvents.toArray(),
           db.sessions.toArray(),
+          db.revisions.toArray(),
+          db.draftRecoveries.toArray(),
         ]);
-        return { projects, cards, events, sessions };
+        return { projects, cards, events, sessions, revisions, draftRecoveries };
       },
     );
   });
@@ -62,6 +69,10 @@ function Workspace() {
   const ids = new Set(projects.map((project) => project.id));
   const data = {
     projects,
+    allCards: rawData?.cards ?? [],
+    allProjects: rawData?.projects ?? [],
+    revisions: rawData?.revisions ?? [],
+    draftRecoveries: rawData?.draftRecoveries ?? [],
     cards:
       rawData?.cards
         .filter((card) => !card.archivedAt && ids.has(card.projectId))
@@ -76,7 +87,9 @@ function Workspace() {
   const project = data.projects.find((project) => project.id === id);
   const session = data.sessions.find((session) => session.id === id);
   const createProject = () => setModal({ type: 'project' });
-  const activePage = section === 'home' ? 'home' : section === 'history' ? 'history' : 'projects';
+  const activePage = ['home', 'history', 'backup', 'archive'].includes(section ?? '')
+    ? section
+    : 'projects';
   return (
     <div className="app-shell">
       <a href="#main-content" className="skip-link">
@@ -98,6 +111,7 @@ function Workspace() {
             { name: '学习项目', route: 'projects', icon: BookOpen },
             { name: '学习记录', route: 'history', icon: Clock3 },
             { name: '备份与恢复', route: 'backup', icon: ShieldCheck },
+            { name: '归档内容', route: 'archive', icon: BookOpen },
           ].map(({ name, route, icon: Icon }) => (
             <a
               key={route}
@@ -147,6 +161,8 @@ function Workspace() {
             <Projects data={data} onCreate={createProject} />
           ) : section === 'history' ? (
             <History data={data} />
+          ) : section === 'archive' ? (
+            <ArchivePage projects={data.allProjects} cards={data.allCards} />
           ) : section === 'backup' ? (
             <BackupPage />
           ) : section === 'project' && project ? (
@@ -171,6 +187,7 @@ function Workspace() {
             <Study
               session={session}
               events={data.events}
+              cards={data.allCards}
               projectName={
                 data.projects.find((project) => project.id === session.projectId)?.name ?? ''
               }
@@ -202,7 +219,7 @@ function Workspace() {
       {modal?.type === 'deleteProject' && (
         <ConfirmDialog
           title="删除学习项目"
-          description={`确定删除“${modal.project.name}”？项目和题库将从工作台隐藏。历史数据会保留在本地数据库中，M1 暂无恢复入口。`}
+          description={`确定删除“${modal.project.name}”？项目和题库将从工作台隐藏。历史数据会保留，可从“归档内容”查看和恢复。`}
           onClose={() => setModal(null)}
           onConfirm={async () => {
             await repository.archiveProject(modal.project.id);

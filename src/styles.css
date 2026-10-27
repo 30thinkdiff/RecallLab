@@ -1634,3 +1634,123 @@ select:focus {
     transition: none !important;
   }
 }
+.storage-gate {
+  max-width: 850px;
+  padding-top: 80px;
+}
+.session-controls {
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 18px;
+  background: #f4f6ee;
+  margin: 20px 0;
+}
+.queue-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  margin-bottom: 16px;
+  font-size: 12px;
+  color: #687b57;
+}
+.remaining-list {
+  font-size: 12px;
+  color: #748966;
+  margin-top: 15px;
+}
+.remaining-list summary {
+  cursor: pointer;
+}
+.remaining-list li {
+  margin-bottom: 8px;
+  overflow-wrap: anywhere;
+}
+.conflict-panel {
+  background: #fff3e5;
+  border: 1px solid #e6c99b;
+  border-radius: 10px;
+  padding: 22px;
+  margin: 20px 0;
+  color: #8a6139;
+  font-size: 12px;
+}
+.conflict-panel h2 {
+  font-size: 18px;
+  margin-top: 0;
+}
+.conflict-panel label {
+  color: #8a6139;
+}
+.conflict-panel textarea {
+  background: #fffaf3;
+}
+.revision-options {
+  border-top: 1px solid var(--line);
+  margin-top: 24px;
+  padding-top: 12px;
+}
+.checkbox-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  font-size: 12px;
+}
+.checkbox-label input {
+  width: auto;
+  margin: 5px 0 0;
+  flex-shrink: 0;
+}
+.recovery-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 15px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  font-size: 11px;
+  margin: 12px 0;
+}
+.restore-preview {
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f2f6eb;
+}
+.restore-preview p {
+  font-size: 12px;
+}
+.sidebar-footer {
+  letter-spacing: 1px;
+}
+.sidebar nav {
+  flex-shrink: 0;
+}
+@media (max-width: 800px) {
+  .sidebar nav {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+  .queue-notice {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .session-controls .button {
+    padding: 8px 10px;
+    font-size: 10px;
+  }
+  .session-controls .button-row {
+    gap: 8px;
+  }
+  .remaining-list {
+    font-size: 11px;
+  }
+  .recovery-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .conflict-panel {
+    padding: 18px;
+  }
+}

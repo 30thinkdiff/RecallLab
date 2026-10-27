@@ -1,23 +1,24 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { RecallDatabase } from './database';
-import { Repository } from './repository';
+import { Repository, type RevisionInput } from './repository';
+import { evidenceIsCurrent, tokenOf } from '../domain/revisions';
 import type { CardInput, ProjectInput } from '../domain/validation';
-
+import { exportBackup } from './backup';
 const project: ProjectInput = {
-  name: '心理学',
+  name: '虚构项目',
   description: '',
   learningGoal: '',
   targetDate: '',
   dailyTimeBudget: 20,
 };
 const card: CardInput = {
-  question: '什么是主动回忆？',
-  standardAnswer: '不查看答案，主动提取记忆。',
-  hints: '先不要看答案\n从记忆中提取',
-  answerCriteria: '不查看答案\n主动提取',
+  question: '虚构蓝晶是什么颜色？',
+  standardAnswer: '旧答案红色',
+  hints: '回想颜色\n回想协议',
+  answerCriteria: '正确颜色',
   mnemonics: '',
   confusionWarnings: '',
-  sourceLabel: '手工笔记',
+  sourceLabel: '虚构资料',
 };
 let db: RecallDatabase;
 let repo: Repository;
@@ -28,148 +29,276 @@ beforeEach(() => {
 afterEach(async () => {
   await db.delete();
 });
+async function session(id: string) {
+  return (await db.sessions.get(id))!;
+}
+async function token(id: string) {
+  return tokenOf(await session(id));
+}
+async function setup(count = 1) {
+  const projectId = await repo.saveProject(project);
+  const items = [];
+  for (let i = 0; i < count; i++)
+    items.push(await repo.saveCard(projectId, { ...card, question: `虚构问题 ${i}` }));
+  return { projectId, items, sessionId: await repo.startSession(projectId) };
+}
+async function edit(
+  projectId: string,
+  item: string,
+  kind: RevisionInput['changeType'] = 'substantive',
+  impact: RevisionInput['impactOnLearningState'] = 'reset',
+) {
+  const current = (await db.practiceItems.get(item))!;
+  return repo.saveCard(
+    projectId,
+    { ...card, question: current.question, standardAnswer: '修正答案蓝色' },
+    item,
+    {
+      expectedRevisionId: current.currentRevisionId,
+      changeType: kind,
+      changeSummary: '修正虚构颜色',
+      impactOnLearningState: impact,
+    },
+  );
+}
+async function reveal(id: string, index = 0) {
+  return repo.updateDraft(id, index, {}, await token(id), 'reveal');
+}
 
-describe('local repository', () => {
-  it('creates, edits and archives projects while retaining their learning evidence', async () => {
-    const id = await repo.saveProject(project);
-    await repo.saveProject({ ...project, name: '改名' }, id);
-    expect((await db.projects.get(id))?.name).toBe('改名');
-    await repo.saveCard(id, card);
-    await repo.archiveProject(id);
-    expect((await db.projects.get(id))?.archivedAt).toBeTruthy();
-    expect(await db.practiceItems.count()).toBe(1);
-    await expect(repo.startSession(id)).rejects.toThrow('不存在');
-  });
-
-  it('separates knowledge and practice and rejects empty content', async () => {
-    const id = await repo.saveProject(project);
-    await expect(repo.saveCard(id, { ...card, question: '  ' })).rejects.toThrow();
-    expect(await db.knowledgeUnits.count()).toBe(0);
-    await repo.saveCard(id, card);
-    expect(await db.knowledgeUnits.count()).toBe(1);
-    expect(await db.practiceItems.count()).toBe(1);
-  });
-
-  it('persists data across a closed and reopened IndexedDB connection', async () => {
-    const id = await repo.saveProject(project);
-    await repo.saveCard(id, card);
-    const sessionId = await repo.startSession(id);
-    await repo.updateDraft(sessionId, 0, {}, 'reveal');
-    await repo.submitReview(sessionId, 0, 'ungraded', 2);
-    db.close();
-    await db.open();
-    expect((await db.projects.get(id))?.name).toBe(project.name);
-    expect(await db.practiceItems.count()).toBe(1);
-    expect(await db.reviewEvents.count()).toBe(1);
-  });
-
-  it('isolates projects and prevents a card from being edited through a different project', async () => {
-    const first = await repo.saveProject(project);
-    const second = await repo.saveProject({ ...project, name: '第二项目' });
-    const itemId = await repo.saveCard(first, card);
-    await expect(repo.saveCard(second, card, itemId)).rejects.toThrow();
+describe('repository transitions and revision evidence', () => {
+  it('validates input and isolates projects', async () => {
+    const { projectId, items } = await setup();
+    const second = await repo.saveProject({ ...project, name: '另一项目' });
+    await expect(repo.saveCard(second, card, items[0])).rejects.toThrow('不存在');
     await expect(repo.startSession(second)).rejects.toThrow('至少');
-    const sessionId = await repo.startSession(first);
-    expect((await db.sessions.get(sessionId))?.queue).toHaveLength(1);
+    await expect(repo.saveCard(projectId, { ...card, question: ' ' })).rejects.toThrow();
+    expect(await db.knowledgeUnits.count()).toBe(1);
   });
-
-  it('starts only one active session when start is clicked twice', async () => {
-    const id = await repo.saveProject(project);
-    await repo.saveCard(id, card);
-    const [first, second] = await Promise.all([repo.startSession(id), repo.startSession(id)]);
-    expect(first).toBe(second);
+  it('edits and archives a project without deleting its evidence, and can restore it', async () => {
+    const { projectId } = await setup();
+    await repo.saveProject({ ...project, name: '新名称' }, projectId);
+    await repo.archiveProject(projectId);
+    await expect(repo.startSession(projectId)).rejects.toThrow();
+    expect(await db.practiceItems.count()).toBe(1);
+    await repo.restoreProject(projectId);
+    expect(await repo.startSession(projectId)).toBeTruthy();
+  });
+  it('keeps one active session under concurrent starts', async () => {
+    const { projectId, sessionId } = await setup();
+    expect(await Promise.all([repo.startSession(projectId), repo.startSession(projectId)])).toEqual(
+      [sessionId, sessionId],
+    );
     expect(await db.sessions.count()).toBe(1);
   });
-
-  it('commits an event and queue advancement once under concurrent double submission', async () => {
-    const id = await repo.saveProject(project);
-    await repo.saveCard(id, card);
-    await repo.saveCard(id, { ...card, question: '第二题' });
-    const session = await repo.startSession(id);
-    await repo.updateDraft(session, 0, { attemptedBeforeReveal: true }, 'reveal');
-    const results = await Promise.all([
-      repo.submitReview(session, 0, 'correct', 4),
-      repo.submitReview(session, 0, 'correct', 4),
-    ]);
-    expect(results.sort()).toEqual([false, true]);
-    expect(await db.reviewEvents.count()).toBe(1);
-    expect((await db.sessions.get(session))?.index).toBe(1);
-  });
-
-  it('retains the original question revision after the answer is edited', async () => {
-    const id = await repo.saveProject(project);
-    const item = await repo.saveCard(id, card);
-    const session = await repo.startSession(id);
-    await repo.saveCard(id, { ...card, standardAnswer: '新的答案' }, item);
-    await repo.updateDraft(session, 0, {}, 'reveal');
-    await repo.submitReview(session, 0, 'ungraded', 1);
-    const event = await db.reviewEvents.toCollection().first();
-    expect(event?.snapshot.standardAnswer).toBe(card.standardAnswer);
-    expect(event?.snapshot.revision).toBe(1);
-    expect((await db.practiceItems.get(item))?.revision).toBe(2);
-  });
-
-  it('freezes evidence after reveal and preserves hint usage across response mode changes', async () => {
-    const id = await repo.saveProject(project);
-    await repo.saveCard(id, card);
-    const session = await repo.startSession(id);
-    await repo.updateDraft(session, 0, {}, 'hint');
+  it('persists draft and hints across a connection restart', async () => {
+    const { sessionId } = await setup();
     await repo.updateDraft(
-      session,
+      sessionId,
       0,
-      { responseMode: 'typed', userResponse: '我自己的答案' },
-      'reveal',
-    );
-    await expect(repo.updateDraft(session, 0, { userResponse: '改成标准答案' })).rejects.toThrow(
-      '证据',
-    );
-    await repo.submitReview(session, 0, 'partially_correct', 4);
-    const event = await db.reviewEvents.toCollection().first();
-    expect(event?.hintLevelUsed).toBe(1);
-    expect(event?.wasIndependentRecall).toBe(false);
-    expect(event?.assessmentResult).toBe('partially_correct');
-    expect(event?.subjectiveMastery).toBe(4);
-    expect(event?.userResponse).toBe('我自己的答案');
-  });
-
-  it('keeps reveal, hints and drafts when resuming a session', async () => {
-    const id = await repo.saveProject(project);
-    await repo.saveCard(id, card);
-    const session = await repo.startSession(id);
-    await repo.updateDraft(
-      session,
-      0,
-      { responseMode: 'typed', userResponse: '保存的输入' },
+      { responseMode: 'typed', userResponse: '保留输入' },
+      await token(sessionId),
       'hint',
     );
     db.close();
     await db.open();
-    expect(await repo.startSession(id)).toBe(session);
-    expect((await db.sessions.get(session))?.draft.userResponse).toBe('保存的输入');
-    expect((await db.sessions.get(session))?.draft.hintLevelUsed).toBe(1);
+    expect((await session(sessionId)).draft).toMatchObject({
+      userResponse: '保留输入',
+      hintLevelUsed: 1,
+    });
   });
-
-  it('skips without fabricating a score and preserves previous events on card deletion', async () => {
-    const id = await repo.saveProject(project);
-    const item = await repo.saveCard(id, card);
-    const session = await repo.startSession(id);
-    await expect(repo.archiveCard(id, item)).rejects.toThrow('当前学习');
-    await repo.submitReview(session, 0, 'skipped', null);
-    await repo.archiveCard(id, item);
-    const event = await db.reviewEvents.toCollection().first();
-    expect(event?.subjectiveMastery).toBeNull();
-    expect(event?.assessmentResult).toBe('skipped');
-    expect(event?.wasAnswerRevealed).toBe(false);
-    expect(event?.wasIndependentRecall).toBe(false);
-    expect((await db.practiceItems.get(item))?.archivedAt).toBeTruthy();
-  });
-
-  it('rolls back the event when the user has not revealed and rated the answer', async () => {
-    const id = await repo.saveProject(project);
-    await repo.saveCard(id, card);
-    const session = await repo.startSession(id);
-    await expect(repo.submitReview(session, 0, 'correct', 4)).rejects.toThrow('揭晓');
+  it('blocks pre-reveal grading and rolls back the event', async () => {
+    const { sessionId } = await setup();
+    await expect(
+      repo.submitReview(sessionId, 0, 'correct', 4, await token(sessionId)),
+    ).rejects.toThrow('揭晓');
     expect(await db.reviewEvents.count()).toBe(0);
-    expect((await db.sessions.get(session))?.index).toBe(0);
+    expect((await session(sessionId)).index).toBe(0);
+  });
+  it('stores contradictory manual performance and self-rating without converting hints to independent recall', async () => {
+    const { sessionId } = await setup();
+    await repo.updateDraft(
+      sessionId,
+      0,
+      { responseMode: 'typed', userResponse: '原始回答' },
+      await token(sessionId),
+      'hint',
+    );
+    await reveal(sessionId);
+    await expect(
+      repo.updateDraft(sessionId, 0, { userResponse: '看完答案再改' }, await token(sessionId)),
+    ).rejects.toThrow('证据');
+    await repo.submitReview(sessionId, 0, 'incorrect', 4, await token(sessionId));
+    expect(await db.reviewEvents.toCollection().first()).toMatchObject({
+      userResponse: '原始回答',
+      assessmentResult: 'incorrect',
+      subjectiveMastery: 4,
+      hintLevelUsed: 1,
+      wasIndependentRecall: false,
+      assessmentSource: 'user_checked',
+    });
+  });
+  it('deduplicates concurrent submissions and never advances twice', async () => {
+    const { sessionId } = await setup(2);
+    await reveal(sessionId);
+    const base = await token(sessionId);
+    expect(
+      (
+        await Promise.all([
+          repo.submitReview(sessionId, 0, 'correct', 4, base),
+          repo.submitReview(sessionId, 0, 'correct', 4, base),
+        ])
+      ).sort(),
+    ).toEqual([false, true]);
+    expect(await db.reviewEvents.count()).toBe(1);
+    expect((await session(sessionId)).index).toBe(1);
+  });
+  it('preserves old event rows and resets current evidence after a substantive correction', async () => {
+    const { projectId, items, sessionId } = await setup();
+    await reveal(sessionId);
+    await repo.submitReview(sessionId, 0, 'correct', 4, await token(sessionId));
+    const before = await db.reviewEvents.toArray();
+    await edit(projectId, items[0]!);
+    expect(await db.reviewEvents.toArray()).toEqual(before);
+    const item = (await db.practiceItems.get(items[0]!))!;
+    expect(evidenceIsCurrent(before[0]!, item, await db.revisions.toArray())).toBe(false);
+    expect(before[0]!.snapshot.standardAnswer).toBe('旧答案红色');
+    expect(await db.revisions.count()).toBe(2);
+  });
+  it('preserves valid evidence for an explicitly declared cosmetic change', async () => {
+    const { projectId, items, sessionId } = await setup();
+    await reveal(sessionId);
+    await repo.submitReview(sessionId, 0, 'correct', 2, await token(sessionId));
+    await edit(projectId, items[0]!, 'cosmetic', 'preserve');
+    const event = (await db.reviewEvents.toArray())[0]!;
+    expect(
+      evidenceIsCurrent(
+        event,
+        (await db.practiceItems.get(items[0]!))!,
+        await db.revisions.toArray(),
+      ),
+    ).toBe(true);
+  });
+  it('does not allow a substantive correction to inherit a learning state', async () => {
+    const { projectId, items } = await setup();
+    await expect(edit(projectId, items[0]!, 'substantive', 'preserve')).rejects.toThrow('重新学习');
+    expect(await db.revisions.count()).toBe(1);
+  });
+  it('creates a separate knowledge unit for knowledge replacement', async () => {
+    const { projectId, items } = await setup();
+    const before = await db.practiceItems.get(items[0]!);
+    await edit(projectId, items[0]!, 'replacement');
+    expect((await db.practiceItems.get(items[0]!))?.knowledgeUnitId).not.toBe(
+      before?.knowledgeUnitId,
+    );
+    expect(await db.knowledgeUnits.count()).toBe(2);
+  });
+  it('rejects a stale card edit instead of overwriting a newer correction', async () => {
+    const { projectId, items } = await setup();
+    const base = (await db.practiceItems.get(items[0]!))!;
+    await edit(projectId, base.id);
+    await expect(
+      repo.saveCard(projectId, card, base.id, {
+        expectedRevisionId: base.currentRevisionId,
+        changeType: 'cosmetic',
+        changeSummary: '旧页面',
+        impactOnLearningState: 'preserve',
+      }),
+    ).rejects.toThrow('其他页面');
+    expect(await db.revisions.count()).toBe(2);
+  });
+  it('blocks current old-version reveal and grading, then preserves its input on explicit reload', async () => {
+    const { projectId, items, sessionId } = await setup();
+    await repo.updateDraft(
+      sessionId,
+      0,
+      { responseMode: 'typed', userResponse: '旧版草稿' },
+      await token(sessionId),
+    );
+    await edit(projectId, items[0]!);
+    await expect(reveal(sessionId)).rejects.toThrow('题目已更新');
+    await expect(
+      repo.submitReview(sessionId, 0, 'correct', 4, await token(sessionId)),
+    ).rejects.toThrow('题目已更新');
+    await repo.syncSession(sessionId, 0, await token(sessionId), { reloadCurrent: true });
+    expect((await session(sessionId)).draft.userResponse).toBe('');
+    expect((await session(sessionId)).queue[0]?.standardAnswer).toBe('修正答案蓝色');
+    expect((await db.draftRecoveries.toArray())[0]?.draft.userResponse).toBe('旧版草稿');
+    expect(await db.reviewEvents.count()).toBe(0);
+  });
+  it('adds 20 cards only when explicitly requested and preserves the current input', async () => {
+    const { projectId, sessionId } = await setup(2);
+    await repo.updateDraft(sessionId, 0, { userResponse: '正在回答' }, await token(sessionId));
+    for (let i = 0; i < 20; i++) await repo.saveCard(projectId, { ...card, question: `新增 ${i}` });
+    expect((await session(sessionId)).queue).toHaveLength(2);
+    await repo.syncSession(sessionId, 0, await token(sessionId));
+    expect((await session(sessionId)).queue).toHaveLength(2);
+    await repo.syncSession(sessionId, 0, await token(sessionId), { includeNew: true });
+    expect((await session(sessionId)).queue).toHaveLength(22);
+    expect((await session(sessionId)).draft.userResponse).toBe('正在回答');
+  });
+  it('refreshes a pending question and preserves every completed prefix snapshot and event', async () => {
+    const { projectId, items, sessionId } = await setup(3);
+    await reveal(sessionId);
+    await repo.submitReview(sessionId, 0, 'ungraded', 2, await token(sessionId));
+    const before = await db.reviewEvents.toArray();
+    const pending = (await session(sessionId)).queue[2]!;
+    await edit(projectId, pending.id);
+    await repo.syncSession(sessionId, 1, await token(sessionId));
+    expect((await session(sessionId)).queue[2]?.revision).toBe(2);
+    expect(await db.reviewEvents.toArray()).toEqual(before);
+    expect((await session(sessionId)).queue[0]?.id).toBe(before[0]?.practiceItemId);
+    expect(items).toHaveLength(3);
+  });
+  it('archives current and pending questions without inventing skip events, and supports restore', async () => {
+    const { projectId, sessionId } = await setup(3);
+    const queue = (await session(sessionId)).queue;
+    await repo.archiveCard(projectId, queue[1]!.id);
+    await repo.archiveCard(projectId, queue[0]!.id);
+    await expect(reveal(sessionId)).rejects.toThrow('已归档');
+    await repo.syncSession(sessionId, 0, await token(sessionId));
+    expect((await session(sessionId)).queue.map((q) => q.id)).toEqual([queue[2]!.id]);
+    expect(await db.reviewEvents.count()).toBe(0);
+    await repo.restoreCard(projectId, queue[0]!.id);
+    await repo.syncSession(sessionId, 0, await token(sessionId), { includeNew: true });
+    expect((await session(sessionId)).queue).toHaveLength(2);
+  });
+  it('ends and restarts a round without clearing events or pretending to reset memory', async () => {
+    const { sessionId } = await setup(2);
+    await reveal(sessionId);
+    await repo.submitReview(sessionId, 0, 'correct', 3, await token(sessionId));
+    await repo.updateDraft(sessionId, 1, { userResponse: '未提交' }, await token(sessionId));
+    const newId = await repo.restartSession(sessionId, 1, await token(sessionId));
+    expect(newId).not.toBe(sessionId);
+    expect((await session(sessionId)).status).toBe('ended');
+    expect(await db.reviewEvents.count()).toBe(1);
+    expect((await db.draftRecoveries.toArray())[0]?.draft.userResponse).toBe('未提交');
+    expect((await session(newId)).index).toBe(0);
+    await expect(exportBackup(db)).resolves.toBeTruthy();
+  });
+  it('rejects stale draft writes and writes issued before another tab reveals', async () => {
+    const { sessionId } = await setup();
+    const old = await token(sessionId);
+    await repo.updateDraft(sessionId, 0, { userResponse: '新草稿' }, old);
+    await expect(repo.updateDraft(sessionId, 0, { userResponse: '旧页面' }, old)).rejects.toThrow(
+      '另一页面',
+    );
+    expect((await session(sessionId)).draft.userResponse).toBe('新草稿');
+    const beforeReveal = await token(sessionId);
+    await reveal(sessionId);
+    await expect(
+      repo.updateDraft(sessionId, 0, { userResponse: '揭晓后旧输入' }, beforeReveal),
+    ).rejects.toThrow();
+    expect((await session(sessionId)).draft.userResponse).toBe('新草稿');
+  });
+  it('stale tokens cannot target another item after the queue changes', async () => {
+    const { projectId, sessionId } = await setup(2);
+    const old = await token(sessionId);
+    const current = (await session(sessionId)).queue[0]!;
+    await repo.archiveCard(projectId, current.id);
+    await repo.syncSession(sessionId, 0, old);
+    await expect(
+      repo.updateDraft(sessionId, 0, { userResponse: '错误题目的回答' }, old),
+    ).rejects.toThrow();
+    expect((await session(sessionId)).draft.userResponse).toBe('');
   });
 });

@@ -111,6 +111,7 @@ const session = z.object({
   generation: id.optional(),
   planVersion: z.number().int().nonnegative().optional(),
   draftVersion: z.number().int().nonnegative().optional(),
+  lastWriterId: z.string().optional(),
 });
 const revision = z.object({
   id,

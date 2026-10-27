@@ -11,8 +11,17 @@ import {
   CheckCircle2,
   Layers3,
 } from 'lucide-react';
-import type { LearningProject, PracticeItem, ReviewEvent, StudySession } from '../domain/models';
+import type {
+  LearningProject,
+  PracticeItem,
+  ReviewEvent,
+  StudySession,
+  PracticeItemRevision,
+  DraftRecovery,
+} from '../domain/models';
 import { masteryLabels, performanceLabels } from '../domain/review';
+import { evidenceIsCurrent } from '../domain/revisions';
+import { SessionControls } from './SessionControls';
 import { dateTime } from '../components/actions';
 
 export interface WorkspaceData {
@@ -20,6 +29,10 @@ export interface WorkspaceData {
   cards: PracticeItem[];
   events: ReviewEvent[];
   sessions: StudySession[];
+  allCards: PracticeItem[];
+  allProjects: LearningProject[];
+  revisions: PracticeItemRevision[];
+  draftRecoveries: DraftRecovery[];
 }
 
 export function Overview({ data, onCreate }: { data: WorkspaceData; onCreate: () => void }) {
@@ -27,13 +40,29 @@ export function Overview({ data, onCreate }: { data: WorkspaceData; onCreate: ()
   const learned = new Set(
     data.events
       .filter(
-        (event) => event.assessmentResult !== 'skipped' && activeCards.has(event.practiceItemId),
+        (event) =>
+          event.assessmentResult !== 'skipped' &&
+          activeCards.has(event.practiceItemId) &&
+          evidenceIsCurrent(
+            event,
+            data.cards.find((card) => card.id === event.practiceItemId)!,
+            data.revisions,
+          ),
       )
       .map((event) => event.practiceItemId),
   );
   const latest = new Map<string, ReviewEvent>();
   data.events
-    .filter((event) => event.subjectiveMastery !== null && activeCards.has(event.practiceItemId))
+    .filter(
+      (event) =>
+        event.subjectiveMastery !== null &&
+        activeCards.has(event.practiceItemId) &&
+        evidenceIsCurrent(
+          event,
+          data.cards.find((card) => card.id === event.practiceItemId)!,
+          data.revisions,
+        ),
+    )
     .forEach((event) => latest.set(event.practiceItemId, event));
   const levels = masteryLabels.map(
     (_, index) => [...latest.values()].filter((event) => event.subjectiveMastery === index).length,
@@ -315,7 +344,14 @@ export function ProjectDetail({
   const events = data.events.filter((event) => event.projectId === project.id);
   const learned = new Set(
     events
-      .filter((event) => event.assessmentResult !== 'skipped')
+      .filter(
+        (event) =>
+          event.assessmentResult !== 'skipped' &&
+          !!cards.find(
+            (card) =>
+              card.id === event.practiceItemId && evidenceIsCurrent(event, card, data.revisions),
+          ),
+      )
       .map((event) => event.practiceItemId),
   );
   return (
@@ -356,9 +392,10 @@ export function ProjectDetail({
       </div>
       {active && (
         <p className="info-note">
-          当前学习轮次使用开始时的题目快照。新增与修改将在下一轮生效；请先完成本轮再删除题目。
+          新题由你选择是否加入本轮。更新只处理剩余题目，保留已完成历史；当前题目变化时需载入新版重新作答。
         </p>
       )}
+      {active && <SessionControls session={active} cards={data.allCards} />}
       <div className="section-heading">
         <h2>
           问答题库 <span>{cards.length}</span>
@@ -383,7 +420,10 @@ export function ProjectDetail({
           {matching.map((card, index) => {
             const last = events
               .filter(
-                (event) => event.practiceItemId === card.id && event.subjectiveMastery !== null,
+                (event) =>
+                  event.practiceItemId === card.id &&
+                  event.subjectiveMastery !== null &&
+                  evidenceIsCurrent(event, card, data.revisions),
               )
               .at(-1);
             return (
@@ -396,6 +436,9 @@ export function ProjectDetail({
                       <span>自由回忆</span>
                       <span>{card.hints.length} 条提示</span>
                       <span>修订 {card.revision}</span>
+                      {!last && events.some((event) => event.practiceItemId === card.id) && (
+                        <span className="tag">新版需要重新学习 · 建议无提示测试</span>
+                      )}
                       {last?.subjectiveMastery !== undefined && last.subjectiveMastery !== null && (
                         <span className="tag">
                           最近自评：{masteryLabels[last.subjectiveMastery]}
@@ -418,7 +461,6 @@ export function ProjectDetail({
                   </button>
                   <button
                     className="icon-button danger-text"
-                    disabled={!!active}
                     aria-label={`删除题目：${card.question}`}
                     onClick={() => onDeleteCard(card)}
                   >
