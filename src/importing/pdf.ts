@@ -171,8 +171,7 @@ export async function parsePdfBytes(
               method = 'ocr';
               status = 'suspect';
               warnings.push('文字来自本地 OCR，尚未验证；请对照页面图像修改问题和答案。');
-              if (confidence < 75)
-                warnings.push('识别把握较低，可能有缺字或误字，请重点核对。');
+              if (confidence < 75) warnings.push('识别把握较低，可能有缺字或误字，请重点核对。');
             } else {
               status = outcome.preservedNativeText ? textQuality(textLayer) : 'empty';
               warnings.push(
