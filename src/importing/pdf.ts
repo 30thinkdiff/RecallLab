@@ -3,7 +3,7 @@ import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { sha256, sectionsOf } from './text';
 import { MAX_PDF_BYTES, type ParsedMaterial } from './types';
 import type { DocumentPage } from '../domain/models';
-import { pageText, textQuality } from './pdf-layout';
+import { pageText, textQuality, unreadablePdfMessage } from './pdf-layout';
 
 GlobalWorkerOptions.workerSrc = workerUrl;
 class PdfImportError extends Error {}
@@ -65,17 +65,8 @@ export async function parsePdfBytes(
         if (content.length > 2_000_000)
           throw new PdfImportError('提取的文字过多，请拆分 PDF 后导入。');
       }
-      if (!pages.some((page) => page.text.trim())) {
-        const failures = pages.filter((page) => page.status === 'failed').length;
-        if (failures) {
-          throw new PdfImportError(
-            `未能从 PDF 提取文字：${failures}/${pages.length} 页解析失败。可能是字体、字符映射或 PDF.js 兼容性问题，不能认定文件是扫描件。请保留原 PDF 并报告此问题。`,
-          );
-        }
-        throw new PdfImportError(
-          '未提取到可用文字，可能是扫描件或空白 PDF。当前没有 OCR；请换用文字型 PDF 或导出 TXT。',
-        );
-      }
+      if (!pages.some((page) => page.text.trim()))
+        throw new PdfImportError(unreadablePdfMessage(pages.map((page) => page.status)));
       const warnings = [
         '当前仅提取文字，不包含图片和版式；阅读顺序也可能不同，请对照原 PDF 核对。',
       ];
