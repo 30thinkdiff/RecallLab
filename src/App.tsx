@@ -9,6 +9,7 @@ import { CardForm, ProjectForm } from './features/Forms';
 import { History, Overview, ProjectDetail, Projects } from './features/Workspace';
 import { Study } from './features/Study';
 import type { LearningProject, PracticeItem } from './domain/models';
+import { ItemDetail } from './features/ItemDetail';
 import { ArchivePage } from './features/Archive';
 import { StorageGate, BackupPage } from './features/Storage';
 
@@ -70,6 +71,10 @@ function Workspace() {
   const data = {
     projects,
     allCards: rawData?.cards ?? [],
+    allEvents:
+      rawData?.events
+        .slice()
+        .sort((a, b) => a.timestamp.localeCompare(b.timestamp) || a.id.localeCompare(b.id)) ?? [],
     allProjects: rawData?.projects ?? [],
     revisions: rawData?.revisions ?? [],
     draftRecoveries: rawData?.draftRecoveries ?? [],
@@ -86,6 +91,7 @@ function Workspace() {
   const [section, id] = route.split('/');
   const project = data.projects.find((project) => project.id === id);
   const session = data.sessions.find((session) => session.id === id);
+  const item = data.allCards.find((card) => card.id === id);
   const createProject = () => setModal({ type: 'project' });
   const activePage = ['home', 'history', 'backup', 'archive'].includes(section ?? '')
     ? section
@@ -161,6 +167,8 @@ function Workspace() {
             <Projects data={data} onCreate={createProject} />
           ) : section === 'history' ? (
             <History data={data} />
+          ) : section === 'item' && item ? (
+            <ItemDetail key={`${item.id}:${item.currentRevisionId}`} item={item} data={data} />
           ) : section === 'archive' ? (
             <ArchivePage projects={data.allProjects} cards={data.allCards} />
           ) : section === 'backup' ? (

@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 import { expect, type Page } from '@playwright/test';
 export async function createProject(page: Page, name = '认知心理学复习') {
   await page.getByRole('button', { name: '创建项目', exact: true }).click();
@@ -39,4 +40,17 @@ export async function rate(page: Page, last = false) {
   await page
     .getByRole('button', { name: last ? '保存并完成本轮' : '保存并下一题', exact: true })
     .click();
+}
+
+export async function restoreFixture(page: Page) {
+  await page.goto('/#backup');
+  await page
+    .getByLabel('选择 JSON 备份')
+    .setInputFiles(fileURLToPath(new URL('../fixtures/legacy-v1.json', import.meta.url)));
+  await expect(
+    page.getByRole('heading', { name: '备份预览 · 数据库 v1', exact: true }),
+  ).toBeVisible();
+  await page.getByRole('checkbox', { name: '我确认以此备份替换当前数据', exact: true }).check();
+  await page.getByRole('button', { name: '确认恢复备份', exact: true }).click();
+  await expect(page.getByRole('status')).toContainText('恢复成功');
 }
