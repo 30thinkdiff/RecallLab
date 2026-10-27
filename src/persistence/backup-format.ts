@@ -1,3 +1,9 @@
+import {
+  assessmentSchema,
+  assessmentResult,
+  assertCriterionEvidence,
+  markSchema,
+} from '../domain/assessment';
 import { decide } from '../scheduling/policy';
 import { z } from 'zod';
 import {
@@ -36,6 +42,7 @@ const snapshot = z.object({
   learningStateId: id.optional(),
 });
 const draft = z.object({
+  assessment: assessmentSchema.optional(),
   responseMode: z.enum(['quick', 'typed']),
   userResponse: z.string().max(20000),
   hintLevelUsed: z.number().int().nonnegative(),
@@ -81,6 +88,7 @@ const knowledge = z.object({
   updatedAt: date,
 });
 const item = snapshot.omit({ revisionId: true }).extend({
+  qualityReviewedRevisionId: id.optional(),
   projectId: id,
   practiceType: z.literal('free_recall'),
   focus: z.boolean().optional(),
@@ -91,10 +99,21 @@ const item = snapshot.omit({ revisionId: true }).extend({
   archivedAt: date.optional(),
 });
 const event = z.object({
+  assessmentMode: z.enum(['simple', 'detailed']).optional(),
+  criterionChecks: z
+    .array(
+      z.object({
+        index: z.number().int().nonnegative(),
+        criterion: z.string(),
+        result: markSchema,
+        source: z.literal('user_checked'),
+      }),
+    )
+    .optional(),
   reviewedAt: date.optional(),
   attemptedBeforeReveal: z.boolean().optional(),
   id,
-  schemaVersion: z.union([z.literal(1), z.literal(2), z.literal(3)]),
+  schemaVersion: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]),
   scheduling: decisionSchema.optional(),
   projectId: id,
   practiceItemId: id,
@@ -385,8 +404,18 @@ export function validateBackup(raw: unknown): Backup {
     )
       throw new Error('未复习的新状态不能伪造掌握记录');
   }
+  for (const e of data.reviewEvents) {
+    assertCriterionEvidence(e);
+    if (e.schemaVersion === 4 && !e.assessmentMode) throw new Error('新版事件缺少核对方式');
+  }
+  for (const s of data.sessions)
+    if (s.draft.assessment) {
+      const snap = s.queue[s.index];
+      if (!snap || !s.draft.wasAnswerRevealed) throw new Error('核对草稿缺少对应的揭晓题目');
+      assessmentResult(s.draft.assessment, snap);
+    }
   for (const event of data.reviewEvents)
-    if (event.schemaVersion === 3) {
+    if (event.schemaVersion >= 3) {
       if (
         event.reviewedAt &&
         (event.scheduling?.reviewedAt !== event.reviewedAt ||
@@ -430,6 +459,11 @@ export function validateBackup(raw: unknown): Backup {
     validateSources(unit.sourceReferences, unit.projectId);
   }
   for (const item of data.practiceItems) {
+    if (
+      item.qualityReviewedRevisionId &&
+      revisions.get(item.qualityReviewedRevisionId)?.practiceItemId !== item.id
+    )
+      throw new Error('人工质量确认引用了其他题目版本');
     requireRef('projects', item.projectId, '题目');
     requireRef('knowledgeUnits', item.knowledgeUnitId, '题目');
     if (

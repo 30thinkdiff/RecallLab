@@ -405,6 +405,9 @@ export function ProjectDetail({
       <a className="button" href={`#daily/${project.id}`}>
         按间隔计划复习
       </a>
+      <a className="text-link" href={`#quality/${project.id}`}>
+        题目质量核对
+      </a>
       <a className="text-link" href={`#pending/${project.id}`}>
         批量管理待完善题干
       </a>

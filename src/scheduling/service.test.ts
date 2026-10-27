@@ -319,3 +319,73 @@ it('produces only actually performed reviews across a controlled week and shows 
   expect((await db.memoryStates.toArray())[0]?.card.reps).toBe(performed);
   await expect(exportBackup(db)).resolves.toBeDefined();
 });
+
+it('persists per-criterion manual evidence, ignores optimistic whole-score overrides and restores it', async () => {
+  let s = await prepare();
+  s = await repo.updateAssessment(
+    s.id,
+    0,
+    {
+      mode: 'detailed',
+      marks: ['omitted'],
+      performance: 'correct',
+      mastery: 4,
+      difficulty: 'easy',
+    },
+    tokenOf(s),
+  );
+  await repo.submitReview(s.id, 0, 'correct', 4, tokenOf(s), 'easy');
+  const e = (await db.reviewEvents.toArray())[0]!;
+  expect(e.schemaVersion).toBe(4);
+  expect(e.assessmentResult).toBe('partially_correct');
+  expect(e.scheduling?.grade).toBe(1);
+  expect(e.criterionChecks).toEqual([
+    { index: 0, criterion: '必须完整', result: 'omitted', source: 'user_checked' },
+  ]);
+  const before = await exportBackup(db);
+  await restoreBackup(db, before);
+  expect((await exportBackup(db)).data.reviewEvents).toEqual(before.data.reviewEvents);
+  const forged = structuredClone(before);
+  forged.data.reviewEvents[0]!.criterionChecks![0]!.result = 'correct';
+  await expect(restoreBackup(db, forged)).rejects.toThrow('整体评分');
+});
+it('uncertain detailed checks cannot produce Good and concurrent assessment edits cannot silently overwrite', async () => {
+  const s = await prepare();
+  const writes = await Promise.allSettled([
+    repo.updateAssessment(
+      s.id,
+      0,
+      { mode: 'detailed', marks: ['uncertain'], mastery: 4 },
+      tokenOf(s),
+    ),
+    repo.updateAssessment(
+      s.id,
+      0,
+      { mode: 'detailed', marks: ['uncertain'], mastery: 3 },
+      tokenOf(s),
+    ),
+  ]);
+  expect(writes.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+  expect(writes.filter((r) => r.status === 'rejected')).toHaveLength(1);
+  const latest = (await db.sessions.get(s.id))!;
+  await repo.submitReview(s.id, 0, 'correct', 4, tokenOf(latest));
+  const event = (await db.reviewEvents.toArray())[0]!;
+  expect(event.assessmentResult).toBe('ungraded');
+  expect(event.scheduling?.grade).toBeNull();
+  expect((await db.memoryStates.get(event.snapshot.learningStateId!))?.card.reps).toBe(0);
+});
+it('all required points confirmed correct can earn Easy while preserving the manual source', async () => {
+  let s = await prepare();
+  s = await repo.updateAssessment(
+    s.id,
+    0,
+    { mode: 'detailed', marks: ['correct'], mastery: 2, difficulty: 'easy' },
+    tokenOf(s),
+  );
+  await repo.submitReview(s.id, 0, 'incorrect', 0, tokenOf(s), 'hard');
+  const event = (await db.reviewEvents.toArray())[0]!;
+  expect(event.scheduling?.grade).toBe(4);
+  expect(event.subjectiveMastery).toBe(2);
+  expect(event.assessmentSource).toBe('user_checked');
+  expect(event.criterionChecks?.[0]?.source).toBe('user_checked');
+});

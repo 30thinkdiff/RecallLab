@@ -191,7 +191,7 @@ export async function applyScheduling(
   await db.schedulingLogs.add(log);
   return {
     ...event,
-    schemaVersion: 3,
+    schemaVersion: event.schemaVersion === 4 ? 4 : 3,
     reviewedAt: reviewedAt.toISOString(),
     attemptedBeforeReveal:
       session.draft.responseMode === 'typed'

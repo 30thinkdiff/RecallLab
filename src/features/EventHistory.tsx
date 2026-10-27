@@ -1,3 +1,4 @@
+import { markLabels } from '../domain/assessment';
 import { reasonLabels, gradeLabels } from '../scheduling/policy';
 import type {
   LearningProject,
@@ -105,6 +106,25 @@ export function EventHistory({
                 {event.scheduling.retestDue && (
                   <p>无提示复测：{dateTime(event.scheduling.retestDue)}</p>
                 )}
+              </section>
+            )}
+            {event.assessmentMode && (
+              <p>
+                核对方式：
+                {event.assessmentMode === 'detailed' ? '逐项人工核对' : '简洁整体人工判断'}
+                （非机器验证）
+              </p>
+            )}
+            {!!event.criterionChecks?.length && (
+              <section aria-label="当时的逐项核对">
+                <h4>当时的必需要点与人工标记</h4>
+                <ol>
+                  {event.criterionChecks.map((c) => (
+                    <li key={c.index}>
+                      {c.criterion} · {markLabels[c.result]} · 来源：用户人工核对
+                    </li>
+                  ))}
+                </ol>
               </section>
             )}
             <h4>原始作答</h4>

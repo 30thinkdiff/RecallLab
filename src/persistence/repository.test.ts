@@ -388,3 +388,32 @@ it('keeps pending prompts out of learning and completes them atomically with a f
   expect(current.standardAnswer).toBe(old.standardAnswer);
   expect((await db.sessions.get(await repo.startSession(pid)))?.queue).toHaveLength(1);
 });
+
+it('rolls back batch quality acknowledgements on a stale revision and rechecks after content changes', async () => {
+  const { projectId, items } = await setup(2);
+  const first = (await db.practiceItems.get(items[0]!))!,
+    second = (await db.practiceItems.get(items[1]!))!;
+  await expect(
+    repo.confirmQualityBatch([
+      { id: first.id, expectedRevisionId: first.currentRevisionId },
+      { id: second.id, expectedRevisionId: 'stale' },
+    ]),
+  ).rejects.toThrow('重新核对');
+  expect((await db.practiceItems.get(first.id))?.qualityReviewedRevisionId).toBeUndefined();
+  await repo.confirmQuality(first.id, first.currentRevisionId);
+  expect((await db.practiceItems.get(first.id))?.qualityReviewedRevisionId).toBe(
+    first.currentRevisionId,
+  );
+  await repo.saveCard(
+    projectId,
+    { ...card, question: first.question, standardAnswer: '更正后的虚构答案' },
+    first.id,
+    {
+      expectedRevisionId: first.currentRevisionId,
+      changeType: 'substantive',
+      changeSummary: '更正内容需重新核对',
+      impactOnLearningState: 'reset',
+    },
+  );
+  expect((await db.practiceItems.get(first.id))?.qualityReviewedRevisionId).toBeUndefined();
+});

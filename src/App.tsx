@@ -8,6 +8,9 @@ import { useAction } from './components/actions';
 import { CardForm, ProjectForm } from './features/Forms';
 import { History, Overview, ProjectDetail, Projects } from './features/Workspace';
 import { PendingPrompts } from './features/PendingPrompts';
+const QuestionQuality = lazy(() =>
+  import('./features/QuestionQuality').then((m) => ({ default: m.QuestionQuality })),
+);
 const DailyReview = lazy(() =>
   import('./features/DailyReview').then((m) => ({ default: m.DailyReview })),
 );
@@ -238,6 +241,14 @@ function Workspace() {
             <ArchivePage projects={data.allProjects} cards={data.allCards} />
           ) : section === 'backup' ? (
             <BackupPage />
+          ) : section === 'quality' && id ? (
+            <Suspense fallback={<p role="status">正在准备题目质量核对…</p>}>
+              <QuestionQuality
+                projectId={id}
+                cards={data.allCards}
+                onEdit={(card) => setModal({ type: 'card', projectId: card.projectId, card })}
+              />
+            </Suspense>
           ) : section === 'pending' && id ? (
             <PendingPrompts projectId={id} cards={data.allCards} />
           ) : section === 'project' && project ? (
