@@ -243,7 +243,16 @@ export function validateBackup(raw: unknown): Backup {
   for (const doc of data.sourceDocuments) {
     requireRef('projects', doc.projectId, '资料');
     const pageNumbers = new Set<number>();
+    let pageIndex = 0;
+    let previousEnd = 0;
     for (const page of doc.pages) {
+      if (
+        page.number !== ++pageIndex ||
+        page.startOffset < previousEnd ||
+        (pageIndex === 1 && page.startOffset !== 0)
+      )
+        throw new Error('资料页码或原文顺序不一致');
+      previousEnd = page.startOffset + page.text.length;
       if (
         pageNumbers.has(page.number) ||
         doc.extractedContent.slice(page.startOffset, page.startOffset + page.text.length) !==

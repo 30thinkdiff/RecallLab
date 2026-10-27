@@ -145,3 +145,12 @@ it('keeps source and historical snapshots when an imported answer is corrected',
     parsed.document.extractedContent,
   );
 });
+
+it('rejects altered source text and page order in restored backups', async () => {
+  const parsed = await material();
+  await commitImport(repo, parsed, parsed.candidates, { newProject: project });
+  const backup = await exportBackup(db);
+  backup.data.sourceDocuments[0]!.pages[0]!.number = 2;
+  await expect(restoreBackup(db, backup)).rejects.toThrow('页码');
+  expect((await db.sourceDocuments.toArray())[0]?.pages[0]?.number).toBe(1);
+});

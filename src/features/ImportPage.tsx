@@ -28,6 +28,7 @@ export function ImportPage({
   );
   const [projectName, setProjectName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState('');
   const [error, setError] = useState('');
   const [ack, setAck] = useState(false);
   const [allowDuplicates, setAllowDuplicates] = useState(false);
@@ -58,6 +59,7 @@ export function ImportPage({
     action.clearError();
     const request = ++version.current;
     setLoading(true);
+    setProgress('正在读取并解析资料…');
     setError('');
     setParsed(null);
     setResult(null);
@@ -66,7 +68,9 @@ export function ImportPage({
     setAllowDuplicates(false);
     setPage(0);
     try {
-      const material = await parseMaterial(file);
+      const material = await parseMaterial(file, (page, total) => {
+        if (request === version.current) setProgress(`正在提取 PDF：第 ${page} / ${total} 页`);
+      });
       if (request !== version.current) return;
       setParsed(material);
       const matches = duplicateReasons(material.candidates, existing);
@@ -122,7 +126,7 @@ export function ImportPage({
             <input
               ref={fileInput}
               type="file"
-              accept=".json,.csv,.tsv,.txt,.md,.markdown"
+              accept=".json,.csv,.tsv,.txt,.md,.markdown,.pdf"
               disabled={loading || action.busy}
               onChange={(event) => {
                 const file = event.target.files?.[0];
@@ -131,8 +135,8 @@ export function ImportPage({
             />
           </label>
           <p className="muted">
-            支持 JSON/CSV/TSV/TXT/Markdown，单次最多 5 MB、1000 道题。UTF-8 或带标记的
-            UTF-16。完整数据库备份请使用“备份与恢复”。
+            支持 JSON/CSV/TSV/TXT/Markdown（5 MB、1000 道题）及文字型 PDF（20 MB、200 页）。UTF-8
+            或带标记的 UTF-16。完整数据库备份请使用“备份与恢复”。
           </p>
           <details>
             <summary>查看支持格式与示例</summary>
@@ -147,7 +151,7 @@ export function ImportPage({
               取消本次导入
             </button>
           )}
-          {loading && <p role="status">正在读取并解析资料，请稍候…</p>}
+          {loading && <p role="status">{progress}</p>}
         </section>
       )}
       <ErrorNotice message={error || action.error} />

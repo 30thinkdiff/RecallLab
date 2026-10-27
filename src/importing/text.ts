@@ -24,7 +24,8 @@ export function decodeText(bytes: Uint8Array) {
 }
 const questionMark = /^\s*(?:#{1,6}\s+)?(?:\d+[.、)）]\s*)?(?:Q|问|问题|题目)\s*[:：]\s*(.*)$/iu;
 const answerMark = /^\s*(?:A|答|答案|标准答案)\s*[:：]\s*(.*)$/iu;
-const heading = /^(?:#{1,6}\s+(.+?)\s*#*|((?:第[一二三四五六七八九十百零\d]+[章节篇]).*))$/u;
+const heading =
+  /^(?:#{1,6}\s+(.+?)\s*#*|((?:第[一二三四五六七八九十百零\d]+[章节篇]|Chapter\s+\d+\b|Section\s+\d+\b).*?))$/iu;
 export function sectionsOf(
   text: string,
   id: string,
