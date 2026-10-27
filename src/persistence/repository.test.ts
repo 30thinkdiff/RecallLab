@@ -215,9 +215,7 @@ describe('repository transitions and revision evidence', () => {
         claim,
       ),
     ).rejects.toThrow('不能继承旧成绩');
-    expect((await db.practiceItems.get(itemId))?.currentRevisionId).toBe(
-      current.currentRevisionId,
-    );
+    expect((await db.practiceItems.get(itemId))?.currentRevisionId).toBe(current.currentRevisionId);
     expect(await db.revisions.count()).toBe(1);
   });
   it('allows formatting-only adjustments to retain learning evidence', async () => {
@@ -235,9 +233,7 @@ describe('repository transitions and revision evidence', () => {
         impactOnLearningState: 'preserve',
       },
     );
-    expect((await db.practiceItems.get(itemId))?.learningStateId).toBe(
-      current.learningStateId,
-    );
+    expect((await db.practiceItems.get(itemId))?.learningStateId).toBe(current.learningStateId);
   });
   it('does not allow a substantive correction to inherit a learning state', async () => {
     const { projectId, items } = await setup();
