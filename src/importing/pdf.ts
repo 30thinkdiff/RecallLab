@@ -48,20 +48,34 @@ export async function parsePdfBytes(
             warnings.push('未提取到文字：可能是空白页或扫描图片，当前没有 OCR。');
           if (status === 'suspect') warnings.push('此页可能有乱码或缺字，请对照原 PDF 核对。');
           page.cleanup();
-        } catch {
+        } catch (cause) {
           if (timedOut) throw new PdfImportError('PDF 提取超时，请拆分文件后重试。');
           status = 'failed';
-          warnings.push('此页文字提取失败，没有将其视为成功。请对照原文件，或重新导出 PDF。');
+          // Keep the cause in the local developer console, not in a public error or database.
+          // A failed decoder is not evidence that the original PDF was scanned.
+          console.warn('RecallLab: PDF page text extraction failed', {
+            page: number,
+            name: cause instanceof Error ? cause.name : 'UnknownError',
+            reason: cause instanceof Error ? cause.message : String(cause),
+          });
+          warnings.push('此页文字提取发生解析错误，不能据此判定为扫描件。请对照原文件核对。');
         }
         pages.push({ number, text, startOffset, status, warnings });
         content += text + '\n\n';
         if (content.length > 2_000_000)
           throw new PdfImportError('提取的文字过多，请拆分 PDF 后导入。');
       }
-      if (!pages.some((page) => page.text.trim()))
+      if (!pages.some((page) => page.text.trim())) {
+        const failures = pages.filter((page) => page.status === 'failed').length;
+        if (failures) {
+          throw new PdfImportError(
+            `未能从 PDF 提取文字：${failures}/${pages.length} 页解析失败。可能是字体、字符映射或 PDF.js 兼容性问题，不能认定文件是扫描件。请保留原 PDF 并报告此问题。`,
+          );
+        }
         throw new PdfImportError(
           '未提取到可用文字，可能是扫描件或空白 PDF。当前没有 OCR；请换用文字型 PDF 或导出 TXT。',
         );
+      }
       const warnings = [
         '当前仅提取文字，不包含图片和版式；阅读顺序也可能不同，请对照原 PDF 核对。',
       ];
