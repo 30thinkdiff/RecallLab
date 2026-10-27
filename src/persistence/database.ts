@@ -8,8 +8,9 @@ import type {
   PracticeItemRevision,
   DraftRecovery,
   RecoveryBackup,
+  SourceDocument,
 } from '../domain/models';
-import { dataTables, legacyTables, migrateBackup } from './migration';
+import { v2Tables, legacyTables, migrateBackup } from './migration';
 import { validateBackup } from './backup-format';
 
 export class RecallDatabase extends Dexie {
@@ -21,6 +22,7 @@ export class RecallDatabase extends Dexie {
   revisions!: Table<PracticeItemRevision, string>;
   draftRecoveries!: Table<DraftRecovery, string>;
   recoveryBackups!: Table<RecoveryBackup, string>;
+  sourceDocuments!: Table<SourceDocument, string>;
 
   constructor(name = import.meta.env.MODE === 'test' ? 'RecallLab-test' : 'RecallLab') {
     super(name);
@@ -56,10 +58,31 @@ export class RecallDatabase extends Dexie {
           json: JSON.stringify(backup),
         });
         const migrated = migrateBackup(validateBackup(backup));
-        for (const name of dataTables) {
+        for (const name of v2Tables) {
           if (name === 'reviewEvents' || name === 'projects' || name === 'knowledgeUnits') continue;
           await transaction.table(name).bulkPut(migrated[name]);
         }
+      });
+    this.version(3)
+      .stores({ sourceDocuments: 'id, projectId, sourceHash, importedAt' })
+      .upgrade(async (transaction) => {
+        const data: Record<string, unknown[]> = {};
+        for (const name of v2Tables) data[name] = await transaction.table(name).toArray();
+        const backup = {
+          format: 'RecallLabBackup',
+          formatVersion: 1,
+          databaseVersion: 2,
+          createdAt: new Date().toISOString(),
+          data,
+        };
+        await transaction.table('recoveryBackups').add({
+          id: crypto.randomUUID(),
+          createdAt: backup.createdAt,
+          reason: 'migration',
+          json: JSON.stringify(backup),
+        });
+        validateBackup(backup);
+        // Only add the source store. Existing items, revisions, drafts and events remain untouched.
       });
   }
 }

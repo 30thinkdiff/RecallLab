@@ -42,7 +42,7 @@ export function StorageGate({ children }: { children: ReactNode }) {
       {backup ? (
         <>
           <p>
-            发现 M0/M1 数据：{backup.data.projects.length} 个项目，
+            发现旧版学习数据：{backup.data.projects.length} 个项目，
             {backup.data.practiceItems.length} 道题，{backup.data.reviewEvents.length}{' '}
             条学习记录（包含归档内容）。
           </p>
@@ -158,6 +158,7 @@ export function BackupPage() {
             <p>
               {candidate.data.projects.length} 个项目 · {candidate.data.practiceItems.length} 道题 ·{' '}
               {candidate.data.reviewEvents.length} 条事件 · {candidate.data.revisions.length} 个修订
+              · {candidate.data.sourceDocuments.length} 份资料
             </p>
             <label className="checkbox-label">
               <input

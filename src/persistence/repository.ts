@@ -17,7 +17,9 @@ import type {
   StudyDraft,
   StudySession,
   SubjectiveMastery,
+  SourceReference,
 } from '../domain/models';
+import { assertSourceReference } from '../domain/sources';
 
 export interface RevisionInput {
   expectedRevisionId: string;
@@ -102,7 +104,13 @@ export class Repository {
       await this.db.projects.update(id, { archivedAt: undefined });
     });
   }
-  async saveCard(projectId: string, raw: CardInput, id?: string, change?: RevisionInput) {
+  async saveCard(
+    projectId: string,
+    raw: CardInput,
+    id?: string,
+    change?: RevisionInput,
+    importedSources?: SourceReference[],
+  ) {
     const input = cardInputSchema.parse(raw);
     return this.write(async () => {
       await this.requireProject(projectId);
@@ -150,6 +158,23 @@ export class Repository {
         existing && change?.changeType !== 'replacement'
           ? existing.knowledgeUnitId
           : crypto.randomUUID();
+      if (existing && importedSources) throw new Error('不能替换既有题目的原始来源');
+      const sourceReferences = importedSources
+        ? structuredClone(importedSources)
+        : existing?.sourceReferences.some((ref) => ref.documentId)
+          ? existing.sourceReferences.map((ref, index) =>
+              index === 0 ? { ...ref, label: input.sourceLabel || ref.label } : ref,
+            )
+          : input.sourceLabel
+            ? [{ label: input.sourceLabel }]
+            : [];
+      for (const source of sourceReferences)
+        if (source.documentId)
+          assertSourceReference(
+            source,
+            await this.db.sourceDocuments.get(source.documentId),
+            projectId,
+          );
       const item: PracticeItem = {
         id: itemId,
         projectId,
@@ -160,7 +185,7 @@ export class Repository {
         hints: lines(input.hints),
         mnemonics: input.mnemonics,
         confusionWarnings: input.confusionWarnings,
-        sourceReferences: input.sourceLabel ? [{ label: input.sourceLabel }] : [],
+        sourceReferences,
         practiceType: 'free_recall',
         verificationStatus: 'user_authored',
         revision: number,

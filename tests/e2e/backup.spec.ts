@@ -85,7 +85,8 @@ test('M: actual v1 browser database downloads a pre-upgrade backup and preserves
   await page.goto('/#study/s-active');
   await expect(page.getByLabel('你的回答')).toHaveValue('尚未完成的虚构长答案草稿');
   await page.getByRole('link', { name: '备份与恢复', exact: true }).click();
-  await expect(page.locator('.recovery-row')).toContainText('升级前');
+  await expect(page.locator('.recovery-row')).toHaveCount(2);
+  await expect(page.locator('.recovery-row').first()).toContainText('升级前');
 });
 
 test('N: backup restore and a real browser restart retain revision links and historical evidence', async ({
@@ -112,7 +113,7 @@ test('N: backup restore and a real browser restart retain revision links and his
       databaseVersion: number;
       data: { reviewEvents: unknown[]; revisions: unknown[]; sessions: unknown[] };
     };
-    expect(exported.databaseVersion).toBe(2);
+    expect(exported.databaseVersion).toBe(3);
     expect(exported.data.reviewEvents).toHaveLength(4);
     expect(exported.data.revisions).toHaveLength(6);
     await page.getByLabel('选择 JSON 备份').setInputFiles(file);
