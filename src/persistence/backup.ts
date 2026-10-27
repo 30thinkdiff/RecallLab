@@ -1,17 +1,21 @@
 import Dexie from 'dexie';
 import type { RecallDatabase } from './database';
 import { backupSchema, validateBackup, type Backup } from './backup-format';
-import { dataTables, legacyTables, v2Tables, migrateBackup } from './migration';
+import { dataTables, legacyTables, v2Tables, v3Tables, migrateBackup } from './migration';
 
 export async function inspectBeforeUpgrade(name: string): Promise<Backup | null> {
   if (!(await Dexie.exists(name))) return null;
   const existing = new Dexie(name);
   try {
     await existing.open();
-    if (existing.verno >= 3) return null;
+    if (existing.verno >= 4) return null;
     return await existing.transaction('r', existing.tables, async () => {
       const data: Record<string, unknown[]> = {};
-      for (const name of existing.verno === 1 ? legacyTables : v2Tables)
+      for (const name of existing.verno === 1
+        ? legacyTables
+        : existing.verno === 2
+          ? v2Tables
+          : v3Tables)
         data[name] = await existing.table(name).toArray();
       // Export is possible even when later relational validation blocks the upgrade.
       return backupSchema.parse({
@@ -37,7 +41,7 @@ async function captureBackup(db: RecallDatabase) {
       return {
         format: 'RecallLabBackup',
         formatVersion: 1,
-        databaseVersion: 3,
+        databaseVersion: 4,
         createdAt: new Date().toISOString(),
         data,
       };

@@ -1,4 +1,5 @@
 import Dexie, { type Table } from 'dexie';
+import type { MemoryState, SchedulingLog } from '../scheduling/types';
 import type {
   KnowledgeUnit,
   LearningProject,
@@ -10,7 +11,7 @@ import type {
   RecoveryBackup,
   SourceDocument,
 } from '../domain/models';
-import { v2Tables, legacyTables, migrateBackup } from './migration';
+import { v2Tables, v3Tables, legacyTables, migrateBackup } from './migration';
 import { validateBackup } from './backup-format';
 
 export class RecallDatabase extends Dexie {
@@ -23,6 +24,8 @@ export class RecallDatabase extends Dexie {
   draftRecoveries!: Table<DraftRecovery, string>;
   recoveryBackups!: Table<RecoveryBackup, string>;
   sourceDocuments!: Table<SourceDocument, string>;
+  memoryStates!: Table<MemoryState, string>;
+  schedulingLogs!: Table<SchedulingLog, string>;
 
   constructor(name = import.meta.env.MODE === 'test' ? 'RecallLab-test' : 'RecallLab') {
     super(name);
@@ -83,6 +86,30 @@ export class RecallDatabase extends Dexie {
         });
         validateBackup(backup);
         // Only add the source store. Existing items, revisions, drafts and events remain untouched.
+      });
+    this.version(4)
+      .stores({
+        memoryStates: 'id, projectId, practiceItemId, learningStateId, due',
+        schedulingLogs: 'id, &eventId, projectId, practiceItemId, learningStateId, timestamp',
+      })
+      .upgrade(async (transaction) => {
+        const data: Record<string, unknown[]> = {};
+        for (const name of v3Tables) data[name] = await transaction.table(name).toArray();
+        const backup = {
+          format: 'RecallLabBackup',
+          formatVersion: 1,
+          databaseVersion: 3,
+          createdAt: new Date().toISOString(),
+          data,
+        };
+        await transaction.table('recoveryBackups').add({
+          id: crypto.randomUUID(),
+          createdAt: backup.createdAt,
+          reason: 'migration',
+          json: JSON.stringify(backup),
+        });
+        validateBackup(backup);
+        // Old events are evidence, not FSRS ratings. Leave both new tables empty.
       });
   }
 }

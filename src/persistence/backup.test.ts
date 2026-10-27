@@ -38,7 +38,7 @@ describe('backup and real v1 upgrade', () => {
     );
     const db = new RecallDatabase(name);
     await db.open();
-    expect(db.verno).toBe(3);
+    expect(db.verno).toBe(4);
     expect(await db.reviewEvents.toArray()).toEqual(
       [...legacyJson.data.reviewEvents].sort((a, b) => a.id.localeCompare(b.id)),
     );
@@ -58,7 +58,7 @@ describe('backup and real v1 upgrade', () => {
       )
       .first();
     expect(JSON.parse(copy!.json).data.reviewEvents).toEqual(before?.data.reviewEvents);
-    await expect(exportBackup(db)).resolves.toMatchObject({ databaseVersion: 3 });
+    await expect(exportBackup(db)).resolves.toMatchObject({ databaseVersion: 4 });
     db.close();
   });
 
@@ -193,13 +193,14 @@ describe('backup and real v1 upgrade', () => {
     });
     await old.open();
     for (const [table, rows] of Object.entries(data))
-      if (table !== 'sourceDocuments') await old.table(table).bulkAdd(rows);
+      if (!['sourceDocuments', 'memoryStates', 'schedulingLogs'].includes(table))
+        await old.table(table).bulkAdd(rows);
     old.close();
     const before = await inspectBeforeUpgrade(name);
     expect(before?.databaseVersion).toBe(2);
     const current = new RecallDatabase(name);
     await current.open();
-    expect(current.verno).toBe(3);
+    expect(current.verno).toBe(4);
     expect((await exportBackup(current)).data.reviewEvents).toEqual(before?.data.reviewEvents);
     expect(await current.sourceDocuments.count()).toBe(0);
     await restoreBackup(current, before!);
@@ -223,7 +224,8 @@ describe('backup and real v1 upgrade', () => {
     await old.open();
     const data = migrateBackup(validateBackup(legacyJson));
     for (const [table, rows] of Object.entries(data))
-      if (table !== 'sourceDocuments') await old.table(table).bulkAdd(rows);
+      if (!['sourceDocuments', 'memoryStates', 'schedulingLogs'].includes(table))
+        await old.table(table).bulkAdd(rows);
     await old.table('knowledgeUnits').update('k-q-long', { projectId: 'missing' });
     old.close();
     const current = new RecallDatabase(name);
@@ -236,4 +238,50 @@ describe('backup and real v1 upgrade', () => {
     expect(reopened.tables.some((table) => table.name === 'sourceDocuments')).toBe(false);
     reopened.close();
   });
+});
+
+it('v3 to v4 preserves old events, creates no FSRS evidence, protects a backup and rolls back damaged data', async () => {
+  const data = migrateBackup(validateBackup(legacyJson));
+  for (const broken of [false, true]) {
+    const name = `v3-${crypto.randomUUID()}`;
+    names.push(name);
+    const old = new Dexie(name);
+    old.version(3).stores({
+      projects: 'id',
+      knowledgeUnits: 'id',
+      practiceItems: 'id',
+      reviewEvents: 'id',
+      sessions: 'id',
+      revisions: 'id',
+      draftRecoveries: 'id',
+      recoveryBackups: 'id',
+      sourceDocuments: 'id',
+    });
+    await old.open();
+    for (const [table, rows] of Object.entries(data))
+      if (!['memoryStates', 'schedulingLogs'].includes(table)) await old.table(table).bulkAdd(rows);
+    if (broken) await old.table('practiceItems').update('q-long', { projectId: 'missing' });
+    old.close();
+    expect((await inspectBeforeUpgrade(name))?.databaseVersion).toBe(3);
+    const upgraded = new RecallDatabase(name);
+    if (broken) {
+      await expect(upgraded.open()).rejects.toThrow();
+      upgraded.close();
+      const reopened = new Dexie(name);
+      await reopened.open();
+      expect(reopened.verno).toBe(3);
+      expect(reopened.tables.some((t) => t.name === 'memoryStates')).toBe(false);
+      reopened.close();
+    } else {
+      await upgraded.open();
+      expect(upgraded.verno).toBe(4);
+      expect(await upgraded.memoryStates.count()).toBe(0);
+      expect(await upgraded.schedulingLogs.count()).toBe(0);
+      expect(await upgraded.reviewEvents.toArray()).toEqual(
+        [...data.reviewEvents].sort((a, b) => a.id.localeCompare(b.id)),
+      );
+      expect(await upgraded.recoveryBackups.count()).toBe(1);
+      upgraded.close();
+    }
+  }
 });

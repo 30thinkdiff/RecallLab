@@ -1,4 +1,10 @@
 import { z } from 'zod';
+import {
+  memorySchema,
+  schedulingLogSchema,
+  decisionSchema,
+  planSchema,
+} from '../scheduling/schema';
 import { assertSourceReference } from '../domain/sources';
 
 const id = z.string().min(1).max(300);
@@ -45,6 +51,8 @@ const project = z.object({
   learningGoal: z.string(),
   targetDate: z.string(),
   dailyTimeBudget: z.number().int().min(1).max(1440),
+  priority: z.number().int().min(1).max(3).optional(),
+  newCardLimit: z.number().int().min(0).max(1000).optional(),
   createdAt: date,
   updatedAt: date,
   archivedAt: date.optional(),
@@ -74,6 +82,7 @@ const knowledge = z.object({
 const item = snapshot.omit({ revisionId: true }).extend({
   projectId: id,
   practiceType: z.literal('free_recall'),
+  focus: z.boolean().optional(),
   verificationStatus: z.literal('user_authored'),
   currentRevisionId: id.optional(),
   createdAt: date,
@@ -82,7 +91,8 @@ const item = snapshot.omit({ revisionId: true }).extend({
 });
 const event = z.object({
   id,
-  schemaVersion: z.union([z.literal(1), z.literal(2)]),
+  schemaVersion: z.union([z.literal(1), z.literal(2), z.literal(3)]),
+  scheduling: decisionSchema.optional(),
   projectId: id,
   practiceItemId: id,
   knowledgeUnitId: id,
@@ -106,6 +116,7 @@ const event = z.object({
   snapshot,
 });
 const session = z.object({
+  reviewPlan: planSchema.optional(),
   id,
   projectId: id,
   queue: z.array(snapshot),
@@ -188,7 +199,7 @@ export const sourceDocumentSchema = z.object({
 export const backupSchema = z.object({
   format: z.literal('RecallLabBackup'),
   formatVersion: z.literal(1),
-  databaseVersion: z.union([z.literal(1), z.literal(2), z.literal(3)]),
+  databaseVersion: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]),
   createdAt: date,
   data: z.object({
     projects: z.array(project),
@@ -199,6 +210,8 @@ export const backupSchema = z.object({
     revisions: z.array(revision).default([]),
     draftRecoveries: z.array(recovery).default([]),
     sourceDocuments: z.array(sourceDocumentSchema).default([]),
+    memoryStates: z.array(memorySchema).default([]),
+    schedulingLogs: z.array(schedulingLogSchema).default([]),
   }),
 });
 export type Backup = z.infer<typeof backupSchema>;
@@ -206,6 +219,8 @@ export type Backup = z.infer<typeof backupSchema>;
 export function validateBackup(raw: unknown): Backup {
   const backup = backupSchema.parse(raw);
   const data = backup.data;
+  if (backup.databaseVersion < 4 && (data.memoryStates.length || data.schedulingLogs.length))
+    throw new Error('旧版本备份不能包含调度数据');
   const maps = Object.fromEntries(
     Object.entries(data).map(([name, rows]) => {
       const map = new Map(rows.map((row) => [row.id, row]));
@@ -262,6 +277,56 @@ export function validateBackup(raw: unknown): Backup {
     for (const itemId of doc.initialItemIds)
       if (items.get(itemId)?.projectId !== doc.projectId) throw new Error('资料导入题目引用无效');
   }
+  const memories = new Map(data.memoryStates.map((m) => [m.id, m]));
+  const eventsById = new Map(data.reviewEvents.map((e) => [e.id, e]));
+  for (const memory of data.memoryStates) {
+    const item = items.get(memory.practiceItemId);
+    const rev = revisions.get(memory.revisionId);
+    if (
+      !item ||
+      item.projectId !== memory.projectId ||
+      memory.id !== memory.learningStateId ||
+      !rev ||
+      rev.practiceItemId !== item.id ||
+      rev.learningStateId !== memory.learningStateId ||
+      rev.snapshot.knowledgeUnitId !== memory.knowledgeUnitId ||
+      memory.due !== memory.card.due
+    )
+      throw new Error('记忆调度状态与内容版本不一致');
+  }
+  for (const log of data.schedulingLogs) {
+    const event = eventsById.get(log.eventId),
+      memory = memories.get(log.learningStateId);
+    if (
+      !event ||
+      !memory ||
+      log.id !== log.eventId ||
+      event.practiceItemId !== log.practiceItemId ||
+      event.projectId !== log.projectId ||
+      event.snapshot.learningStateId !== log.learningStateId ||
+      event.snapshot.revisionId !== log.revisionId ||
+      JSON.stringify(event.scheduling) !== JSON.stringify(log.decision) ||
+      log.timestamp !== event.timestamp ||
+      log.versionAfter < log.versionBefore ||
+      log.versionAfter > memory.version
+    )
+      throw new Error('调度日志与原始学习事件不一致');
+    if (
+      log.decision.grade !== null &&
+      (!log.before ||
+        !log.after ||
+        !log.fsrsLog ||
+        log.fsrsLog.rating !== log.decision.grade ||
+        log.after.due !== log.decision.nextDue ||
+        log.fsrsLog.review !== log.timestamp)
+    )
+      throw new Error('FSRS 日志缺少真实更新证据');
+    if (log.decision.grade === null && (log.before || log.after || log.fsrsLog))
+      throw new Error('无评分事件不能伪造 FSRS 日志');
+  }
+  for (const event of data.reviewEvents)
+    if (event.scheduling && !data.schedulingLogs.some((l) => l.eventId === event.id))
+      throw new Error('正式复习事件缺少调度决策日志');
   const fields = [
     'id',
     'knowledgeUnitId',

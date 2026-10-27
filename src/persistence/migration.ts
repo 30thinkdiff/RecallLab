@@ -1,3 +1,4 @@
+import type { MemoryState, SchedulingLog } from '../scheduling/types';
 import type { Backup } from './backup-format';
 import { validateBackup } from './backup-format';
 import type {
@@ -22,6 +23,8 @@ export interface LearningData {
   revisions: PracticeItemRevision[];
   draftRecoveries: DraftRecovery[];
   sourceDocuments: SourceDocument[];
+  memoryStates: MemoryState[];
+  schedulingLogs: SchedulingLog[];
 }
 export const dataTables = [
   'projects',
@@ -32,9 +35,12 @@ export const dataTables = [
   'revisions',
   'draftRecoveries',
   'sourceDocuments',
+  'memoryStates',
+  'schedulingLogs',
 ] as const;
 export const legacyTables = dataTables.slice(0, 5);
 export const v2Tables = dataTables.slice(0, 7);
+export const v3Tables = dataTables.slice(0, 8);
 
 export function migrateBackup(input: Backup): LearningData {
   if (input.databaseVersion >= 2) return input.data as LearningData;
@@ -107,6 +113,8 @@ export function migrateBackup(input: Backup): LearningData {
     revisions,
     draftRecoveries: [],
     sourceDocuments: [],
+    memoryStates: [],
+    schedulingLogs: [],
   };
   validateBackup({ ...input, databaseVersion: 2, data });
   return data;
