@@ -17,6 +17,11 @@ jobs:
       - run: npm ci
       - name: Fixture reproducibility, types, lint, formatting, unit tests and build
         run: npm run check
+      - name: Diagnostic formatting diff
+        if: failure()
+        run: |
+          npx prettier --write src/persistence/repository.ts src/persistence/repository.test.ts
+          git diff -- src/persistence/repository.ts src/persistence/repository.test.ts
       - name: Install isolated browser
         run: npx playwright install --with-deps chromium
       - name: Browser acceptance on port 5174 / RecallLab-test
