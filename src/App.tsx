@@ -167,7 +167,7 @@ function Workspace() {
           </p>
         </div>
         <div className="sidebar-footer">
-          RECALL. REFLECT. REPEAT.<span>0.3.1 · 资料与主动回忆</span>
+          RECALL. REFLECT. REPEAT.<span>0.4 · 证据与间隔复习</span>
         </div>
       </aside>
       <main id="main-content" tabIndex={-1}>
@@ -177,6 +177,7 @@ function Workspace() {
             {
               {
                 home: '学习概览',
+                daily: '今日复习',
                 history: '学习记录',
                 projects: '学习项目',
                 backup: '备份与恢复',

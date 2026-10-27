@@ -14,6 +14,7 @@ export const storedCardSchema = z.object({
   last_review: date.optional(),
 });
 export const decisionSchema = z.object({
+  reviewedAt: date.optional(),
   policyVersion: z.literal('v1'),
   grade: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]).nullable(),
   reason: z.enum([
@@ -35,7 +36,18 @@ export const decisionSchema = z.object({
 export const planSchema = z.object({
   practiceOnly: z.boolean().optional(),
   mode: z.enum(['daily', 'due', 'new', 'weak', 'chapter', 'custom']),
-  timezone: z.string().min(1).max(100),
+  timezone: z
+    .string()
+    .min(1)
+    .max(100)
+    .refine((value) => {
+      try {
+        new Intl.DateTimeFormat('en-US', { timeZone: value });
+        return true;
+      } catch {
+        return false;
+      }
+    }, '复习计划时区无效'),
   createdAt: date,
   budgetMinutes: z.number().int().min(1).max(1440),
   entries: z.record(

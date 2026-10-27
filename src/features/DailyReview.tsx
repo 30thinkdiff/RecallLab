@@ -1,3 +1,4 @@
+import { ReviewStats } from './ReviewStats';
 import { useState } from 'react';
 import { useReviewClock, useReviewData } from './review-data';
 import { buildPlan, localDay } from '../scheduling/planner';
@@ -264,6 +265,7 @@ export function DailyReview({
           );
         })}
       </details>
+      <ReviewStats projectId={project.id} />
       <details>
         <summary>复习规则与默认设置</summary>
         <p>

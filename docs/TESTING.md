@@ -45,22 +45,22 @@ npm run fixtures:check    # 字节级比较规范化生成结果
 
 ## 核心验收矩阵
 
-| 任务书用例           | 自动化位置                                    | 检查结果                                                   |
-| -------------------- | --------------------------------------------- | ---------------------------------------------------------- |
-| A 新增 20 题加入本轮 | revisions.spec.ts · A                         | 默认 2 题，可下轮再学，明确加入后 22 题，原输入保持        |
-| B 修改待答题         | revisions.spec.ts · B                         | 当前草稿不变，后续使用新答案                               |
-| C 当前版本冲突       | revisions.spec.ts · C/D                       | 旧页面禁止揭晓/评分，保留输入再载入新版                    |
-| D 错误答案更正       | C/D、history.spec.ts、analytics.test.ts       | 旧快照完整，当前有效成绩归零，重学提示                     |
-| E 格式修改           | revisions.spec.ts · E、history.spec.ts        | 学习状态继承，原证据仍有效                                 |
-| F 学习中归档         | revisions.spec.ts · F/G、backup.spec.ts       | 待答不出现；当前归档停止评分，无假跳过事件                 |
-| G 结束轮次           | revisions.spec.ts · F/G、repository.test.ts   | 已完成事件保留，未提交作答另存，重开不清历史               |
-| H 两页输入           | concurrency.spec.ts · H、study-draft.test.ts  | 已观察更新可继续；过期写拒绝且保留输入                     |
-| I 揭晓锁定           | concurrency.spec.ts · I/J、repository.test.ts | 两页锁定，过期异步写无法改证据                             |
-| J 两页提交           | concurrency.spec.ts · I/J                     | 同一位置只有一条事件，下一题不被二次推进                   |
-| K 历史快照与修订提示 | history.spec.ts · K/L                         | 原作答、旧答案和“已修订”提示正确                           |
-| L 题目完整历史       | history.spec.ts                               | 全部事件/版本、差异、统计、暂存副本可查看                  |
-| M 真正旧库升级       | backup.spec.ts · M、backup.test.ts            | 先下载 v1，实际 native v10 升至 Dexie v2，原事件与草稿保留 |
-| N 备份恢复与重启     | backup.spec.ts · N                            | 导出/导入后重启浏览器进程，修订与事件关系不变              |
+| 任务书用例           | 自动化位置                                    | 检查结果                                                       |
+| -------------------- | --------------------------------------------- | -------------------------------------------------------------- |
+| A 新增 20 题加入本轮 | revisions.spec.ts · A                         | 默认 2 题，可下轮再学，明确加入后 22 题，原输入保持            |
+| B 修改待答题         | revisions.spec.ts · B                         | 当前草稿不变，后续使用新答案                                   |
+| C 当前版本冲突       | revisions.spec.ts · C/D                       | 旧页面禁止揭晓/评分，保留输入再载入新版                        |
+| D 错误答案更正       | C/D、history.spec.ts、analytics.test.ts       | 旧快照完整，当前有效成绩归零，重学提示                         |
+| E 格式修改           | revisions.spec.ts · E、history.spec.ts        | 学习状态继承，原证据仍有效                                     |
+| F 学习中归档         | revisions.spec.ts · F/G、backup.spec.ts       | 待答不出现；当前归档停止评分，无假跳过事件                     |
+| G 结束轮次           | revisions.spec.ts · F/G、repository.test.ts   | 已完成事件保留，未提交作答另存，重开不清历史                   |
+| H 两页输入           | concurrency.spec.ts · H、study-draft.test.ts  | 已观察更新可继续；过期写拒绝且保留输入                         |
+| I 揭晓锁定           | concurrency.spec.ts · I/J、repository.test.ts | 两页锁定，过期异步写无法改证据                                 |
+| J 两页提交           | concurrency.spec.ts · I/J                     | 同一位置只有一条事件，下一题不被二次推进                       |
+| K 历史快照与修订提示 | history.spec.ts · K/L                         | 原作答、旧答案和“已修订”提示正确                               |
+| L 题目完整历史       | history.spec.ts                               | 全部事件/版本、差异、统计、暂存副本可查看                      |
+| M 真正旧库升级       | backup.spec.ts · M、backup.test.ts            | 先下载 v1，实际 native v10 升至当前 Dexie v4，原事件与草稿保留 |
+| N 备份恢复与重启     | backup.spec.ts · N                            | 导出/导入后重启浏览器进程，修订与事件关系不变                  |
 
 另有原 M0/M1 10 题完整闭环、CRUD、项目隔离、手机布局回归，以及过期题目编辑、备份文件读取竞态和无效数据拒绝。
 并发 UI 用例允许观察到新版本后顺序写入并收敛；单元测试用相同基础版本确定性制造竞争，要求恰有一个拒绝，不能仅凭偶然时间窗口通过。
@@ -95,13 +95,13 @@ GitHub Actions 自动运行检查与浏览器矩阵。始终尝试上传 `playwr
 ## 审查建议与边界
 
 先看备份/迁移、修订状态与 token 检查，再看 UI 和对应测试；各阶段的记录在 CHECKPOINTS_V2.md。
-V0.2 PR #2 以 PR #1 为基础；当前 V0.3 继续叠加在 PR #3 上，均不自动合并或发布。
+V0.2 PR #2 以 PR #1 为基础；V0.3 叠加在 PR #3 上，V0.4 PR #8 叠加在 PR #7 上，均不自动合并或发布。
 测试通过只验证所覆盖情形；尚未覆盖 Firefox/WebKit、真实系统崩溃、所有存储配额与大规模数据压力。
 没有为可选审查预览发布公开网站，也没有上传任何本地真实 IndexedDB 数据。
 
 ## V0.3 导入验收矩阵
 
-当前本地验证：78 项单元/组件、32 项浏览器，包含前述 V0.2 A–N 回归。远程结果以具体 SHA 的 CI 为准。
+V0.3 阶段验证：78 项单元/组件、32 项浏览器，包含前述 V0.2 A–N 回归。远程结果以具体 SHA 的 CI 为准。
 
 | 本轮要求                               | 定位与证据                                                            |
 | -------------------------------------- | --------------------------------------------------------------------- |
@@ -143,10 +143,41 @@ CI 额外运行依赖审计；审查入口为 V0.3 PR，基础是已通过 CI �
 | 桌面与基本手机                                                 | chinese-extraction.spec.ts；保留原有 import/pdf/learning 手机回归                                  |
 | 发布文件资源                                                   | `npm run test:production`，在 5175 验证构建产物的 CMap、匹配 Worker、OCR WASM/中英文资源，没有 CDN |
 
-最终本地结果：86 项单元/组件、46 项主浏览器回归（含原有 32 项行为场景）、2 项发布产物测试通过；没有删除失败项以通过测试。
+V0.3.1 阶段本地结果：86 项单元/组件、46 项主浏览器回归（含原有 32 项行为场景）、2 项发布产物测试通过；没有删除失败项以通过测试。
 扫描件旧行为测试由“拒绝后提示没有 OCR”更新为“必须明确启动 OCR、空文字禁止保存、取消不留资料”，保留原保护意图。
 生产测试使用单独 reporter，报告在 `test-results/production` 与 `playwright-report/production`，同一提交关联 artifact 一并保留。CI 最后摘要分别列出主回归和生产资源验收结果。
 
 `npm run fixtures:check` 可复现 JSON/表格及全部手写 PDF；扫描 PDF 从已提交的公开图像资产重建。可选 `subset-fictional-font.py` / `generate-raster-pdf-assets.py` 可重新子集/光栅化，依赖只用于开发，不是产品启动要求。加密 PDF 有随机盐，不要求字节重复生成，实际解析行为由回归检查。
 
 真实文件本地验收：11 页、6 部分、69 条（31/22/3/3/8/2），逐页去空白后与 PyMuPDF 一致；7 条模板问题、10 条跨页、12 字符未归类明确报告。完整私有流程含确认导入、学习一题、来源查看及内存备份恢复，无真实正文/截图进入报告。原始失败触发条件仍未重现，不作为“已定位根因”报告。
+
+## V0.4 可信间隔复习矩阵
+
+新增测试只使用虚构学习内容；可控时钟覆盖本地日历边界与连续一周的实际到期复习，不强行构造不存在的成功记录。原 V0.3.1 的 PDF、OCR、导入、并发与历史证据用例继续运行。
+
+| 要求               | 自动化位置与实际断言                                                                                                  |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| 1 新题初始化       | scheduling/service.test.ts：显式建立空 FSRS 状态，不回放旧记录                                                        |
+| 2 独立正确评分     | policy.test.ts、scheduled-review.spec.ts：合法 Hard/Good/Easy，默认 Good                                              |
+| 3 失败不是 Hard    | policy/service.test.ts：错误或完整复述遗漏必需内容都是 Again                                                          |
+| 4 提示不冒充成功   | service.test.ts：卡片不变、10 分钟无提示复测、单独保存决策                                                            |
+| 5 跳过不造失败     | policy/service.test.ts：无评分、不推进状态、不扣题数预算                                                              |
+| 6 自评与错误矛盾   | scheduled-review.spec.ts：人工核对错误、自评 4 仍为 Again                                                             |
+| 7 原子性           | service.test.ts：调度日志写入失败时事件、状态、位置全部回滚                                                           |
+| 8 刷新恢复         | scheduled-review.spec.ts、daily-review.spec.ts：输入/揭晓锁/计划仍在                                                  |
+| 9 跨标签重复       | service.test.ts 确定性并发恰一成功；原 concurrency.spec.ts 继续回归                                                   |
+| 10 错误答案修订    | service.test.ts：新 learningStateId，旧卡仍存但当前不继承旧成绩                                                       |
+| 11 格式修订        | service.test.ts：有效状态保留；伪造跨内容继承的备份被拒绝                                                             |
+| 12 迁移与恢复      | backup.test.ts：v3→v4 原事件不变、损坏升级回滚、旧备份；review-delivery.spec.ts 完整调度导出/恢复和真正浏览器进程重启 |
+| 13 跨日队列        | planner.test.ts、daily-review.spec.ts：长期按本地日，分钟级按时刻                                                     |
+| 14 目标日期/时区   | planner.test.ts：Asia/Shanghai / America/Los_Angeles 边界、目标前 7 天；非法时区备份拒绝                              |
+| 15 预算耗尽        | planner.test.ts、daily-review.spec.ts：默认每日新题数、2 分钟配额、预算外加练不更新 FSRS、传统练习也计工作量          |
+| 16 原始证据分离    | service.test.ts、scheduled-review.spec.ts：输入、自评、核对、提示、实际评分独立保留                                   |
+| 17 暂停继续        | daily-review.spec.ts：返回今日页后恢复原草稿/范围                                                                     |
+| 18 不伪造概率      | service.test.ts、review-delivery.spec.ts：无样本正确率为空、口头自报单列、未展示个人概率                              |
+| 19 PDF进入正式复习 | review-delivery.spec.ts：公开中文 CID 69 条 PDF→导入→正式 Good；daily-review.spec.ts 另测 JSON 69 题                  |
+| 20 原回归          | 完整 test:e2e 和 test:production，包含原 PDF/OCR 和资源用例                                                           |
+| 题干质量/修改保护  | readiness.test.ts、review-readiness.spec.ts：陈述不复制答案、待完善批量保存后才可学、重跑 OCR 拒绝覆盖后保留修改      |
+| 晚保存与一周历史   | service.test.ts：隔天保存使用实际回忆时间；连续 7 天按真实到期队列复习，日志数/卡片次数/统计/完整备份一致             |
+
+本轮本地 119 项单元/组件、54 项主浏览器回归及 2 项发布产物测试通过；固定夹具、类型、Lint、格式、构建及完整/生产依赖审计通过。最后的晚保存排序调整再次通过 119 项和静态/构建检查，最终 CI 会重新跑完整浏览器矩阵；远程结果及报告与最终提交 SHA 关联，见检查点和 PR #8。不将已有测试矩阵之外的浏览器、操作系统、系统断电或所有存储配额场景宣称为已验证。

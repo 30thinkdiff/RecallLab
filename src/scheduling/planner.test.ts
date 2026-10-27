@@ -4,7 +4,7 @@ import { initialMemory } from './engine';
 import { snapshotOf } from '../domain/revisions';
 import { buildReviewEvent, freshDraft } from '../domain/review';
 import { decide } from './policy';
-import type { LearningProject, PracticeItem, StudySession } from '../domain/models';
+import type { LearningProject, PracticeItem, StudySession, ReviewEvent } from '../domain/models';
 const project: LearningProject = {
   id: 'p',
   name: '虚构',
@@ -119,4 +119,54 @@ it('keeps pending prompts out, honors chapters and custom selection and does not
     buildPlan(project, [c, draft], [], [], now, tz, { mode: 'custom', customIds: ['a'] })
       .selected[0]?.canSchedule,
   ).toBe(false);
+});
+
+it('does not label a recovered current version as permanently weak because of an old failure', () => {
+  const c = card('a');
+  const old = eventFor(c);
+  old.assessmentResult = 'incorrect';
+  old.scheduling = decide(old, true);
+  const success = eventFor(c, new Date(now.getTime() + 1000));
+  success.id = 'later';
+  // A later save of yesterday's failure must not replace today's successful recall.
+  old.reviewedAt = old.timestamp;
+  old.timestamp = new Date(now.getTime() + 3000).toISOString();
+  expect(buildPlan(project, [c], [], [old], now, tz, { mode: 'weak' }).selected).toHaveLength(1);
+  expect(
+    buildPlan(project, [c], [], [old, success], new Date(now.getTime() + 2000), tz, {
+      mode: 'weak',
+    }).selected,
+  ).toHaveLength(0);
+});
+
+it('uses the local goal date for a transparent seven-day exam window', () => {
+  expect(buildPlan({ ...project, targetDate: '2026-11-03' }, [], [], [], now, tz).examNear).toBe(
+    true,
+  );
+  expect(buildPlan({ ...project, targetDate: '2026-11-04' }, [], [], [], now, tz).examNear).toBe(
+    false,
+  );
+  expect(buildPlan({ ...project, targetDate: '2026-10-26' }, [], [], [], now, tz).examNear).toBe(
+    false,
+  );
+  expect(
+    buildPlan(
+      { ...project, targetDate: '2026-10-28' },
+      [],
+      [],
+      [],
+      new Date('2026-10-27T16:01Z'),
+      tz,
+    ).examNear,
+  ).toBe(true);
+});
+
+it('counts actual legacy practice toward the time estimate without turning it into an FSRS rating', () => {
+  const c = card('new');
+  const old: ReviewEvent = eventFor(card('old'));
+  delete old.scheduling;
+  const result = buildPlan({ ...project, dailyTimeBudget: 2 }, [c], [], [old], now, tz);
+  expect(result.completedToday).toBe(1);
+  expect(result.budgetExhausted).toBe(true);
+  expect(result.selected).toHaveLength(0);
 });

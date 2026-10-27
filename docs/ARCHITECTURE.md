@@ -1,4 +1,4 @@
-# 架构与工程决策 · V0.3.1
+# 架构与工程决策 · V0.4
 
 ## 运行与模块
 
@@ -127,6 +127,24 @@ PDF.js 5.5.207 官方 legacy 主模块与对应 Worker 配对，保持 isEvalSup
 
 OCR 通过动态模块加载 Tesseract.js 7，Worker、LSTM WASM、中英文 best-int 语言数据均由本机 origin 提供。用户明确启动，只处理图片/疑似乱码/图文混合页；混合页的原文字层保留为 textLayer，OCR 结果为单独来源层。method/confidence 与警告随资料备份，页面图像预览不入库。取消通过 AbortSignal 终止流程/页绘制/已创建 OCR Worker；初始化中尚未交出的 Worker 在就绪后终止。
 
-没有更改 Dexie store 或索引，schema 仍为 v3；仅新增可选 title、page.method/textLayer/confidence/kind 和引用 endPage，旧数据与旧备份不需要改写。新字段在完整备份、快照和引用校验中保留，既有迁移及事务回滚测试继续运行。
+没有更改 Dexie store 或索引，V0.3.1 当时 schema 为 v3；仅新增可选 title、page.method/textLayer/confidence/kind 和引用 endPage，旧数据与旧备份不需要改写。新字段在完整备份、快照和引用校验中保留，既有迁移及事务回滚测试继续运行。
 
 私有验收脚本在仓库外，只报告数值；普通自动化和 CI 一律只使用公开虚构内容。无法复现的原始异常不编造根因，详见 V031_CHECKPOINTS.md。
+
+## V0.4 证据与 FSRS
+
+`scheduling/engine` 固定 ts-fsrs 5.4.2，request_retention=0.90、enable_fuzz=false、enable_short_term=true；只调用库的 createEmptyCard/next，不训练或重造遗忘曲线。`policy` 独立决定评分，`planner` 负责本地日期/排序/配额，`service` 在已有事务中更新状态。React 只做输入与解释。
+
+MemoryState 以 learningStateId 为键，关联项目、PracticeItem、KnowledgeUnit、最后实际评分的修订、状态版本与可序列化 FSRS 卡片。新题显式加入正式计划时才初始化；v4 升级不回放旧事件。实质更正使用新 learningStateId，旧行和日志留存；格式修订保留状态但仍校验内容一致。跨题目共享学习状态及继承不同答案的已评分状态会被备份校验拒绝。
+
+StudySession.reviewPlan 保存模式/时区/预算/逐题原因、是否允许调度与预期记忆版本。每项目恢复一个已有正式计划，不静默改选范围。自定义或预算外练习的 practiceOnly 在更新队列后仍保留。已有完整轮次不设置 reviewPlan，维持练习性质。
+
+Repository 在进入写事务前加载调度模块；事务内重新验证会话令牌、内容修订、状态所有者与版本。原 ReviewEvent、MemoryState、SchedulingLog、队列推进原子提交，事件 ID 和 eventId 唯一约束防重；写失败回滚。日志只在真实评分时带 before/after/原始 FSRS log，无评分不伪造内部日志。
+
+新正式事件 schemaVersion=3，保留评价来源、独立回忆、提示、主观分数、揭晓前尝试及 reviewedAt；timestamp 是保存时间。reviewedAt 来自锁定的揭晓时间，隔夜晚保存不延长间隔；旧事件不回填此字段。MemoryState.updatedAt 和决策日志 timestamp 仍表示原子保存时间。
+
+无提示完整正确按难度 2/3/4，独立失败/完整任务缺必需点按 1；提示、未尝试或未核对为教学复测，保留长期卡片并设置 10 分钟复测。跳过不改状态。无提示复测待到点才开放，不能由旧的到期时间绕过；提前/临时练习不更新长期记忆。
+
+保留 v1/v2/v3 定义，新增 schema v4 的 memoryStates/schedulingLogs；升级前导出旧布局，事务内保留 v3 原副本、验证后仅加新表。完整备份 v4 包含调度和计划，旧版字段默认空，不制造评分。恢复在同一事务替换并保护恢复前副本，新的会话 generation 使旧标签页令牌失效。
+
+统计只对有效内容版本计算无提示人工核对率；口头自报和提示后成功另列，工作量保留真实旧版练习。以本地回忆发生日分组，旧事件保留原保存日。无预测概率/个人优化宣称。学习、今日页面及算法按需加载，PDF/OCR 不参与启动阻塞。

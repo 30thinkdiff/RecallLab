@@ -19,6 +19,7 @@ export interface ReviewPlan {
   entries: Record<string, PlanEntry>;
 }
 export interface ReviewDecision {
+  reviewedAt?: string;
   policyVersion: 'v1';
   grade: Grade | null;
   reason:

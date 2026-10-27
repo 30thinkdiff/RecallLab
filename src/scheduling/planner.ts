@@ -52,45 +52,57 @@ export function buildPlan(
     const m = current(c);
     return (!m || m.card.reps === 0) && !m?.retestDue;
   };
-  const weak = (c: PracticeItem) =>
-    events.some(
-      (e) =>
-        e.practiceItemId === c.id &&
-        e.snapshot.learningStateId === c.learningStateId &&
-        (e.assessmentResult === 'incorrect' ||
-          e.assessmentResult === 'partially_correct' ||
-          e.hintLevelUsed > 0),
+  const weak = (c: PracticeItem) => {
+    if (current(c)?.retestDue) return true;
+    const latest = events
+      .filter(
+        (e) =>
+          e.practiceItemId === c.id &&
+          e.snapshot.learningStateId === c.learningStateId &&
+          e.assessmentResult !== 'skipped' &&
+          e.assessmentResult !== 'ungraded',
+      )
+      .sort(
+        (a, b) =>
+          (a.reviewedAt ?? a.timestamp).localeCompare(b.reviewedAt ?? b.timestamp) ||
+          a.queueIndex - b.queueIndex ||
+          a.id.localeCompare(b.id),
+      )
+      .slice(-1)[0];
+    return (
+      !!latest &&
+      (latest.assessmentResult === 'incorrect' ||
+        latest.assessmentResult === 'partially_correct' ||
+        latest.hintLevelUsed > 0)
     );
+  };
   const spent = events.filter(
     (e) =>
       e.projectId === project.id &&
-      e.scheduling &&
       e.assessmentResult !== 'skipped' &&
-      localDay(new Date(e.timestamp), timezone) === day,
+      localDay(new Date(e.reviewedAt ?? e.timestamp), timezone) === day,
   );
   const quota = Math.max(1, Math.floor(project.dailyTimeBudget / 2));
   const remaining = Math.max(0, quota - spent.length);
-  const newRemaining = Math.max(
-    0,
-    (project.newCardLimit ?? 10) -
-      new Set(
-        spent
-          .filter(
-            (e) =>
-              e.scheduling &&
-              e.snapshot.learningStateId &&
-              !events.some(
-                (older) =>
-                  older.id !== e.id &&
-                  older.practiceItemId === e.practiceItemId &&
-                  older.snapshot.learningStateId === e.snapshot.learningStateId &&
-                  older.scheduling?.grade &&
-                  older.timestamp < e.timestamp,
-              ),
-          )
-          .map((e) => e.snapshot.learningStateId),
-      ).size,
+  const firstSeen = new Map<string, string>();
+  for (const e of events)
+    if (e.scheduling && e.assessmentResult !== 'skipped' && e.snapshot.learningStateId) {
+      const key = e.snapshot.learningStateId;
+      const old = firstSeen.get(key);
+      if (!old || (e.reviewedAt ?? e.timestamp) < old)
+        firstSeen.set(key, e.reviewedAt ?? e.timestamp);
+    }
+  const introduced = new Set(
+    spent
+      .filter(
+        (e) =>
+          e.scheduling &&
+          e.snapshot.learningStateId &&
+          localDay(new Date(firstSeen.get(e.snapshot.learningStateId)!), timezone) === day,
+      )
+      .map((e) => e.snapshot.learningStateId),
   );
+  const newRemaining = Math.max(0, (project.newCardLimit ?? 10) - introduced.size);
   let pool = ready;
   if (mode === 'due') pool = pool.filter((c) => due(c) || retry(c));
   if (mode === 'new') pool = pool.filter(fresh);

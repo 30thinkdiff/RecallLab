@@ -189,6 +189,8 @@ export interface StudySession {
 }
 
 export interface ReviewEvent {
+  reviewedAt?: string;
+  attemptedBeforeReveal?: boolean;
   scheduling?: ReviewDecision;
   id: string;
   schemaVersion: 1 | 2 | 3;

@@ -168,3 +168,145 @@ it('rejects a backup that re-labels actual failure as Hard even with matching fo
   await expect(restoreBackup(db, backup)).rejects.toThrow('矛盾');
   expect((await db.reviewEvents.toArray())[0]?.scheduling?.grade).toBe(1);
 });
+
+it('shows only current-version manual evidence while retaining real historical workload', async () => {
+  const { event } = await submit();
+  const { reviewStatistics } = await import('./analytics');
+  let stats = reviewStatistics(
+    await db.practiceItems.toArray(),
+    await db.reviewEvents.toArray(),
+    await db.memoryStates.toArray(),
+    await db.schedulingLogs.toArray(),
+    await db.revisions.toArray(),
+    new Date(),
+    'Asia/Shanghai',
+  );
+  expect(stats.manualSamples).toBe(1);
+  expect(stats.accuracy).toBe(1);
+  expect(stats.reported).toBe(0);
+  expect(stats.recentScheduled).toBe(1);
+  expect(stats.distribution.reduce((sum, r) => sum + r.count, 0)).toBe(1);
+  const current = (await db.practiceItems.get(itemId))!;
+  await repo.saveCard(projectId, { ...raw, standardAnswer: '新的正确答案' }, itemId, {
+    expectedRevisionId: current.currentRevisionId,
+    changeType: 'substantive',
+    changeSummary: '更正',
+    impactOnLearningState: 'reset',
+  });
+  stats = reviewStatistics(
+    await db.practiceItems.toArray(),
+    await db.reviewEvents.toArray(),
+    await db.memoryStates.toArray(),
+    await db.schedulingLogs.toArray(),
+    await db.revisions.toArray(),
+    new Date(),
+    'Asia/Shanghai',
+  );
+  expect(stats.accuracy).toBeNull();
+  expect(stats.recentScheduled).toBe(1);
+  expect(stats.distribution.every((r) => r.count === 0)).toBe(true);
+  expect((await db.reviewEvents.get(event.id))?.snapshot.standardAnswer).toBe(raw.standardAnswer);
+});
+it('reports hinted success without relabeling it as independent correctness or scheduled success', async () => {
+  await submit('correct', { hint: true });
+  const { reviewStatistics } = await import('./analytics');
+  const s = reviewStatistics(
+    await db.practiceItems.toArray(),
+    await db.reviewEvents.toArray(),
+    await db.memoryStates.toArray(),
+    await db.schedulingLogs.toArray(),
+    await db.revisions.toArray(),
+    new Date(),
+    'Asia/Shanghai',
+  );
+  expect(s.hintedSuccess).toBe(1);
+  expect(s.manualSamples).toBe(0);
+  expect(s.accuracy).toBeNull();
+  expect(s.recentScheduled).toBe(0);
+  expect(s.todayCompleted).toBe(1);
+  const bad = await exportBackup(db);
+  bad.data.memoryStates[0]!.retestDue = '2027-01-01T00:00:00.000Z';
+  await expect(restoreBackup(db, bad)).rejects.toThrow('复测时间');
+});
+
+it('rejects a backup that aliases two different questions to the same learning state', async () => {
+  await submit();
+  const otherId = await repo.saveCard(projectId, { ...raw, question: '另一道虚构题' });
+  const backup = await exportBackup(db);
+  const a = backup.data.practiceItems.find((c) => c.id === itemId)!,
+    b = backup.data.practiceItems.find((c) => c.id === otherId)!;
+  b.learningStateId = a.learningStateId;
+  const revision = backup.data.revisions.find((r) => r.id === b.currentRevisionId)!;
+  revision.learningStateId = a.learningStateId!;
+  revision.snapshot.learningStateId = a.learningStateId;
+  await expect(restoreBackup(db, backup)).rejects.toThrow('跨题目');
+  expect((await db.practiceItems.get(otherId))?.learningStateId).not.toBe(a.learningStateId);
+});
+
+it('rejects retaining real FSRS grades for a changed answer mislabeled as a cosmetic revision', async () => {
+  await submit();
+  const item = (await db.practiceItems.get(itemId))!;
+  await repo.saveCard(projectId, { ...raw, standardAnswer: raw.standardAnswer + '。' }, itemId, {
+    expectedRevisionId: item.currentRevisionId,
+    changeType: 'cosmetic',
+    changeSummary: '标点',
+    impactOnLearningState: 'preserve',
+  });
+  const backup = await exportBackup(db);
+  const current = backup.data.practiceItems.find((c) => c.id === itemId)!;
+  current.standardAnswer = '不同知识内容';
+  backup.data.revisions.find((r) => r.id === current.currentRevisionId)!.snapshot.standardAnswer =
+    current.standardAnswer;
+  await expect(restoreBackup(db, backup)).rejects.toThrow('不同知识内容');
+  expect((await db.memoryStates.toArray())[0]?.card.reps).toBe(1);
+});
+
+it('anchors a paused overnight answer to the actual recall time, without manufacturing another day of retention', async () => {
+  const s = await prepare();
+  vi.setSystemTime(new Date('2026-10-28T12:00:00Z'));
+  await repo.submitReview(s.id, 0, 'correct', 3, tokenOf(s), 'good');
+  const event = (await db.reviewEvents.toArray())[0]!,
+    memory = (await db.memoryStates.toArray())[0]!;
+  expect(event.timestamp).toBe('2026-10-28T12:00:00.000Z');
+  expect(event.reviewedAt).toBe('2026-10-27T12:00:00.000Z');
+  expect(memory.card.last_review).toBe(event.reviewedAt);
+  expect(Date.parse(memory.due)).toBeLessThan(Date.now());
+  await expect(exportBackup(db)).resolves.toBeDefined();
+});
+
+it('produces only actually performed reviews across a controlled week and shows the resulting workload', async () => {
+  const { buildPlan } = await import('./planner');
+  let performed = 0;
+  for (let day = 0; day < 7; day++) {
+    vi.setSystemTime(new Date(Date.parse('2026-10-27T12:00:00Z') + day * 86400000));
+    const project = (await db.projects.get(projectId))!;
+    const plan = buildPlan(
+      project,
+      await db.practiceItems.toArray(),
+      await db.memoryStates.toArray(),
+      await db.reviewEvents.toArray(),
+      new Date(),
+      'Asia/Shanghai',
+    );
+    if (!plan.selected.length) continue;
+    const s = await prepare();
+    await repo.submitReview(s.id, 0, 'correct', 3, tokenOf(s), 'good');
+    performed++;
+  }
+  const { reviewStatistics } = await import('./analytics');
+  const stats = reviewStatistics(
+    await db.practiceItems.toArray(),
+    await db.reviewEvents.toArray(),
+    await db.memoryStates.toArray(),
+    await db.schedulingLogs.toArray(),
+    await db.revisions.toArray(),
+    new Date(),
+    'Asia/Shanghai',
+  );
+  expect(performed).toBeGreaterThan(1);
+  expect(performed).toBeLessThanOrEqual(7);
+  expect(stats.recentScheduled).toBe(performed);
+  expect(stats.manualSamples).toBe(performed);
+  expect((await db.memoryStates.toArray())[0]?.card.reps).toBe(performed);
+  await expect(exportBackup(db)).resolves.toBeDefined();
+});

@@ -64,8 +64,10 @@ export function ImportPage({
     if (fileInput.current) fileInput.current.value = '';
   }
   async function read(file: File, ocr = false) {
-    if (dirty && !window.confirm('重新解析会替换尚未保存的候选编辑。确定放弃这些修改并继续吗？'))
+    if (dirty && !window.confirm('重新解析会替换尚未保存的候选编辑。确定放弃这些修改并继续吗？')) {
+      if (file !== sourceFile.current && fileInput.current) fileInput.current.value = '';
       return;
+    }
     setDirty(false);
     parseController.current?.abort();
     const controller = new AbortController();
@@ -127,6 +129,10 @@ export function ImportPage({
     setRows((rows) => [...rows, row]);
     setPage(Math.floor(rows.length / 10));
   }
+  function selectRows(select: (row: ImportCandidate) => boolean) {
+    setDirty(true);
+    setRows((rows) => rows.map((row) => ({ ...row, selected: select(row) })));
+  }
   function change(id: string, patch: Partial<ImportCandidate>) {
     setDirty(true);
     setRows((rows) => rows.map((row) => (row.id === id ? { ...row, ...patch } : row)));
@@ -187,6 +193,7 @@ export function ImportPage({
       {parsed && !result && (
         <>
           <section className="import-target">
+            <p className="muted">当前预览：{parsed.document.filename}</p>
             <h2>导入到哪里？</h2>
             <div className="form-grid">
               <label>
@@ -343,18 +350,14 @@ export function ImportPage({
               <button
                 className="button secondary"
                 disabled={action.busy}
-                onClick={() =>
-                  setRows((rows) =>
-                    rows.map((row) => ({ ...row, selected: !duplicates.has(row.id) })),
-                  )
-                }
+                onClick={() => selectRows((row) => !duplicates.has(row.id))}
               >
                 选择非重复题目
               </button>
               <button
                 className="text-button"
                 disabled={action.busy}
-                onClick={() => setRows((rows) => rows.map((row) => ({ ...row, selected: false })))}
+                onClick={() => selectRows(() => false)}
               >
                 全部取消选择
               </button>

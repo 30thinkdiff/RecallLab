@@ -31,14 +31,14 @@ export function PendingPrompts({ projectId, cards }: { projectId: string; cards:
               aria-label={`完善题干 ${card.id}`}
               value={changes[card.id]?.question ?? ''}
               onChange={(e) =>
-                setChanges({
-                  ...changes,
+                setChanges((current) => ({
+                  ...current,
                   [card.id]: {
                     question: e.target.value,
                     expectedRevisionId:
-                      changes[card.id]?.expectedRevisionId ?? card.currentRevisionId,
+                      current[card.id]?.expectedRevisionId ?? card.currentRevisionId,
                   },
-                })
+                }))
               }
             />
           </label>

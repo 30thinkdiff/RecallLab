@@ -13,9 +13,10 @@ export function useReviewData() {
         db.sessions,
         db.sourceDocuments,
         db.revisions,
+        db.schedulingLogs,
       ],
       async () => {
-        const [projects, cards, memories, events, sessions, documents, revisions] =
+        const [projects, cards, memories, events, sessions, documents, revisions, logs] =
           await Promise.all([
             db.projects.toArray(),
             db.practiceItems.toArray(),
@@ -24,6 +25,7 @@ export function useReviewData() {
             db.sessions.toArray(),
             db.sourceDocuments.toArray(),
             db.revisions.toArray(),
+            db.schedulingLogs.toArray(),
           ]);
         return {
           projects: projects.filter((p) => !p.archivedAt),
@@ -33,6 +35,7 @@ export function useReviewData() {
           sessions,
           documents,
           revisions,
+          logs,
         };
       },
     ),

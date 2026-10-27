@@ -1,3 +1,4 @@
+import { reasonLabels, gradeLabels } from '../scheduling/policy';
 import type {
   LearningProject,
   PracticeItem,
@@ -63,6 +64,9 @@ export function EventHistory({
                     ? '用户人工核对'
                     : '未核对'}
               </span>
+              {event.attemptedBeforeReveal !== undefined && (
+                <span>揭晓前曾尝试：{event.attemptedBeforeReveal ? '是' : '否'}</span>
+              )}
               <span>无提示回忆尝试：{event.wasIndependentRecall ? '是' : '否'}</span>
               <span>答案已揭晓：{event.wasAnswerRevealed ? '是' : '否'}</span>
               <span>
@@ -71,6 +75,11 @@ export function EventHistory({
               </span>
               <span>作答用时（含暂停）：{Math.round(event.responseDuration / 1000)} 秒</span>
               <span>题目修订：{event.snapshot.revision}</span>
+              {event.reviewedAt && (
+                <span>
+                  回忆核对依据发生于：{dateTime(event.reviewedAt)}（上方时间为记录保存时间）
+                </span>
+              )}
             </div>
             {cards.find((card) => card.id === event.practiceItemId)?.revision !==
               event.snapshot.revision && (
@@ -81,6 +90,23 @@ export function EventHistory({
             <a className="text-link" href={`#item/${event.practiceItemId}`}>
               查看该题全部历史与版本
             </a>
+            {event.scheduling && (
+              <section className="info-note">
+                <h4>当时的调度依据</h4>
+                <p>{reasonLabels[event.scheduling.reason]}</p>
+                <p>
+                  {event.scheduling.grade === null
+                    ? '不更新 FSRS 长期状态'
+                    : gradeLabels[event.scheduling.grade]}
+                </p>
+                {event.scheduling.nextDue && (
+                  <p>当时安排下次到期：{dateTime(event.scheduling.nextDue)}</p>
+                )}
+                {event.scheduling.retestDue && (
+                  <p>无提示复测：{dateTime(event.scheduling.retestDue)}</p>
+                )}
+              </section>
+            )}
             <h4>原始作答</h4>
             <p className="preserve-lines">
               {event.responseMode === 'quick'

@@ -46,6 +46,12 @@ export class ScheduleService {
           memory = initialMemory(row.item, now);
           await this.db.memoryStates.add(memory);
         }
+        if (
+          memory.practiceItemId !== row.item.id ||
+          memory.projectId !== projectId ||
+          memory.knowledgeUnitId !== row.item.knowledgeUnitId
+        )
+          throw new ConflictError('记忆状态不匹配当前题目，请保留数据并恢复可信备份。');
         entries[row.item.id] = {
           stateVersion: memory.version,
           reason: row.reason,
@@ -97,6 +103,12 @@ export async function refreshReviewPlan(db: RecallDatabase, session: StudySessio
       memory = initialMemory(item, now);
       await db.memoryStates.add(memory);
     }
+    if (
+      memory.practiceItemId !== item.id ||
+      memory.projectId !== item.projectId ||
+      memory.knowledgeUnitId !== item.knowledgeUnitId
+    )
+      throw new ConflictError('记忆状态与当前题目不一致');
     const retry = !!memory.retestDue && Date.parse(memory.retestDue) <= now.getTime();
     const fresh = memory.card.reps === 0 && !memory.retestDue;
     const due = isDue(memory, now, plan.timezone);
@@ -124,9 +136,19 @@ export async function applyScheduling(
   )
     throw new ConflictError('题目或复习计划已变化，请保留输入并更新本轮题目。');
   const memory = await db.memoryStates.get(current.learningStateId);
-  if (!memory || memory.version !== entry.stateVersion)
+  if (
+    !memory ||
+    memory.practiceItemId !== current.id ||
+    memory.projectId !== current.projectId ||
+    memory.knowledgeUnitId !== current.knowledgeUnitId ||
+    memory.version !== entry.stateVersion
+  )
     throw new ConflictError('此题的复习状态已在另一页面更新，请更新本轮计划后继续。');
+  const reviewedAt = new Date(session.draft.revealedAt ?? event.timestamp);
+  if (reviewedAt.getTime() > now.getTime())
+    throw new Error('本机时间早于作答时间，请校准时间后保存；草稿仍保留。');
   const decision = decide(event, entry.canSchedule, difficulty);
+  decision.reviewedAt = reviewedAt.toISOString();
   let updated: MemoryState = memory;
   const log: SchedulingLog = {
     id: event.id,
@@ -141,7 +163,7 @@ export async function applyScheduling(
     versionAfter: memory.version,
   };
   if (decision.grade !== null) {
-    const result = advance(memory.card, now, decision.grade);
+    const result = advance(memory.card, reviewedAt, decision.grade);
     decision.nextDue = result.card.due;
     updated = {
       ...memory,
@@ -156,7 +178,7 @@ export async function applyScheduling(
     log.after = result.card;
     log.fsrsLog = result.log;
   } else if (['hinted', 'no_attempt', 'ungraded'].includes(decision.reason)) {
-    decision.retestDue = new Date(now.getTime() + 10 * 60_000).toISOString();
+    decision.retestDue = new Date(reviewedAt.getTime() + 10 * 60_000).toISOString();
     updated = {
       ...memory,
       retestDue: decision.retestDue,
@@ -167,5 +189,14 @@ export async function applyScheduling(
   if (updated !== memory) await db.memoryStates.put(updated);
   log.versionAfter = updated.version;
   await db.schedulingLogs.add(log);
-  return { ...event, schemaVersion: 3, scheduling: decision };
+  return {
+    ...event,
+    schemaVersion: 3,
+    reviewedAt: reviewedAt.toISOString(),
+    attemptedBeforeReveal:
+      session.draft.responseMode === 'typed'
+        ? !!session.draft.userResponse.trim()
+        : session.draft.attemptedBeforeReveal,
+    scheduling: decision,
+  };
 }

@@ -43,6 +43,7 @@ export function Study({
 }) {
   const last = events
     .filter((e) => e.sessionId === session.id && e.queueIndex < session.index)
+    .sort((a, b) => a.queueIndex - b.queueIndex)
     .slice(-1)[0]?.scheduling;
   if (session.status !== 'active') {
     const completed = events.filter((event) => event.sessionId === session.id);
@@ -516,6 +517,9 @@ function DecisionFeedback({ decision }: { decision: ReviewDecision }) {
         {decision.nextDue ? ` · 下次到期：${dateTime(decision.nextDue)}` : ''}
         {decision.retestDue ? ` · 无提示复测：${dateTime(decision.retestDue)}` : ''}
       </p>
+      {decision.grade !== null && (
+        <small>间隔按揭晓时保留的回忆证据安排，稍后保存不会额外延长。</small>
+      )}
       <small>
         {decision.source === 'self_report'
           ? '来源：用户自报'
