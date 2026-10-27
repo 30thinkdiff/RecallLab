@@ -4,7 +4,13 @@ import { sha256 } from './text';
 import { MAX_PDF_BYTES, type ParsedMaterial } from './types';
 import type { DocumentPage } from '../domain/models';
 import { extractNumbered } from './numbered';
-import { classifyPdfPage, pageText, reconcileOcrText, textQuality, unreadablePdfMessage } from './pdf-layout';
+import {
+  classifyPdfPage,
+  pageText,
+  reconcileOcrText,
+  textQuality,
+  unreadablePdfMessage,
+} from './pdf-layout';
 import type { PDFPageProxy } from 'pdfjs-dist/types/src/display/api';
 import type { createLocalOcr } from './ocr';
 
