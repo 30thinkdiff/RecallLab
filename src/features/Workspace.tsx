@@ -343,7 +343,8 @@ export function ProjectDetail({
     card.question.toLowerCase().includes(search.toLowerCase()),
   );
   const active = data.sessions.find(
-    (session) => session.projectId === project.id && session.status === 'active',
+    (session) =>
+      session.projectId === project.id && session.status === 'active' && !session.reviewPlan,
   );
   const events = data.events.filter((event) => event.projectId === project.id);
   const learned = new Set(
@@ -394,6 +395,7 @@ export function ProjectDetail({
           {active ? `继续学习 (${active.index}/${active.queue.length})` : '开始学习'}
         </button>
       </div>
+      <p className="muted">这里是自由练习，不更新长期复习安排；正式复习请进入“今日复习”。</p>
       {active && (
         <p className="info-note">
           新题由你选择是否加入本轮。更新只处理剩余题目，保留已完成历史；当前题目变化时需载入新版重新作答。
