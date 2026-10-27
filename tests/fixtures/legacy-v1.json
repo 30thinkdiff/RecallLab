@@ -1,0 +1,542 @@
+{
+  "format": "RecallLabBackup",
+  "formatVersion": 1,
+  "databaseVersion": 1,
+  "createdAt": "2026-10-26T08:00:00.000Z",
+  "data": {
+    "projects": [
+      {
+        "id": "p-alpha",
+        "name": "虚构资料 · 项目甲",
+        "description": "完全虚构的回归测试资料",
+        "learningGoal": "区分虚构概念",
+        "targetDate": "",
+        "dailyTimeBudget": 20,
+        "createdAt": "2026-10-20T08:00:00.000Z",
+        "updatedAt": "2026-10-20T08:00:00.000Z"
+      },
+      {
+        "id": "p-beta",
+        "name": "虚构资料 · 项目乙",
+        "description": "完全虚构的回归测试资料",
+        "learningGoal": "区分虚构概念",
+        "targetDate": "",
+        "dailyTimeBudget": 20,
+        "createdAt": "2026-10-20T08:00:00.000Z",
+        "updatedAt": "2026-10-20T08:00:00.000Z"
+      }
+    ],
+    "knowledgeUnits": [
+      {
+        "id": "k-q-crystal",
+        "projectId": "p-alpha",
+        "title": "虚构协议甲：蓝晶对应哪种颜色？",
+        "knowledgeType": "fact",
+        "canonicalContent": "新版答案：蓝色",
+        "sourceReferences": [
+          {
+            "label": "公开虚构测试手册"
+          }
+        ],
+        "importance": 1,
+        "difficulty": null,
+        "tags": [],
+        "verificationStatus": "user_authored",
+        "createdAt": "2026-10-20T08:00:00.000Z",
+        "updatedAt": "2026-10-24T08:00:00.000Z"
+      },
+      {
+        "id": "k-q-long",
+        "projectId": "p-alpha",
+        "title": "虚构流程：完整列举四个阶段。",
+        "knowledgeType": "fact",
+        "canonicalContent": "第一阶段收集蓝晶。\n第二阶段核对图谱。\n第三阶段登记状态。\n第四阶段归还蓝晶。",
+        "sourceReferences": [
+          {
+            "label": "公开虚构测试手册"
+          }
+        ],
+        "importance": 1,
+        "difficulty": null,
+        "tags": [],
+        "verificationStatus": "user_authored",
+        "createdAt": "2026-10-20T08:00:00.000Z",
+        "updatedAt": "2026-10-20T08:00:00.000Z"
+      },
+      {
+        "id": "k-q-similar",
+        "projectId": "p-alpha",
+        "title": "虚构协议乙：蓝晶对应哪种颜色？",
+        "knowledgeType": "fact",
+        "canonicalContent": "绿色（与协议甲不同）",
+        "sourceReferences": [
+          {
+            "label": "公开虚构测试手册"
+          }
+        ],
+        "importance": 1,
+        "difficulty": null,
+        "tags": [],
+        "verificationStatus": "user_authored",
+        "createdAt": "2026-10-20T08:00:00.000Z",
+        "updatedAt": "2026-10-20T08:00:00.000Z"
+      },
+      {
+        "id": "k-q-archived",
+        "projectId": "p-alpha",
+        "title": "已归档的虚构问题",
+        "knowledgeType": "fact",
+        "canonicalContent": "归档答案",
+        "sourceReferences": [
+          {
+            "label": "公开虚构测试手册"
+          }
+        ],
+        "importance": 1,
+        "difficulty": null,
+        "tags": [],
+        "verificationStatus": "user_authored",
+        "createdAt": "2026-10-20T08:00:00.000Z",
+        "updatedAt": "2026-10-20T08:00:00.000Z"
+      },
+      {
+        "id": "k-q-other",
+        "projectId": "p-beta",
+        "title": "项目乙的独立问题",
+        "knowledgeType": "fact",
+        "canonicalContent": "项目乙专用答案",
+        "sourceReferences": [
+          {
+            "label": "公开虚构测试手册"
+          }
+        ],
+        "importance": 1,
+        "difficulty": null,
+        "tags": [],
+        "verificationStatus": "user_authored",
+        "createdAt": "2026-10-20T08:00:00.000Z",
+        "updatedAt": "2026-10-20T08:00:00.000Z"
+      }
+    ],
+    "practiceItems": [
+      {
+        "id": "q-crystal",
+        "projectId": "p-alpha",
+        "knowledgeUnitId": "k-q-crystal",
+        "question": "虚构协议甲：蓝晶对应哪种颜色？",
+        "standardAnswer": "新版答案：蓝色",
+        "answerCriteria": ["回答核心要点"],
+        "practiceType": "free_recall",
+        "hints": ["先回想颜色", "再回想协议名称", "核对顺序"],
+        "mnemonics": "虚构助记",
+        "confusionWarnings": "不要混淆甲乙",
+        "sourceReferences": [
+          {
+            "label": "公开虚构测试手册"
+          }
+        ],
+        "verificationStatus": "user_authored",
+        "revision": 2,
+        "createdAt": "2026-10-20T08:00:00.000Z",
+        "updatedAt": "2026-10-24T08:00:00.000Z"
+      },
+      {
+        "id": "q-long",
+        "projectId": "p-alpha",
+        "knowledgeUnitId": "k-q-long",
+        "question": "虚构流程：完整列举四个阶段。",
+        "standardAnswer": "第一阶段收集蓝晶。\n第二阶段核对图谱。\n第三阶段登记状态。\n第四阶段归还蓝晶。",
+        "answerCriteria": ["回答核心要点"],
+        "practiceType": "free_recall",
+        "hints": ["先回想颜色", "再回想协议名称", "核对顺序"],
+        "mnemonics": "虚构助记",
+        "confusionWarnings": "不要混淆甲乙",
+        "sourceReferences": [
+          {
+            "label": "公开虚构测试手册"
+          }
+        ],
+        "verificationStatus": "user_authored",
+        "revision": 1,
+        "createdAt": "2026-10-20T08:00:00.000Z",
+        "updatedAt": "2026-10-20T08:00:00.000Z"
+      },
+      {
+        "id": "q-similar",
+        "projectId": "p-alpha",
+        "knowledgeUnitId": "k-q-similar",
+        "question": "虚构协议乙：蓝晶对应哪种颜色？",
+        "standardAnswer": "绿色（与协议甲不同）",
+        "answerCriteria": ["回答核心要点"],
+        "practiceType": "free_recall",
+        "hints": ["先回想颜色", "再回想协议名称", "核对顺序"],
+        "mnemonics": "虚构助记",
+        "confusionWarnings": "不要混淆甲乙",
+        "sourceReferences": [
+          {
+            "label": "公开虚构测试手册"
+          }
+        ],
+        "verificationStatus": "user_authored",
+        "revision": 1,
+        "createdAt": "2026-10-20T08:00:00.000Z",
+        "updatedAt": "2026-10-20T08:00:00.000Z"
+      },
+      {
+        "id": "q-archived",
+        "projectId": "p-alpha",
+        "knowledgeUnitId": "k-q-archived",
+        "question": "已归档的虚构问题",
+        "standardAnswer": "归档答案",
+        "answerCriteria": ["回答核心要点"],
+        "practiceType": "free_recall",
+        "hints": ["先回想颜色", "再回想协议名称", "核对顺序"],
+        "mnemonics": "虚构助记",
+        "confusionWarnings": "不要混淆甲乙",
+        "sourceReferences": [
+          {
+            "label": "公开虚构测试手册"
+          }
+        ],
+        "verificationStatus": "user_authored",
+        "revision": 1,
+        "createdAt": "2026-10-20T08:00:00.000Z",
+        "updatedAt": "2026-10-20T08:00:00.000Z",
+        "archivedAt": "2026-10-25T08:00:00.000Z"
+      },
+      {
+        "id": "q-other",
+        "projectId": "p-beta",
+        "knowledgeUnitId": "k-q-other",
+        "question": "项目乙的独立问题",
+        "standardAnswer": "项目乙专用答案",
+        "answerCriteria": ["回答核心要点"],
+        "practiceType": "free_recall",
+        "hints": ["先回想颜色", "再回想协议名称", "核对顺序"],
+        "mnemonics": "虚构助记",
+        "confusionWarnings": "不要混淆甲乙",
+        "sourceReferences": [
+          {
+            "label": "公开虚构测试手册"
+          }
+        ],
+        "verificationStatus": "user_authored",
+        "revision": 1,
+        "createdAt": "2026-10-20T08:00:00.000Z",
+        "updatedAt": "2026-10-20T08:00:00.000Z"
+      }
+    ],
+    "reviewEvents": [
+      {
+        "id": "s-first:0",
+        "schemaVersion": 1,
+        "projectId": "p-alpha",
+        "practiceItemId": "q-crystal",
+        "knowledgeUnitId": "k-q-crystal",
+        "sessionId": "s-first",
+        "queueIndex": 0,
+        "timestamp": "2026-10-20T08:02:00.000Z",
+        "responseMode": "typed",
+        "userResponse": "虚构用户的原始回答",
+        "assessmentResult": "incorrect",
+        "subjectiveMastery": 4,
+        "confidenceBeforeReveal": 3,
+        "hintLevelUsed": 1,
+        "wasAnswerRevealed": true,
+        "wasIndependentRecall": false,
+        "responseDuration": 30000,
+        "errorTypes": [],
+        "interventionType": "hint",
+        "assessmentSource": "user_checked",
+        "snapshot": {
+          "id": "q-crystal",
+          "knowledgeUnitId": "k-q-crystal",
+          "question": "虚构协议甲：蓝晶对应哪种颜色？",
+          "standardAnswer": "旧答案：红色（测试中设定为错误）",
+          "answerCriteria": ["回答核心要点"],
+          "hints": ["先回想颜色", "再回想协议名称", "核对顺序"],
+          "mnemonics": "虚构助记",
+          "confusionWarnings": "不要混淆甲乙",
+          "sourceReferences": [
+            {
+              "label": "公开虚构测试手册"
+            }
+          ],
+          "revision": 1
+        }
+      },
+      {
+        "id": "s-first:1",
+        "schemaVersion": 1,
+        "projectId": "p-alpha",
+        "practiceItemId": "q-long",
+        "knowledgeUnitId": "k-q-long",
+        "sessionId": "s-first",
+        "queueIndex": 1,
+        "timestamp": "2026-10-20T08:04:00.000Z",
+        "responseMode": "typed",
+        "userResponse": "虚构用户的原始回答",
+        "assessmentResult": "correct",
+        "subjectiveMastery": 0,
+        "confidenceBeforeReveal": 3,
+        "hintLevelUsed": 0,
+        "wasAnswerRevealed": true,
+        "wasIndependentRecall": true,
+        "responseDuration": 30000,
+        "errorTypes": [],
+        "interventionType": null,
+        "assessmentSource": "user_checked",
+        "snapshot": {
+          "id": "q-long",
+          "knowledgeUnitId": "k-q-long",
+          "question": "虚构流程：完整列举四个阶段。",
+          "standardAnswer": "第一阶段收集蓝晶。\n第二阶段核对图谱。\n第三阶段登记状态。\n第四阶段归还蓝晶。",
+          "answerCriteria": ["回答核心要点"],
+          "hints": ["先回想颜色", "再回想协议名称", "核对顺序"],
+          "mnemonics": "虚构助记",
+          "confusionWarnings": "不要混淆甲乙",
+          "sourceReferences": [
+            {
+              "label": "公开虚构测试手册"
+            }
+          ],
+          "revision": 1
+        }
+      },
+      {
+        "id": "s-second:0",
+        "schemaVersion": 1,
+        "projectId": "p-alpha",
+        "practiceItemId": "q-crystal",
+        "knowledgeUnitId": "k-q-crystal",
+        "sessionId": "s-second",
+        "queueIndex": 0,
+        "timestamp": "2026-10-21T08:02:00.000Z",
+        "responseMode": "typed",
+        "userResponse": "虚构用户的原始回答",
+        "assessmentResult": "correct",
+        "subjectiveMastery": 4,
+        "confidenceBeforeReveal": 3,
+        "hintLevelUsed": 0,
+        "wasAnswerRevealed": true,
+        "wasIndependentRecall": true,
+        "responseDuration": 30000,
+        "errorTypes": [],
+        "interventionType": null,
+        "assessmentSource": "user_checked",
+        "snapshot": {
+          "id": "q-crystal",
+          "knowledgeUnitId": "k-q-crystal",
+          "question": "虚构协议甲：蓝晶对应哪种颜色？",
+          "standardAnswer": "旧答案：红色（测试中设定为错误）",
+          "answerCriteria": ["回答核心要点"],
+          "hints": ["先回想颜色", "再回想协议名称", "核对顺序"],
+          "mnemonics": "虚构助记",
+          "confusionWarnings": "不要混淆甲乙",
+          "sourceReferences": [
+            {
+              "label": "公开虚构测试手册"
+            }
+          ],
+          "revision": 1
+        }
+      },
+      {
+        "id": "s-active:0",
+        "schemaVersion": 1,
+        "projectId": "p-alpha",
+        "practiceItemId": "q-crystal",
+        "knowledgeUnitId": "k-q-crystal",
+        "sessionId": "s-active",
+        "queueIndex": 0,
+        "timestamp": "2026-10-22T08:02:00.000Z",
+        "responseMode": "typed",
+        "userResponse": "虚构用户的原始回答",
+        "assessmentResult": "correct",
+        "subjectiveMastery": 3,
+        "confidenceBeforeReveal": 3,
+        "hintLevelUsed": 0,
+        "wasAnswerRevealed": true,
+        "wasIndependentRecall": true,
+        "responseDuration": 30000,
+        "errorTypes": [],
+        "interventionType": null,
+        "assessmentSource": "user_checked",
+        "snapshot": {
+          "id": "q-crystal",
+          "knowledgeUnitId": "k-q-crystal",
+          "question": "虚构协议甲：蓝晶对应哪种颜色？",
+          "standardAnswer": "旧答案：红色（测试中设定为错误）",
+          "answerCriteria": ["回答核心要点"],
+          "hints": ["先回想颜色", "再回想协议名称", "核对顺序"],
+          "mnemonics": "虚构助记",
+          "confusionWarnings": "不要混淆甲乙",
+          "sourceReferences": [
+            {
+              "label": "公开虚构测试手册"
+            }
+          ],
+          "revision": 1
+        }
+      }
+    ],
+    "sessions": [
+      {
+        "id": "s-first",
+        "projectId": "p-alpha",
+        "queue": [
+          {
+            "id": "q-crystal",
+            "knowledgeUnitId": "k-q-crystal",
+            "question": "虚构协议甲：蓝晶对应哪种颜色？",
+            "standardAnswer": "旧答案：红色（测试中设定为错误）",
+            "answerCriteria": ["回答核心要点"],
+            "hints": ["先回想颜色", "再回想协议名称", "核对顺序"],
+            "mnemonics": "虚构助记",
+            "confusionWarnings": "不要混淆甲乙",
+            "sourceReferences": [
+              {
+                "label": "公开虚构测试手册"
+              }
+            ],
+            "revision": 1
+          },
+          {
+            "id": "q-long",
+            "knowledgeUnitId": "k-q-long",
+            "question": "虚构流程：完整列举四个阶段。",
+            "standardAnswer": "第一阶段收集蓝晶。\n第二阶段核对图谱。\n第三阶段登记状态。\n第四阶段归还蓝晶。",
+            "answerCriteria": ["回答核心要点"],
+            "hints": ["先回想颜色", "再回想协议名称", "核对顺序"],
+            "mnemonics": "虚构助记",
+            "confusionWarnings": "不要混淆甲乙",
+            "sourceReferences": [
+              {
+                "label": "公开虚构测试手册"
+              }
+            ],
+            "revision": 1
+          }
+        ],
+        "index": 2,
+        "status": "completed",
+        "createdAt": "2026-10-20T08:00:00.000Z",
+        "completedAt": "2026-10-20T08:04:00.000Z",
+        "draft": {
+          "responseMode": "typed",
+          "userResponse": "",
+          "hintLevelUsed": 0,
+          "wasAnswerRevealed": false,
+          "attemptedBeforeReveal": false,
+          "confidenceBeforeReveal": null,
+          "startedAt": "2026-10-20T08:00:00.000Z",
+          "revealedAt": null
+        }
+      },
+      {
+        "id": "s-second",
+        "projectId": "p-alpha",
+        "queue": [
+          {
+            "id": "q-crystal",
+            "knowledgeUnitId": "k-q-crystal",
+            "question": "虚构协议甲：蓝晶对应哪种颜色？",
+            "standardAnswer": "旧答案：红色（测试中设定为错误）",
+            "answerCriteria": ["回答核心要点"],
+            "hints": ["先回想颜色", "再回想协议名称", "核对顺序"],
+            "mnemonics": "虚构助记",
+            "confusionWarnings": "不要混淆甲乙",
+            "sourceReferences": [
+              {
+                "label": "公开虚构测试手册"
+              }
+            ],
+            "revision": 1
+          }
+        ],
+        "index": 1,
+        "status": "completed",
+        "createdAt": "2026-10-21T08:00:00.000Z",
+        "completedAt": "2026-10-21T08:02:00.000Z",
+        "draft": {
+          "responseMode": "typed",
+          "userResponse": "",
+          "hintLevelUsed": 0,
+          "wasAnswerRevealed": false,
+          "attemptedBeforeReveal": false,
+          "confidenceBeforeReveal": null,
+          "startedAt": "2026-10-20T08:00:00.000Z",
+          "revealedAt": null
+        }
+      },
+      {
+        "id": "s-active",
+        "projectId": "p-alpha",
+        "queue": [
+          {
+            "id": "q-crystal",
+            "knowledgeUnitId": "k-q-crystal",
+            "question": "虚构协议甲：蓝晶对应哪种颜色？",
+            "standardAnswer": "旧答案：红色（测试中设定为错误）",
+            "answerCriteria": ["回答核心要点"],
+            "hints": ["先回想颜色", "再回想协议名称", "核对顺序"],
+            "mnemonics": "虚构助记",
+            "confusionWarnings": "不要混淆甲乙",
+            "sourceReferences": [
+              {
+                "label": "公开虚构测试手册"
+              }
+            ],
+            "revision": 1
+          },
+          {
+            "id": "q-long",
+            "knowledgeUnitId": "k-q-long",
+            "question": "虚构流程：完整列举四个阶段。",
+            "standardAnswer": "第一阶段收集蓝晶。\n第二阶段核对图谱。\n第三阶段登记状态。\n第四阶段归还蓝晶。",
+            "answerCriteria": ["回答核心要点"],
+            "hints": ["先回想颜色", "再回想协议名称", "核对顺序"],
+            "mnemonics": "虚构助记",
+            "confusionWarnings": "不要混淆甲乙",
+            "sourceReferences": [
+              {
+                "label": "公开虚构测试手册"
+              }
+            ],
+            "revision": 1
+          },
+          {
+            "id": "q-similar",
+            "knowledgeUnitId": "k-q-similar",
+            "question": "虚构协议乙：蓝晶对应哪种颜色？",
+            "standardAnswer": "绿色（与协议甲不同）",
+            "answerCriteria": ["回答核心要点"],
+            "hints": ["先回想颜色", "再回想协议名称", "核对顺序"],
+            "mnemonics": "虚构助记",
+            "confusionWarnings": "不要混淆甲乙",
+            "sourceReferences": [
+              {
+                "label": "公开虚构测试手册"
+              }
+            ],
+            "revision": 1
+          }
+        ],
+        "index": 1,
+        "status": "active",
+        "createdAt": "2026-10-22T08:00:00.000Z",
+        "completedAt": null,
+        "draft": {
+          "responseMode": "typed",
+          "userResponse": "尚未完成的虚构长答案草稿",
+          "hintLevelUsed": 0,
+          "wasAnswerRevealed": false,
+          "attemptedBeforeReveal": false,
+          "confidenceBeforeReveal": null,
+          "startedAt": "2026-10-22T08:02:00.000Z",
+          "revealedAt": null
+        }
+      }
+    ]
+  }
+}

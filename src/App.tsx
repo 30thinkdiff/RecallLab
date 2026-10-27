@@ -9,6 +9,7 @@ import { CardForm, ProjectForm } from './features/Forms';
 import { History, Overview, ProjectDetail, Projects } from './features/Workspace';
 import { Study } from './features/Study';
 import type { LearningProject, PracticeItem } from './domain/models';
+import { StorageGate, BackupPage } from './features/Storage';
 
 type ModalState =
   | { type: 'project'; project?: LearningProject }
@@ -20,7 +21,9 @@ type ModalState =
 export function App() {
   return (
     <DataBoundary>
-      <Workspace />
+      <StorageGate>
+        <Workspace />
+      </StorageGate>
     </DataBoundary>
   );
 }
@@ -94,6 +97,7 @@ function Workspace() {
             { name: '学习概览', route: 'home', icon: LayoutDashboard },
             { name: '学习项目', route: 'projects', icon: BookOpen },
             { name: '学习记录', route: 'history', icon: Clock3 },
+            { name: '备份与恢复', route: 'backup', icon: ShieldCheck },
           ].map(({ name, route, icon: Icon }) => (
             <a
               key={route}
@@ -143,6 +147,8 @@ function Workspace() {
             <Projects data={data} onCreate={createProject} />
           ) : section === 'history' ? (
             <History data={data} />
+          ) : section === 'backup' ? (
+            <BackupPage />
           ) : section === 'project' && project ? (
             <ProjectDetail
               key={project.id}

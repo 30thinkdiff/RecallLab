@@ -141,7 +141,7 @@ test('a real browser restart retains projects, cards and learning records on dis
   });
   try {
     let page = await context.newPage();
-    await page.goto('http://127.0.0.1:5173');
+    await page.goto('http://127.0.0.1:5174');
     await createProject(page, '重启浏览器验证');
     await addCard(page, 1);
     await page.getByRole('button', { name: '开始学习' }).click();
@@ -155,7 +155,7 @@ test('a real browser restart retains projects, cards and learning records on dis
       channel: 'chromium',
     });
     page = await context.newPage();
-    await page.goto('http://127.0.0.1:5173/#projects');
+    await page.goto('http://127.0.0.1:5174/#projects');
     await expect(page.getByRole('heading', { name: '重启浏览器验证', exact: true })).toBeVisible();
     await page.getByRole('link', { name: /重启浏览器验证/ }).click();
     await expect(page.locator('.library-card')).toHaveCount(1);

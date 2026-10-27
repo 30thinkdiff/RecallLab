@@ -47,6 +47,8 @@ export interface PracticeItem {
   sourceReferences: SourceReference[];
   verificationStatus: 'user_authored';
   revision: number;
+  currentRevisionId: string;
+  learningStateId: string;
   createdAt: string;
   updatedAt: string;
   archivedAt?: string;
@@ -69,7 +71,47 @@ export type PracticeSnapshot = Pick<
   | 'confusionWarnings'
   | 'sourceReferences'
   | 'revision'
->;
+> & { revisionId?: string; learningStateId?: string };
+
+export type VersionedSnapshot = PracticeSnapshot & { revisionId: string; learningStateId: string };
+export type ChangeType =
+  'initial' | 'legacy' | 'cosmetic' | 'clarification' | 'substantive' | 'replacement';
+export interface PracticeItemRevision {
+  id: string;
+  practiceItemId: string;
+  revisionNumber: number;
+  previousRevisionId: string | null;
+  changeType: ChangeType;
+  changeSummary: string;
+  impactOnLearningState: 'preserve' | 'reset';
+  learningStateId: string;
+  createdAt: string;
+  snapshot: PracticeSnapshot;
+}
+
+export interface DraftRecovery {
+  id: string;
+  sessionId: string;
+  practiceItemId: string;
+  revision: number;
+  createdAt: string;
+  reason: string;
+  draft: StudyDraft;
+}
+
+export interface RecoveryBackup {
+  id: string;
+  createdAt: string;
+  reason: 'migration' | 'restore';
+  json: string;
+}
+
+export interface SessionToken {
+  generation: string;
+  planVersion: number;
+  draftVersion: number;
+  revisionId: string;
+}
 
 export interface StudyDraft {
   responseMode: ResponseMode;
@@ -87,15 +129,18 @@ export interface StudySession {
   projectId: string;
   queue: PracticeSnapshot[];
   index: number;
-  status: 'active' | 'completed';
+  status: 'active' | 'completed' | 'ended';
   createdAt: string;
   completedAt: string | null;
   draft: StudyDraft;
+  generation: string;
+  planVersion: number;
+  draftVersion: number;
 }
 
 export interface ReviewEvent {
   id: string;
-  schemaVersion: 1;
+  schemaVersion: 1 | 2;
   projectId: string;
   practiceItemId: string;
   knowledgeUnitId: string;

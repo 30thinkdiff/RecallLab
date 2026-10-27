@@ -6,6 +6,7 @@ import {
   type CardInput,
   type ProjectInput,
 } from '../domain/validation';
+import { snapshotOf, revisionId, legacyStateId } from '../domain/revisions';
 import { buildReviewEvent, freshDraft } from '../domain/review';
 import type {
   Performance,
@@ -54,6 +55,7 @@ export class Repository {
       this.db.projects,
       this.db.practiceItems,
       this.db.knowledgeUnits,
+      this.db.revisions,
       async () => {
         await this.requireProject(projectId);
         const existing = id ? await this.db.practiceItems.get(id) : undefined;
@@ -76,9 +78,25 @@ export class Repository {
           practiceType: 'free_recall',
           verificationStatus: 'user_authored',
           revision: (existing?.revision ?? 0) + 1,
+          currentRevisionId: revisionId(id ?? '', (existing?.revision ?? 0) + 1),
+          learningStateId: '',
           createdAt: existing?.createdAt ?? now,
           updatedAt: now,
         };
+        item.currentRevisionId = revisionId(item.id, item.revision);
+        item.learningStateId = legacyStateId(item.id, item.revision);
+        await this.db.revisions.add({
+          id: item.currentRevisionId,
+          practiceItemId: item.id,
+          revisionNumber: item.revision,
+          previousRevisionId: existing?.currentRevisionId ?? null,
+          changeType: existing ? 'substantive' : 'initial',
+          changeSummary: existing ? '修改内容，默认需要重新学习' : '首次创建',
+          impactOnLearningState: 'reset',
+          learningStateId: item.learningStateId,
+          createdAt: now,
+          snapshot: snapshotOf(item),
+        });
         await this.db.knowledgeUnits.put({
           id: knowledgeUnitId,
           projectId,
@@ -140,18 +158,10 @@ export class Repository {
         const session: StudySession = {
           id: crypto.randomUUID(),
           projectId,
-          queue: items.map((item) => ({
-            id: item.id,
-            knowledgeUnitId: item.knowledgeUnitId,
-            question: item.question,
-            standardAnswer: item.standardAnswer,
-            answerCriteria: item.answerCriteria,
-            hints: item.hints,
-            mnemonics: item.mnemonics,
-            confusionWarnings: item.confusionWarnings,
-            sourceReferences: item.sourceReferences,
-            revision: item.revision,
-          })),
+          queue: items.map(snapshotOf),
+          generation: crypto.randomUUID(),
+          planVersion: 0,
+          draftVersion: 0,
           index: 0,
           status: 'active',
           createdAt: now,
