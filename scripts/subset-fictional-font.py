@@ -7,6 +7,14 @@ chars='虚构学习资料第部分单元编号规则名称答案问题标准说�
 f=TTFont('/usr/share/fonts/truetype/arphic/uming.ttc',fontNumber=0,recalcTimestamp=False)
 opt=subset.Options();opt.recalc_timestamp=False
 sub=subset.Subsetter(options=opt);sub.populate(text=chars);sub.subset(f)
+notice=' Modified 2026-10-27 for RecallLab: subset to public fictional fixture characters only. Distributed under the ARPHIC Public License; see FONT_LICENSE.txt.'
+for record in list(f['name'].names):
+    if record.nameID == 0:
+        f['name'].setName(record.toUnicode()+notice,record.nameID,record.platformID,record.platEncID,record.langID)
+    elif record.nameID in [1,4,6]:
+        value='RecallFictional' if record.nameID==6 else 'RecallLab Fictional CJK'
+        f['name'].setName(value,record.nameID,record.platformID,record.platEncID,record.langID)
+f['name'].setName(notice.strip(),10,3,1,0x409)
 f.save(root/'fictional-cjk.ttf')
 units=f['head'].unitsPerEm;cmap=f.getBestCmap()
 entries={str(c):{'gid':f.getGlyphID(n),'width':round(f['hmtx'][n][0]*1000/units)} for c,n in cmap.items()}

@@ -161,7 +161,7 @@ function Workspace() {
           </p>
         </div>
         <div className="sidebar-footer">
-          RECALL. REFLECT. REPEAT.<span>0.3 · 资料与主动回忆</span>
+          RECALL. REFLECT. REPEAT.<span>0.3.1 · 资料与主动回忆</span>
         </div>
       </aside>
       <main id="main-content" tabIndex={-1}>

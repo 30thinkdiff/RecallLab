@@ -22,6 +22,7 @@ it('retains cross-page answers, resets numbers per section and excludes page num
     '虚构标题\n第一部分 基础\n1．规则甲：原文第一段\n（1）子点不得拆卡\n1',
     '原文第二段。\n2. 规则乙：原文乙。\n口诀：测试口诀。\n第二部分 应用\n1．规则丙：原文丙。\n2',
   ]);
+  expect(r.title).toBe('虚构标题');
   expect(r.candidates).toHaveLength(3);
   expect(r.sections).toHaveLength(2);
   expect(r.candidates[0]?.standardAnswer).toBe('原文第一段\n（1）子点不得拆卡\n\n原文第二段。');
@@ -72,4 +73,10 @@ it('uses source character offsets verbatim with Unicode, including supplementary
   for (const c of r.candidates)
     expect(r.text.slice(c.source.startOffset, c.source.endOffset)).toBe(c.source.excerpt);
   expect(r.coverage.unassignedCharacters).toBe(0);
+});
+
+it('never treats an unanswered question as its own standard answer', () => {
+  const r = parse(['1. 虚构规则是什么？']);
+  expect(r.candidates[0]?.standardAnswer).toBe('');
+  expect(r.coverage.reviewItems).toBe(1);
 });

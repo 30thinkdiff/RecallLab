@@ -48,7 +48,7 @@ function chinese(pages, missingMap = false) {
   const objects = [
     '<< /Type /Catalog /Pages 2 0 R >>',
     `<< /Type /Pages /Kids [${pages.map((_, i) => `${9 + i * 2} 0 R`).join(' ')}] /Count ${pages.length} >>`,
-    `<< /Type /Font /Subtype /Type0 /BaseFont /RecallFictional /Encoding /Identity-H /DescendantFonts [4 0 R] ${missingMap ? '' : '/ToUnicode 8 0 R'} >>`,
+    `<< /Type /Font /Subtype /Type0 /BaseFont /RecallFictional /Encoding /Identity-H /DescendantFonts [4 0 R] ${missingMap === true ? '' : '/ToUnicode 8 0 R'} >>`,
     `<< /Type /Font /Subtype /CIDFontType2 /BaseFont /RecallFictional /CIDSystemInfo << /Registry (Adobe) /Ordering (Identity) /Supplement 0 >> /FontDescriptor 5 0 R /DW 1000 /W [${entries.map(([c, m]) => `${c} [${m.width}]`).join(' ')}] /CIDToGIDMap 7 0 R >>`,
     '<< /Type /FontDescriptor /FontName /RecallFictional /Flags 4 /FontBBox [-100 -300 1200 1100] /ItalicAngle 0 /Ascent 1000 /Descent -250 /CapHeight 800 /StemV 80 /FontFile2 6 0 R >>',
     stream(font, `/Length1 ${font.length}`),
@@ -60,7 +60,7 @@ function chinese(pages, missingMap = false) {
   for (let i = 0; i < entries.length; i += 80) {
     let a = entries.slice(i, i + 80);
     chunks.push(
-      `${a.length} beginbfchar\n${a.map(([c]) => `<${hex(+c)}> <${hex(+c)}>`).join('\n')}\nendbfchar`,
+      `${a.length} beginbfchar\n${a.map(([c]) => `<${hex(+c)}> <${hex(missingMap === 'corrupt' ? 0xfffd : +c)}>`).join('\n')}\nendbfchar`,
     );
   }
   objects.push(
@@ -120,6 +120,29 @@ const files = {
   ]),
   'chinese-missing-map.pdf': chinese([['中文测试', '1．规则名称：标准答案甲。']], true),
   'blank.pdf': chinese([[]]),
+  'over-page-limit.pdf': chinese(Array.from({ length: 201 }, () => [])),
+  'missing-page.pdf': pdf([
+    '<< /Type /Catalog /Pages 2 0 R >>',
+    '<< /Type /Pages /Kids [3 0 R 5 0 R] /Count 2 >>',
+    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 6 0 R >> >> /Contents 4 0 R >>',
+    stream('BT /F1 14 Tf 50 760 Td (Fictional readable first page.) Tj ET'),
+    'null',
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+  ]),
+  'chinese-corrupt-map.pdf': chinese([['中文测试', '1．规则名称：标准答案甲。']], 'corrupt'),
+  'predefined-cmap.pdf': pdf([
+    '<< /Type /Catalog /Pages 2 0 R >>',
+    '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>',
+    stream(
+      `BT /F1 14 Tf 50 760 Td <${Array.from('中文测试规则')
+        .map((c) => hex(c.charCodeAt(0)))
+        .join('')}> Tj ET`,
+    ),
+    '<< /Type /Font /Subtype /Type0 /BaseFont /STSong-Light /Encoding /UniGB-UCS2-H /DescendantFonts [6 0 R] >>',
+    '<< /Type /Font /Subtype /CIDFontType0 /BaseFont /STSong-Light /CIDSystemInfo << /Registry (Adobe) /Ordering (GB1) /Supplement 4 >> /DW 1000 /FontDescriptor 7 0 R >>',
+    '<< /Type /FontDescriptor /FontName /STSongStd-Light /Flags 6 /FontBBox [-25 -254 1000 880] /Ascent 752 /CapHeight 737 /Descent -271 /ItalicAngle 0 /StemV 58 >>',
+  ]),
 };
 for (const [name, bytes] of Object.entries(files)) {
   const path = new URL(`import/${name}`, root);

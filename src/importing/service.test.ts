@@ -154,3 +154,25 @@ it('rejects altered source text and page order in restored backups', async () =>
   await expect(restoreBackup(db, backup)).rejects.toThrow('页码');
   expect((await db.sourceDocuments.toArray())[0]?.pages[0]?.number).toBe(1);
 });
+
+it('rejects empty or failed PDF extraction at the transaction boundary without creating a project', async () => {
+  const parsed = await material();
+  parsed.document.fileType = 'pdf';
+  parsed.candidates = [];
+  for (const status of ['empty', 'failed'] as const) {
+    parsed.document.pages = [
+      {
+        number: 1,
+        text: status === 'failed' ? 'failed output' : '',
+        startOffset: 0,
+        status,
+        warnings: [],
+      },
+    ];
+    await expect(commitImport(repo, parsed, [], { newProject: project })).rejects.toThrow(
+      '没有可保存的文字',
+    );
+  }
+  expect(await db.projects.count()).toBe(0);
+  expect(await db.sourceDocuments.count()).toBe(0);
+});

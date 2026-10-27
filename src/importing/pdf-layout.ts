@@ -27,6 +27,10 @@ export function textQuality(text: string): 'ready' | 'empty' | 'suspect' {
   if (!text.trim()) return 'empty';
   if (
     text.includes('\uFFFD') ||
+    Array.from(text).some((char) => {
+      const code = char.codePointAt(0)!;
+      return (code >= 0xd800 && code <= 0xdfff) || (code >= 0xe000 && code <= 0xf8ff);
+    }) ||
     Array.from(text).some(
       (char) => char.charCodeAt(0) < 32 && ![9, 10, 13].includes(char.charCodeAt(0)),
     )

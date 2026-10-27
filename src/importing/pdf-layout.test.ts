@@ -14,6 +14,8 @@ it('flags empty and replacement/control characters instead of silently accepting
   expect(textQuality('文字�缺失')).toBe('suspect');
   expect(textQuality('异常\0内容')).toBe('suspect');
   expect(textQuality('有效文字🙂\n下一行')).toBe('ready');
+  expect(textQuality('缺少映射\uE123')).toBe('suspect');
+  expect(textQuality('破损代理\uD800')).toBe('suspect');
 });
 
 it('does not misdiagnose decoder failures as scanned documents', () => {

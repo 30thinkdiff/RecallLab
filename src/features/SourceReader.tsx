@@ -15,6 +15,7 @@ export function SourceReader({
   return (
     <section className="source-reader">
       <h2>原文预览</h2>
+      {document.title && <p>{document.title}</p>}
       <p className="muted">
         以下为文件提取的原文，不会被编辑后的学习答案覆盖。选择文字后可创建问答。
       </p>
@@ -57,6 +58,12 @@ export function SourceReader({
                 : `引擎把握约 ${Math.round(page.confidence)}%，不代表准确率。`}
               请对照原始页面核对和编辑候选答案；页面图像仅在本次导入可见。
             </p>
+          )}
+          {page.method === 'ocr' && page.textLayer && (
+            <details>
+              <summary>查看原 PDF 文字层（未被 OCR 覆盖）</summary>
+              <p className="preserve-lines">{page.textLayer}</p>
+            </details>
           )}
           {previews?.[page.number] && (
             <details>

@@ -9,6 +9,7 @@ export interface ContentCoverage {
   sections: number;
   candidates: number;
   unassignedCharacters: number;
+  unassigned: { page: number; startOffset: number; endOffset: number }[];
   reviewItems: number;
   crossPageItems: number;
   problemPages: number[];
@@ -18,7 +19,7 @@ const footer = /^\s*(?:[-—–]\s*)?(?:第\s*)?\d+(?:\s*[/／]\s*\d+|\s*页)?(?
 const qmark = /^\s*(?:#{1,6}\s*)?(?:问题|问|Q)\s*[:：]\s*/iu;
 const amark = /^\s*(?:答案|标准答案|答|A)\s*[:：]\s*/iu;
 const numbered = /^\s*(?:#{1,6}\s*)?(?:(\d{1,3})\s*[．.、)）]|[（(]\s*(\d{1,3})\s*[）)])\s*/u;
-// Only explicit delimiters form answers; prose is never guessed into a standard answer.
+// Explicit answers are sliced from the source. Statement recall retains the whole original item.
 export function extractNumbered(text: string, pages: DocumentPage[], id: string, filename: string) {
   const sections = sectionsOf(text, id);
   for (const section of sections)
@@ -30,6 +31,14 @@ export function extractNumbered(text: string, pages: DocumentPage[], id: string,
     start: m.index,
     end: m.index + m[0].length,
   }));
+  const titleLine =
+    sections.length &&
+    lines[0] &&
+    lines[0].start < sections[0]!.startOffset &&
+    lines[0].text.trim().length <= 200
+      ? lines[0]
+      : undefined;
+  const title = titleLine?.text.trim();
   const sectionAt = (start: number) => [...sections].reverse().find((s) => start >= s.startOffset);
   const bareSections = new Set(
     lines.filter((l) => numbered.exec(l.text)?.[1]).map((l) => sectionAt(l.start)?.id ?? ''),
@@ -79,7 +88,7 @@ export function extractNumbered(text: string, pages: DocumentPage[], id: string,
         } else question = main;
       }
     } else question = main;
-    const statement = !!question && !standardAnswer && !start.explicit;
+    const statement = !!question && !standardAnswer && !start.explicit && !/[？?]/u.test(question);
     if (statement) {
       standardAnswer = main;
       question = `请复述：${main.split('\n')[0]!.slice(0, 120)}`;
@@ -127,26 +136,34 @@ export function extractNumbered(text: string, pages: DocumentPage[], id: string,
     });
     covered.push([start.start, end]);
   }
-  const unassignedCharacters = lines
-    .filter((l) => !footer.test(l.text) && !sections.some((s) => s.startOffset === l.start))
-    .reduce(
-      (sum, l) =>
-        sum +
-        Array.from(l.text).filter(
-          (c, j) =>
-            !/[\s]/u.test(c) && !covered.some(([a, b]) => l.start + j >= a && l.start + j < b),
-        ).length,
-      0,
-    );
+  const unassigned = lines
+    .filter(
+      (l) =>
+        l !== titleLine &&
+        !footer.test(l.text) &&
+        !sections.some((s) => s.startOffset === l.start) &&
+        !covered.some(([a, b]) => l.start >= a && l.end <= b),
+    )
+    .map((l) => ({
+      page: [...pages].reverse().find((p) => p.startOffset <= l.start)?.number ?? 1,
+      startOffset: l.start,
+      endOffset: l.end,
+    }));
+  const unassignedCharacters = unassigned.reduce(
+    (sum, r) =>
+      sum + Array.from(text.slice(r.startOffset, r.endOffset)).filter((c) => !/\s/u.test(c)).length,
+    0,
+  );
   const coverage: ContentCoverage = {
     totalPages: pages.length,
     readablePages: pages.filter((p) => p.text.trim() && p.status !== 'failed').length,
     sections: sections.length,
     candidates: candidates.length,
     unassignedCharacters,
+    unassigned,
     reviewItems: candidates.filter((c) => c.reviewNotes?.length).length,
     crossPageItems: candidates.filter((c) => c.source.endPage).length,
     problemPages: pages.filter((p) => p.status !== 'ready').map((p) => p.number),
   };
-  return { candidates, sections, coverage };
+  return { candidates, sections, coverage, title };
 }

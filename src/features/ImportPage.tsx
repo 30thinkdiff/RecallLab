@@ -224,13 +224,15 @@ export function ImportPage({
               </p>
               {parsed.document.pages.some(
                 (p) =>
-                  p.status !== 'ready' &&
-                  (p.kind === 'image' || p.kind === 'failed' || p.status === 'suspect'),
+                  p.kind === 'mixed' ||
+                  (p.status !== 'ready' &&
+                    (p.kind === 'image' || p.kind === 'failed' || p.status === 'suspect')),
               ) && (
                 <>
                   <p>
-                    可在本机尝试简体中文及英文 OCR，仅处理有问题的页面。首次按需加载约 8 MB
-                    资源，可能占用数百 MB 内存；识别后须与页面图像核对。
+                    可在本机尝试简体中文及英文
+                    OCR，仅处理图片、疑似乱码或图文混合页面。首次按需加载约 8 MB 资源，可能占用数百
+                    MB 内存；识别后须与页面图像核对。
                   </p>
                   <button
                     className="button secondary"
@@ -279,8 +281,9 @@ export function ImportPage({
           {parsed.coverage && (
             <section className="info-note" aria-label="内容核查">
               <h2>内容核查</h2>
+              {parsed.document.title && <p>文档：{parsed.document.title}</p>}
               <p>
-                已处理 {parsed.coverage.readablePages} / {parsed.coverage.totalPages} 页 · 识别{' '}
+                可读文字 {parsed.coverage.readablePages} / {parsed.coverage.totalPages} 页 · 识别{' '}
                 {parsed.coverage.sections} 个章节 · {rows.length} 个候选条目
               </p>
               <p>
@@ -288,6 +291,28 @@ export function ImportPage({
                 {parsed.coverage.reviewItems} 个条目需重点核对 · {parsed.coverage.crossPageItems}{' '}
                 个跨页条目
               </p>
+              {!!parsed.coverage.unassigned.length && (
+                <details>
+                  <summary>查看尚未归类的原文</summary>
+                  {parsed.coverage.unassigned.map((r) => (
+                    <div key={r.startOffset}>
+                      <button
+                        className="text-button"
+                        onClick={() =>
+                          document
+                            .getElementById(`source-page-${parsed.document.id}-${r.page}`)
+                            ?.scrollIntoView({ block: 'center' })
+                        }
+                      >
+                        第 {r.page} 页 · 定位原文
+                      </button>
+                      <p className="preserve-lines">
+                        {parsed.document.extractedContent.slice(r.startOffset, r.endOffset)}
+                      </p>
+                    </div>
+                  ))}
+                </details>
+              )}
               <p>
                 {parsed.coverage.problemPages.length
                   ? `可能缺失或异常的页面：${parsed.coverage.problemPages.join('、')}`
@@ -444,7 +469,7 @@ export function ImportPage({
               disabled={
                 action.busy ||
                 invalid.length > 0 ||
-                !parsed.document.pages.some((p) => p.text.trim()) ||
+                !parsed.document.pages.some((p) => p.status !== 'failed' && p.text.trim()) ||
                 (projectId === 'new' && !projectName.trim()) ||
                 (selectedDuplicates.length > 0 && !allowDuplicates) ||
                 (parsed.document.warnings.length > 0 && !ack)

@@ -29,6 +29,7 @@ export interface DocumentPage {
   startOffset: number;
   status: 'ready' | 'empty' | 'failed' | 'suspect';
   method?: 'text' | 'ocr';
+  textLayer?: string;
   confidence?: number;
   kind?: 'text' | 'image' | 'mixed' | 'blank' | 'failed';
   warnings: string[];
@@ -44,6 +45,7 @@ export interface SourceDocument {
   id: string;
   projectId: string;
   filename: string;
+  title?: string;
   fileType: DocumentFormat;
   importedAt: string;
   sourceHash: string;

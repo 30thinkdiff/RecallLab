@@ -5,6 +5,7 @@ import { MAX_PDF_BYTES, type ParsedMaterial } from './types';
 import type { DocumentPage } from '../domain/models';
 import { extractNumbered } from './numbered';
 import { classifyPdfPage, pageText, textQuality, unreadablePdfMessage } from './pdf-layout';
+import type { PDFPageProxy } from 'pdfjs-dist/types/src/display/api';
 import type { createLocalOcr } from './ocr';
 
 GlobalWorkerOptions.workerSrc = workerUrl;
@@ -86,8 +87,9 @@ export async function parsePdfBytes(
           confidence: number | undefined,
           errorName: string | undefined;
         const warnings: string[] = [];
-        const page = await pdf.getPage(number);
+        let page: PDFPageProxy | undefined;
         try {
+          page = await pdf.getPage(number);
           const extracted = await page.getTextContent();
           const textItems = extracted.items.filter((item) => 'str' in item);
           items = textItems.length;
@@ -104,8 +106,11 @@ export async function parsePdfBytes(
           });
           warnings.push('文字解析失败，不能据此判定为扫描件。');
         }
-        let images = false;
+        const textLayer = text;
+        let images = false,
+          inspectionFailed = false;
         try {
+          if (!page) throw new Error();
           const operators = await page.getOperatorList();
           images = operators.fnArray.some((op) =>
             [
@@ -117,7 +122,12 @@ export async function parsePdfBytes(
           );
         } catch {
           check();
+          inspectionFailed = true;
           warnings.push('页面图像检查失败，请核对原文件；未据此判定为扫描件。');
+        }
+        if (inspectionFailed && !text.trim()) {
+          status = 'failed';
+          errorName ??= 'ImageInspectionError';
         }
         kind = classifyPdfPage(status, images);
         if (status === 'empty')
@@ -126,8 +136,16 @@ export async function parsePdfBytes(
               ? '未提取到文字：页面含图片，尚未运行本地 OCR。'
               : '未提取到文字或图片：此页可能为空白。',
           );
+        if (kind === 'mixed')
+          warnings.push(
+            '图文混合页：图片里的文字尚未识别，可选择本地 OCR；请核对是否遗漏图片内容。',
+          );
         if (status === 'suspect') warnings.push('此页可能有乱码或缺字，请对照原 PDF 核对。');
-        if (options.ocr && status !== 'ready' && (images || status === 'suspect')) {
+        if (
+          page &&
+          options.ocr &&
+          ((status !== 'ready' && (images || status === 'suspect')) || kind === 'mixed')
+        ) {
           if (++ocrPages > 20)
             throw new PdfImportError('本地 OCR 单次最多处理 20 页，请拆分扫描资料。');
           if (!ocr) {
@@ -168,6 +186,7 @@ export async function parsePdfBytes(
           warnings,
           kind,
           method,
+          ...(method === 'ocr' ? { textLayer } : {}),
           ...(confidence === undefined ? {} : { confidence }),
         });
         report.pages.push({
@@ -178,7 +197,7 @@ export async function parsePdfBytes(
           ...(errorName ? { errorName } : {}),
         });
         content += text + '\n\n';
-        page.cleanup();
+        page?.cleanup();
         if (content.length > 2_000_000)
           throw new PdfImportError('提取的文字过多，请拆分 PDF 后导入。');
       }
@@ -201,6 +220,7 @@ export async function parsePdfBytes(
         document: {
           id,
           filename,
+          ...(organized.title ? { title: organized.title } : {}),
           fileType: 'pdf',
           sourceHash: hash,
           byteLength: bytes.length,

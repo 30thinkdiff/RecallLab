@@ -124,3 +124,29 @@ PDF 桌面用例还断言没有向本机测试 origin 以外的 HTTP 服务发�
 `npm run fixtures` 会生成全部公开夹具，`fixtures:check` 检查字节可复现。原始 Markdown 夹具保留问答换行，不接受格式器将 Q/A 合并为普通段落。
 CI 额外运行依赖审计；审查入口为 V0.3 PR，基础是已通过 CI 的 PR #3。
 当前未覆盖加密 PDF 的完整密码交互、所有字体/复杂排版、系统级断电/配额边界或非 Chromium 引擎；不将这些写成已验证。
+
+## V0.3.1 真实文档矩阵
+
+以下均是公开虚构内容或合法字体子集；私有原件不作为 CI 夹具，私有验收仅输出统计。
+
+| 场景                                                           | 实际覆盖                                                                                           |
+| -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| WPS 风格中文、嵌入 Type0/CID TrueType + Identity-H + ToUnicode | chinese-cid.pdf，自行生成的 10 页虚构题库，6 章/69 条；不是声称由 WPS 直接导出的文件               |
+| 中文跨页长答案、章节编号重置、括号子点、页码                   | chinese-cross-page.pdf + numbered.test.ts；引用 page/endPage 与原文范围校验，备份恢复              |
+| 外置 CMap、乱码/缺失映射、较旧运行时                           | predefined-cmap / chinese-corrupt-map；主模块与 Worker 缺新辅助函数仍可读；PUA/替换/控制字符告警   |
+| 英文文字型 PDF                                                 | 原有 text-two-pages.pdf 回归继续通过                                                               |
+| 图文混合、仅部分页可读、缺失页                                 | mixed-inline / mixed-pages / missing-page；异常不改判扫描件，混合 OCR 保留原文字层                 |
+| 中文扫描件、多页 OCR、英文 OCR                                 | chinese-scanned / english-scanned，真实本地 Tesseract + 语言数据，图像核对与编辑、取消、无外部请求 |
+| 模糊页面、空白、加密、损坏                                     | blurred-scan / blank / encrypted / broken；保留未验证状态，各自提示，不无声成功                    |
+| 大文件/大页数                                                  | 超 20 MB 文件在浏览器选择后拒绝；201 页合法 PDF 在提取前拒绝                                       |
+| 导入→学习→来源→备份恢复                                        | chinese-pdf.spec.ts；OCR 结果和 method/confidence 完整备份恢复；原有历史/修订/冲突全量回归         |
+| 桌面与基本手机                                                 | chinese-extraction.spec.ts；保留原有 import/pdf/learning 手机回归                                  |
+| 发布文件资源                                                   | `npm run test:production`，在 5175 验证构建产物的 CMap、匹配 Worker、OCR WASM/中英文资源，没有 CDN |
+
+最终本地结果：86 项单元/组件、46 项主浏览器回归（含原有 32 项行为场景）、2 项发布产物测试通过；没有删除失败项以通过测试。
+扫描件旧行为测试由“拒绝后提示没有 OCR”更新为“必须明确启动 OCR、空文字禁止保存、取消不留资料”，保留原保护意图。
+生产测试使用单独 reporter，报告在 `test-results/production` 与 `playwright-report/production`，同一提交关联 artifact 一并保留。CI 最后摘要分别列出主回归和生产资源验收结果。
+
+`npm run fixtures:check` 可复现 JSON/表格及全部手写 PDF；扫描 PDF 从已提交的公开图像资产重建。可选 `subset-fictional-font.py` / `generate-raster-pdf-assets.py` 可重新子集/光栅化，依赖只用于开发，不是产品启动要求。加密 PDF 有随机盐，不要求字节重复生成，实际解析行为由回归检查。
+
+真实文件本地验收：11 页、6 部分、69 条（31/22/3/3/8/2），逐页去空白后与 PyMuPDF 一致；7 条模板问题、10 条跨页、12 字符未归类明确报告。完整私有流程含确认导入、学习一题、来源查看及内存备份恢复，无真实正文/截图进入报告。原始失败触发条件仍未重现，不作为“已定位根因”报告。
