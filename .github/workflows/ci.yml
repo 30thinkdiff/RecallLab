@@ -19,6 +19,11 @@ jobs:
         run: npm audit --audit-level=moderate
       - name: Fixture reproducibility, types, lint, formatting, unit tests and build
         run: npm run check
+      - name: Inspect formatter diff
+        if: failure()
+        run: |
+          npx prettier --write src/importing/pdf.ts
+          git diff -- src/importing/pdf.ts
       - name: Install isolated browser
         run: npx playwright install --with-deps chromium
       - name: Browser acceptance on port 5174 / RecallLab-test
