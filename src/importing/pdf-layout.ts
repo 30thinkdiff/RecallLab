@@ -35,7 +35,9 @@ export function textQuality(text: string): 'ready' | 'empty' | 'suspect' {
   return 'ready';
 }
 
-export function unreadablePdfMessage(statuses: readonly ('ready' | 'empty' | 'suspect' | 'failed')[]) {
+export function unreadablePdfMessage(
+  statuses: readonly ('ready' | 'empty' | 'suspect' | 'failed')[],
+) {
   const failures = statuses.filter((status) => status === 'failed').length;
   if (failures)
     return `未能从 PDF 提取文字：${failures}/${statuses.length} 页解析失败。可能是字体、字符映射或 PDF.js 兼容性问题，不能认定文件是扫描件。请保留原 PDF 并报告此问题。`;
