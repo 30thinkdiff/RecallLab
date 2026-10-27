@@ -1,4 +1,4 @@
-# 架构与工程决策 · 第二轮
+# 架构与工程决策 · V0.3
 
 ## 运行与模块
 
@@ -8,7 +8,7 @@ React + TypeScript 单页应用，Vite 热更新与静态生产构建，Hash 路
 | --------------------------------- | -------------------------------------------- |
 | domain/models、revisions          | 数据类型、修订身份、学习证据有效性与并发令牌 |
 | domain/review、analytics          | 事件构建与可解释的实际记录统计               |
-| persistence/database、migration   | 保留 v1，新增 v2 升级与旧快照修订恢复        |
+| persistence/database、migration   | 保留 v1/v2，新增 v3 来源表与原始保护副本     |
 | persistence/backup-format、backup | JSON schema、关系校验、导出与事务式恢复      |
 | persistence/repository            | 可独立测试的业务状态转移、版本检查与事务     |
 | features/study-draft              | 每标签页串行写入器与可观察草稿状态           |
@@ -68,14 +68,14 @@ React + TypeScript 单页应用，Vite 热更新与静态生产构建，Hash 路
 
 ## 备份、升级与恢复
 
-数据库 v1 定义保持不变，通过 [Dexie upgrade](<https://dexie.org/docs/Version/Version.upgrade()>) 新增 v2。
-应用在正常查询打开 v2 前，用 [动态模式](<https://dexie.org/docs/Dexie/Dexie.open()>) 读取旧库，先提供完整 JSON 下载；用户确认后才升级。
+数据库 v1 定义保持不变，通过 [Dexie upgrade](<https://dexie.org/docs/Version/Version.upgrade()>) 新增 v2；V0.3 再新增 v3 资料表，v2→v3 不改写既有实体。
+应用在正常查询打开新版前，用 [动态模式](<https://dexie.org/docs/Dexie/Dexie.open()>) 读取旧库，先提供完整 JSON 下载；用户确认后才升级。
 升级事务先保存原始 v1 JSON 到 `recoveryBackups`，再变换题目、轮次并恢复可观察修订。出错则整体回滚，原 v1 库留存。
 
 旧事件不修改。旧题库、轮次与事件可观察到的同一修订必须内容一致；矛盾时停止升级，保留备份和旧库。
 没有被保存过的历史中间版本无法还原；旧修订修改类型、原因及准确时间未知，不做虚构推断。
 
-备份 formatVersion 1，支持 databaseVersion 1/2，包含所有学习实体及归档数据，不递归携带自动保护副本。
+备份 formatVersion 1，支持 databaseVersion 1/2/3，包含所有学习实体及归档数据，不递归携带自动保护副本。
 恢复先验证类型、唯一 ID、项目归属、修订链、快照一致性、学习状态隔离、事件与完成前缀、暂存引用等。
 用户预览确认后，在事务里捕获当前原始数据、替换全部学习表、重新检查实际写入关系。
 失败整体回滚，保护副本也不会部分提交；有效备份可用于修复当前损坏数据，其原始状态仍另存保护副本。
@@ -96,4 +96,25 @@ CI 运行夹具、类型、Lint、格式、单元/组件、构建和浏览器测
 
 目前采用全量读取和较宽的本地事务范围，适合初期个人题库；大规模数据仍需分页及更细粒度访问。
 跨标签页不提供多人实时文本合并。文件导入只有应用备份格式，不是通用题库导入。
-当前仅验证 Chromium；未加入完整 FSRS、AI、PDF、账号、云同步或 PWA。
+当前仅验证 Chromium；未加入完整 FSRS、AI、OCR、账号、云同步或 PWA。
+
+## V0.3 资料导入与来源
+
+SourceDocument 保存文件名/格式、字节数、SHA-256、提取原文、页码/状态、章节位置、警告和解析器版本。
+原始二进制不存库。提取文本按原样保存，学习内容在 KnowledgeUnit / PracticeItem 的不可变修订链中独立修改。
+SourceReference 保存 documentId、UTF-16 start/end、实际 excerpt，可附 page、sectionId、recordIndex。保存与恢复都校验原文切片和页码归属；不可用页不会生成正常来源。
+
+`importing/text` 负责纯解析和真实记录定位，Papa Parse 处理 CSV 引号与多行字段；明确问答才生成候选。
+`importing/pdf` 延迟加载本地 PDF.js Worker，逐页提取、保留异常页，不执行 Viewer 脚本；乱码、空白、失败和未知顺序不伪装成完整正确内容。
+`ImportCandidate` 只是可编辑预览，带实际来源。普通段落/PDF 选文不会自动编造问题。
+未来 AI 可以实现新的候选生产器，但必须引用同一来源校验合同，经过同一预览/人工确认 API，不能直接覆盖已确认答案或原文。
+
+`commitImport` 在写事务之前校验候选并计算请求摘要；事务内再次检查目标项目、重复题及来源，创建资料/知识单元/题目/初始修订。任何失败回滚全部新增内容。
+资料 ID + 请求摘要使重复确认幂等；更改请求不能静默重用已提交结果。导入不修改已有学习事件或记忆状态。
+编辑导入题目时保留结构化原文引用，即使修改显示名称，原始 excerpt/page 也不会被标签字符串覆盖。
+
+v3 通过新增 store 和升级事务保护 v2 原始快照，不改变已发布 v1/v2 的表结构。v1→v3 可顺序执行两个迁移，每次原始快照可下载。
+完整备份包含 sourceDocuments 与全部学习实体；恢复继续验证修订、完成前缀和来源引用，重置轮次 generation 以拒绝旧标签页写入。
+
+资源上限与格式见 IMPORT_GUIDE.md。PDF 限额和超时保护不等于对所有复杂排版的准确性保证。
+导入与 PDF 均独立代码块，初始应用不下载 PDF.js/Worker；无运行时 CDN 或文档上传。

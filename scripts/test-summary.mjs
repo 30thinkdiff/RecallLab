@@ -1,6 +1,6 @@
 import { readFile, appendFile } from 'node:fs/promises';
 import process from 'node:process';
-let summary = `## RecallLab browser verification\n\nCommit: ${process.env.GITHUB_SHA ?? 'local'}\n\n`;
+let summary = `## RecallLab browser verification\n\nCommit: ${process.env.RECALLLAB_REVIEW_SHA ?? process.env.GITHUB_SHA ?? 'local'}\n\n`;
 try {
   const report = JSON.parse(await readFile('test-results/results.json', 'utf8'));
   const stats = report.stats;
