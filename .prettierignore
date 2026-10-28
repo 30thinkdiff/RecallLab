@@ -7,3 +7,5 @@ package-lock.json
 
 # Raw Markdown import fixtures preserve authored Q/A line breaks.
 tests/fixtures/import/*.md
+
+.marscode/

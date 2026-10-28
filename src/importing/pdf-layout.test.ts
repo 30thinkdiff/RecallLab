@@ -14,10 +14,21 @@ it('flags empty and replacement/control characters instead of silently accepting
   expect(textQuality('文字�缺失')).toBe('suspect');
   expect(textQuality('异常\0内容')).toBe('suspect');
   expect(textQuality('有效文字🙂\n下一行')).toBe('ready');
+  expect(textQuality('缺少映射\uE123')).toBe('suspect');
+  expect(textQuality('破损代理\uD800')).toBe('suspect');
 });
 
 it('does not misdiagnose decoder failures as scanned documents', () => {
   expect(unreadablePdfMessage(['failed', 'failed'])).toContain('解析失败');
   expect(unreadablePdfMessage(['failed', 'empty'])).toContain('1/2');
-  expect(unreadablePdfMessage(['empty', 'empty'])).toContain('没有 OCR');
+  expect(unreadablePdfMessage(['empty', 'empty'])).toContain('不能仅凭');
+});
+
+it('distinguishes text, mixed, image-only, blank and decoder errors', async () => {
+  const { classifyPdfPage } = await import('./pdf-layout');
+  expect(classifyPdfPage('ready', false)).toBe('text');
+  expect(classifyPdfPage('ready', true)).toBe('mixed');
+  expect(classifyPdfPage('empty', true)).toBe('image');
+  expect(classifyPdfPage('empty', false)).toBe('blank');
+  expect(classifyPdfPage('failed', true)).toBe('failed');
 });

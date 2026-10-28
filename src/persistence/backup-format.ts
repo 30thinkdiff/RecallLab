@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { assertSourceReference } from '../domain/sources';
 
 const id = z.string().min(1).max(300);
 const date = z.iso.datetime();
@@ -6,6 +7,7 @@ const source = z.object({
   label: z.string(),
   documentId: z.string().optional(),
   page: z.number().int().positive().optional(),
+  endPage: z.number().int().positive().optional(),
   excerpt: z.string().optional(),
   startOffset: z.number().int().nonnegative().optional(),
   endOffset: z.number().int().nonnegative().optional(),
@@ -149,6 +151,7 @@ export const sourceDocumentSchema = z.object({
   id,
   projectId: id,
   filename: z.string().min(1).max(500),
+  title: z.string().max(200).optional(),
   fileType: z.enum(['json', 'csv', 'tsv', 'txt', 'markdown', 'pdf']),
   importedAt: date,
   sourceHash: z.string().regex(/^[a-f0-9]{64}$/),
@@ -160,6 +163,10 @@ export const sourceDocumentSchema = z.object({
       text: z.string(),
       startOffset: z.number().int().nonnegative(),
       status: z.enum(['ready', 'empty', 'failed', 'suspect']),
+      method: z.enum(['text', 'ocr']).optional(),
+      textLayer: z.string().optional(),
+      confidence: z.number().min(0).max(100).optional(),
+      kind: z.enum(['text', 'image', 'mixed', 'blank', 'failed']).optional(),
       warnings: z.array(z.string()),
     }),
   ),
@@ -217,27 +224,7 @@ export function validateBackup(raw: unknown): Backup {
       if (!ref.documentId) continue;
       const doc = documents.get(ref.documentId);
       if (!doc || doc.projectId !== projectId) throw new Error('来源资料不存在或跨项目引用');
-      if (
-        ref.page &&
-        !doc.pages.some((page) => page.number === ref.page && page.status !== 'failed')
-      )
-        throw new Error('来源页码无效');
-      if (ref.sectionId && !doc.sections.some((section) => section.id === ref.sectionId))
-        throw new Error('来源章节无效');
-      if (
-        ref.startOffset === undefined ||
-        ref.endOffset === undefined ||
-        ref.startOffset > ref.endOffset ||
-        ref.endOffset > doc.extractedContent.length ||
-        doc.extractedContent.slice(ref.startOffset, ref.endOffset) !== ref.excerpt
-      )
-        throw new Error('来源原文与位置不一致');
-      const page = doc.pages.find((page) => page.number === ref.page);
-      if (
-        page &&
-        (ref.startOffset < page.startOffset || ref.endOffset > page.startOffset + page.text.length)
-      )
-        throw new Error('来源位置超出指定页');
+      assertSourceReference(ref, doc, projectId);
     }
   }
   for (const doc of data.sourceDocuments) {

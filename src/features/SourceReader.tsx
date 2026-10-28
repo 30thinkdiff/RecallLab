@@ -5,14 +5,17 @@ import type { MaterialDraft } from '../importing/types';
 export function SourceReader({
   document,
   onSelect,
+  previews,
 }: {
   document: SourceDocument | MaterialDraft;
   onSelect?: (source: SourceReference) => void;
+  previews?: Record<number, string>;
 }) {
   const [selected, setSelected] = useState<SourceReference | null>(null);
   return (
     <section className="source-reader">
       <h2>原文预览</h2>
+      {document.title && <p>{document.title}</p>}
       <p className="muted">
         以下为文件提取的原文，不会被编辑后的学习答案覆盖。选择文字后可创建问答。
       </p>
@@ -47,6 +50,31 @@ export function SourceReader({
           key={page.number}
         >
           <h3>{document.fileType === 'pdf' ? `第 ${page.number} 页` : '原始文字'}</h3>
+          {page.method === 'ocr' && (
+            <p className="info-note">
+              本页文字来自 OCR，尚未验证。
+              {page.confidence === undefined
+                ? ''
+                : `引擎把握约 ${Math.round(page.confidence)}%，不代表准确率。`}
+              请对照原始页面核对和编辑候选答案；页面图像仅在本次导入可见。
+            </p>
+          )}
+          {page.method === 'ocr' && page.textLayer && (
+            <details>
+              <summary>查看原 PDF 文字层（未被 OCR 覆盖）</summary>
+              <p className="preserve-lines">{page.textLayer}</p>
+            </details>
+          )}
+          {previews?.[page.number] && (
+            <details>
+              <summary>查看第 {page.number} 页图像，对照 OCR</summary>
+              <img
+                className="ocr-preview"
+                src={previews[page.number]}
+                alt={`第 ${page.number} 页识别前的图像`}
+              />
+            </details>
+          )}
           {page.warnings.map((warning) => (
             <p className="info-note" key={warning}>
               {warning}

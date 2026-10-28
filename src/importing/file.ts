@@ -3,6 +3,7 @@ import { parseTextBytes } from './text';
 export async function parseMaterial(
   file: File,
   onProgress?: (page: number, total: number) => void,
+  options?: import('./pdf').PdfOptions,
 ) {
   const extensions: Record<string, DocumentFormat> = {
     json: 'json',
@@ -22,7 +23,7 @@ export async function parseMaterial(
   if (format === 'pdf') {
     if (file.size > 20 * 1024 * 1024) throw new Error('PDF 单次上限为 20 MB，请拆分后导入。');
     const { parsePdfBytes } = await import('./pdf');
-    return parsePdfBytes(new Uint8Array(await file.arrayBuffer()), file.name, onProgress);
+    return parsePdfBytes(new Uint8Array(await file.arrayBuffer()), file.name, onProgress, options);
   }
   if (file.size > 5 * 1024 * 1024) throw new Error('文字题库单次上限为 5 MB，请拆分文件。');
   return parseTextBytes(

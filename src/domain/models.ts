@@ -13,6 +13,7 @@ export interface LearningProject {
 export interface SourceReference {
   documentId?: string;
   page?: number;
+  endPage?: number;
   excerpt?: string;
   startOffset?: number;
   endOffset?: number;
@@ -27,6 +28,10 @@ export interface DocumentPage {
   text: string;
   startOffset: number;
   status: 'ready' | 'empty' | 'failed' | 'suspect';
+  method?: 'text' | 'ocr';
+  textLayer?: string;
+  confidence?: number;
+  kind?: 'text' | 'image' | 'mixed' | 'blank' | 'failed';
   warnings: string[];
 }
 export interface DocumentSection {
@@ -40,6 +45,7 @@ export interface SourceDocument {
   id: string;
   projectId: string;
   filename: string;
+  title?: string;
   fileType: DocumentFormat;
   importedAt: string;
   sourceHash: string;

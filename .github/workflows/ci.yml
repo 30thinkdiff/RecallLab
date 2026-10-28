@@ -23,6 +23,8 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Browser acceptance on port 5174 / RecallLab-test
         run: npm run test:e2e
+      - name: Built PDF resources and offline OCR acceptance
+        run: npm run test:production
       - name: Commit-associated test summary
         if: always()
         run: npm run test:summary

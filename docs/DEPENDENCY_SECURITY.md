@@ -18,7 +18,17 @@
 - Papa Parse 5.7.0：生产依赖，用于本地 CSV/TSV 字符串解析；安装后审计为 0。
 - PDF.js 首选兼容 Node20 的 5.6.205，但审计发现 [GHSA-hq66-cqwq-w95j](https://github.com/mozilla/pdf.js/security/advisories/GHSA-hq66-cqwq-w95j)，高危，属于生产解析依赖，不能忽略。
 - 该公告影响从 5.6.83 引入的版本；采用未受其影响的 5.5.207，而不是强制升级到要求更高 Node 的版本。保留现有 Node20，锁定主包及 Worker 同版本。
-- 应用只使用文字提取 API，不接入 PDF Viewer 的脚本执行组件，并关闭提取选项中的 eval；文件及解析 Worker 都在本地处理。
+- 应用使用文字提取与页面绘制 API，不接入 PDF Viewer 的脚本执行组件，并关闭提取选项中的 eval；文件及解析 Worker 都在本地处理。
 - 最终执行 `npm audit` 和 `npm audit --omit=dev`，两者均为 0；完整 78 项单元/组件和 32 项真实浏览器验收通过。
 
 该结果对应本轮锁文件和检查日期，只表示当前已知公告检查通过，不是未来安全性的保证。
+
+## V0.3.1 本地资源与 OCR
+
+- PDF.js 仍固定 5.5.207，切换同版本官方 legacy API/Worker，未关闭安全选项。CMap、标准字体及图像 WASM 随构建本地提供，参见 [PDF.js API](https://mozilla.github.io/pdf.js/api/draft/api.js.html) 与 [官方兼容说明](https://github.com/mozilla/pdf.js/wiki/Frequently-Asked-Questions#faq-support)。
+- 新增生产依赖 Tesseract.js 7.0.0 / core 7.0.0（Apache-2.0），中英文语言包 1.0.0（包声明 MIT）；选用 best-int LSTM，按需从本机资源加载。原始 PDF、渲染图像和文字不会发送到 OCR 云服务。参见 [官方离线配置](https://github.com/naptha/tesseract.js/blob/master/docs/local-installation.md)。
+- vite-plugin-static-copy 3.4.0 为开发依赖，兼容现有 Node20 与 Vite7，无强制升级。发布目录 OCR 资源约 24 MB（含多个架构兼容变体），客户端实际选取一个引擎，首次约 8 MB，不在应用启动时加载。
+- 中文夹具的 ARPHIC 字体子集及完整许可在 tests/fixtures/pdf-assets；不是用户字体或学习内容。可选 Python 重建工具只用于开发，不是用户运行 PDF/OCR 的依赖。
+- 最终完整/生产审计结果以本轮交付和 CI 为准；不把依赖安装成功等同于识别准确性保证。
+
+V0.3.1 最终本机 `npm audit` 与 `npm audit --omit=dev` 均为 0（含新增 OCR 依赖），对应日志只包含依赖信息。公开许可证/通知随构建放在 `third-party/`；测试字体内嵌了 2026-10-27 子集修改说明。

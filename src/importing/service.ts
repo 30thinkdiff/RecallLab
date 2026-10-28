@@ -15,6 +15,11 @@ export async function commitImport(
   allowDuplicates = false,
   reviewedWarnings = false,
 ) {
+  if (
+    material.document.fileType === 'pdf' &&
+    !material.document.pages.some((p) => p.status !== 'failed' && p.text.trim())
+  )
+    throw new Error('PDF 没有可保存的文字，请先完成文字提取或本地 OCR。');
   if (rows.length > MAX_CARDS) throw new Error(`单次最多导入 ${MAX_CARDS} 道题`);
   const selected = rows.filter((row) => row.selected);
   const inputs = selected.map((row) => cardInputSchema.parse(row));

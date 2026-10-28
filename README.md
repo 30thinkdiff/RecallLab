@@ -2,14 +2,15 @@
 
 An Evidence-Driven Adaptive Learning System.
 
-本地优先、AI 可选的主动回忆学习工具。当前 **V0.3 · 资料导入与知识组织**，待体验与独立审查，未发布稳定版。
+本地优先、AI 可选的主动回忆学习工具。当前 **V0.3.1 · 中文 PDF 与本地 OCR**，待体验与独立审查，未发布稳定版。
 
 ## 直接体验
 
 已启动时打开 <http://127.0.0.1:5173>，不需要构建或执行测试。
 
 - **明确问答题库**：导入资料 → 选择 JSON/CSV/TSV/TXT/Markdown → 预览、抽查或修改 → 选择项目 → 确认导入 → 开始学习。
-- **文字型 PDF**：导入资料 → 选择 PDF → 按页预览 → 在原文框选择文字 → 创建问答、填写问题 → 核对提示并确认 → 开始学习。
+- **编号型 PDF**：导入资料 → 选择 PDF → 预览章节与候选问答 → 核对标记和原文 → 批量确认 → 开始学习。
+- **扫描或图文混合 PDF**：预览页面类型 → 点击“在本机识别图片文字（OCR）”→ 对照页图像核对和修改候选答案 → 确认保存。
 - **普通讲义**：未识别明确问答时，不编造题目；从原文选择内容后手工整理。
 - **追溯来源**：学习/题目历史中的来源链接 → 原文资料；学习答案的修改不会覆盖原文或旧事件。
 
@@ -37,12 +38,14 @@ npm run dev
 - 项目和手工问答、提示/来源/核对要点、快速回忆及输入作答、自评与人工核对、可恢复草稿和完整事件。
 - 不可变修订、实质性更正后重新学习、当前有效统计、跨标签页冲突保护、轮次更新/结束/重开、归档恢复。
 - JSON/CSV/TSV/TXT/Markdown 批量追加导入，明确问答识别、可编辑预览、缺字段与重复处理、事务回滚。
-- 文字型 PDF 本地 Worker 提取、逐页预览、章节定位与选文制卡；缺文字/损坏/疑似乱码有提示。
+- PDF.js 兼容 Worker、本地 CMap/字体资源；逐页预览、章节/编号候选识别、多段与跨页答案、未归类原文核查及手工选文制卡。
+- 本地简体中文/英文 OCR，逐页进度与取消、页图像对照、把握值与未验证标记；图文混合页保留原文字层。
 - 学习资料库及原文来源：文件校验值、格式、提取文本、页码/章节/片段位置，学习内容与原文分开。
 - 完整 JSON 备份/校验恢复，兼容旧备份；资料、来源和新学习记录一起备份。
 
-没有 OCR、直接 Word/DOCX 解析、复杂版式/公式语义识别、AI 制卡/评分、完整 FSRS、账号或云同步。
-PDF 显示提取文字，不渲染原文件页面、图片和版式；需对照原 PDF 抽查阅读顺序与完整性。
+没有直接 Word/DOCX 解析、复杂版式/公式语义识别、AI 制卡/评分、完整 FSRS、账号或云同步。
+普通 PDF 预览以文字为主；OCR 页面图像仅在本次导入时用于核对。复杂多栏、公式和表格仍需对照原 PDF。
+本地 OCR 最多 20 页/次、300 秒，首次按需加载约 8 MB，可能使用数百 MB 内存；模糊/复杂页面需要人工核对。
 
 ## 数据与安全
 
@@ -61,6 +64,7 @@ PDF 显示提取文字，不渲染原文件页面、图片和版式；需对照�
 npm run check              # 夹具、类型、Lint、格式、单元/组件、构建
 npx playwright install chromium
 npm run test:e2e           # 全部真实浏览器验收
+npm run test:production    # 构建完成后验证发布文件的 CMap / OCR 资源
 npm run test:e2e:ui
 npm run test:e2e:debug
 npm run test:report
@@ -68,14 +72,14 @@ npm run test:summary
 npm run fixtures:check
 ```
 
-测试使用独立 **5174 / RecallLab-test** 和临时浏览器配置，不访问日常数据库。资料全部为公开虚构内容；PDF 夹具由脚本生成。没有生产清库按钮。
+测试使用独立 **5174 / RecallLab-test** 和临时浏览器配置，不访问日常数据库。自动化资料全部为公开虚构内容；PDF 夹具由脚本生成。发布文件另在 5175 的临时浏览器中测试，不访问日常配置。真实文件私有验收只在本机单独执行，不生成公开正文/截图。没有生产清库按钮。
 GitHub Actions 保留 SHA 关联摘要、HTML/JSON/JUnit，失败时附截图与 Trace。详见 [测试矩阵](docs/TESTING.md)。
 
 ## 工程与审查
 
-React、TypeScript 严格模式、Vite、Dexie、Zod、Papa Parse、PDF.js、Vitest、Playwright。导入和 PDF 按需加载，锁文件复现安装，不要求系统级升级。
+React、TypeScript 严格模式、Vite、Dexie、Zod、Papa Parse、PDF.js、Tesseract.js、Vitest、Playwright。导入和 PDF 按需加载，锁文件复现安装，不要求系统级升级。
 
 - [产品规格](docs/PRODUCT_SPEC.md)、[架构与数据语义](docs/ARCHITECTURE.md)、[进度与限制](docs/PROGRESS.md)。
-- [V0.3 检查点](docs/V03_CHECKPOINTS.md)、[变更记录](CHANGELOG.md)、[工作约定](AGENTS.md)。
-- V0.3 基于已通过 CI 的 [PR #3](https://github.com/30thinkdiff/RecallLab/pull/3)，保留 PR #1→#2→#3 的叠加关系，不自动合并。
-- M0/M1 和第二轮历史交付文档描述当时状态，当前以 V0.3 文档为准。
+- [V0.3.1 检查点与私有统计](docs/V031_CHECKPOINTS.md)、[V0.3 检查点](docs/V03_CHECKPOINTS.md)、[变更记录](CHANGELOG.md)、[工作约定](AGENTS.md)。
+- V0.3.1 [PR #6](https://github.com/30thinkdiff/RecallLab/pull/6) 基于已通过 CI 的 PR #5，保留 PR #1→#2→#3→#4→#5→#6 的叠加关系，不自动合并。
+- M0/M1 和第二轮历史交付文档描述当时状态，当前以 V0.3.1 文档为准。

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { LearningProject, PracticeItem, SourceReference } from '../domain/models';
 import { parseMaterial } from '../importing/file';
 import { duplicateReasons, type ImportCandidate, type ParsedMaterial } from '../importing/types';
@@ -36,6 +36,9 @@ export function ImportPage({
   const [result, setResult] = useState<Awaited<ReturnType<typeof commitImport>> | null>(null);
   const version = useRef(0);
   const fileInput = useRef<HTMLInputElement>(null);
+  const sourceFile = useRef<File | null>(null);
+  const parseController = useRef<AbortController | null>(null);
+  useEffect(() => () => parseController.current?.abort(), []);
   const action = useAction();
   const existing = cards.filter((card) => card.projectId === projectId);
   const duplicates = duplicateReasons(rows, existing);
@@ -45,6 +48,8 @@ export function ImportPage({
   function reset() {
     action.clearError();
     version.current++;
+    parseController.current?.abort();
+    sourceFile.current = null;
     setParsed(null);
     setRows([]);
     setResult(null);
@@ -55,7 +60,11 @@ export function ImportPage({
     setPage(0);
     if (fileInput.current) fileInput.current.value = '';
   }
-  async function read(file: File) {
+  async function read(file: File, ocr = false) {
+    parseController.current?.abort();
+    const controller = new AbortController();
+    parseController.current = controller;
+    sourceFile.current = file;
     action.clearError();
     const request = ++version.current;
     setLoading(true);
@@ -68,9 +77,21 @@ export function ImportPage({
     setAllowDuplicates(false);
     setPage(0);
     try {
-      const material = await parseMaterial(file, (page, total) => {
-        if (request === version.current) setProgress(`正在提取 PDF：第 ${page} / ${total} 页`);
-      });
+      const material = await parseMaterial(
+        file,
+        (page, total) => {
+          if (request === version.current)
+            setProgress(`${ocr ? '本地 OCR' : '正在提取 PDF'}：第 ${page} / ${total} 页`);
+        },
+        {
+          signal: controller.signal,
+          ocr,
+          onOcrProgress: (page, total, fraction) => {
+            if (request === version.current)
+              setProgress(`本地 OCR：第 ${page} / ${total} 页 · ${Math.round(fraction * 100)}%`);
+          },
+        },
+      );
       if (request !== version.current) return;
       setParsed(material);
       const matches = duplicateReasons(material.candidates, existing);
@@ -192,6 +213,54 @@ export function ImportPage({
               )}
             </div>
           </section>
+          {parsed.document.fileType === 'pdf' && (
+            <section className="info-note" aria-label="PDF 页面类型">
+              <p>
+                文字页 {parsed.document.pages.filter((p) => p.kind === 'text').length} · 图文混合页{' '}
+                {parsed.document.pages.filter((p) => p.kind === 'mixed').length} · 图片页{' '}
+                {parsed.document.pages.filter((p) => p.kind === 'image').length} · 空白页{' '}
+                {parsed.document.pages.filter((p) => p.kind === 'blank').length} · 解析异常页{' '}
+                {parsed.document.pages.filter((p) => p.kind === 'failed').length}
+              </p>
+              {parsed.document.pages.some(
+                (p) =>
+                  p.kind === 'mixed' ||
+                  (p.status !== 'ready' &&
+                    (p.kind === 'image' || p.kind === 'failed' || p.status === 'suspect')),
+              ) && (
+                <>
+                  <p>
+                    可在本机尝试简体中文及英文
+                    OCR，仅处理图片、疑似乱码或图文混合页面。首次按需加载约 8 MB 资源，可能占用数百
+                    MB 内存；识别后须与页面图像核对。
+                  </p>
+                  <button
+                    className="button secondary"
+                    disabled={action.busy}
+                    onClick={() => {
+                      if (sourceFile.current) void read(sourceFile.current, true);
+                    }}
+                  >
+                    在本机识别图片文字（OCR）
+                  </button>
+                </>
+              )}
+            </section>
+          )}
+          {parsed.pdfReport && (
+            <details>
+              <summary>本次提取统计（不含正文）</summary>
+              <p>来源软件：{parsed.pdfReport.creator || '未提供'}</p>
+              <ul>
+                {parsed.pdfReport.pages.map((p) => (
+                  <li key={p.number}>
+                    第 {p.number} 页：文字片段 {p.items} 个 · {p.characters} 字符
+                    {p.errorName ? ` · 解析异常 ${p.errorName}` : ''}
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
           {parsed.document.warnings.length > 0 && (
             <section className="info-note">
               <h3>请核对提取结果</h3>
@@ -207,6 +276,48 @@ export function ImportPage({
                 />
                 我已核对警告，确认要保存的内容
               </label>
+            </section>
+          )}
+          {parsed.coverage && (
+            <section className="info-note" aria-label="内容核查">
+              <h2>内容核查</h2>
+              {parsed.document.title && <p>文档：{parsed.document.title}</p>}
+              <p>
+                可读文字 {parsed.coverage.readablePages} / {parsed.coverage.totalPages} 页 · 识别{' '}
+                {parsed.coverage.sections} 个章节 · {rows.length} 个候选条目
+              </p>
+              <p>
+                尚未归类 {parsed.coverage.unassignedCharacters} 个非空白字符 ·{' '}
+                {parsed.coverage.reviewItems} 个条目需重点核对 · {parsed.coverage.crossPageItems}{' '}
+                个跨页条目
+              </p>
+              {!!parsed.coverage.unassigned.length && (
+                <details>
+                  <summary>查看尚未归类的原文</summary>
+                  {parsed.coverage.unassigned.map((r) => (
+                    <div key={r.startOffset}>
+                      <button
+                        className="text-button"
+                        onClick={() =>
+                          document
+                            .getElementById(`source-page-${parsed.document.id}-${r.page}`)
+                            ?.scrollIntoView({ block: 'center' })
+                        }
+                      >
+                        第 {r.page} 页 · 定位原文
+                      </button>
+                      <p className="preserve-lines">
+                        {parsed.document.extractedContent.slice(r.startOffset, r.endOffset)}
+                      </p>
+                    </div>
+                  ))}
+                </details>
+              )}
+              <p>
+                {parsed.coverage.problemPages.length
+                  ? `可能缺失或异常的页面：${parsed.coverage.problemPages.join('、')}`
+                  : '所有页面均有可读文字；这不代表知识提取已经完整，请抽查原文。'}
+              </p>
             </section>
           )}
           <section>
@@ -254,6 +365,12 @@ export function ImportPage({
                   </label>
                   {duplicates.has(row.id) && <span className="tag">{duplicates.get(row.id)}</span>}
                 </div>
+                {row.reviewNotes?.map((note) => (
+                  <p className="info-note" key={note}>
+                    {note}
+                  </p>
+                ))}
+                <p className="source-note">{row.source.label}</p>
                 <div className="form-grid">
                   <label>
                     问题
@@ -352,6 +469,7 @@ export function ImportPage({
               disabled={
                 action.busy ||
                 invalid.length > 0 ||
+                !parsed.document.pages.some((p) => p.status !== 'failed' && p.text.trim()) ||
                 (projectId === 'new' && !projectName.trim()) ||
                 (selectedDuplicates.length > 0 && !allowDuplicates) ||
                 (parsed.document.warnings.length > 0 && !ack)
@@ -385,6 +503,7 @@ export function ImportPage({
           </div>
           <SourceReader
             document={parsed.document}
+            previews={parsed.previews}
             onSelect={action.busy ? undefined : addSelection}
           />
         </>
