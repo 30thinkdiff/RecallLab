@@ -13,6 +13,8 @@ export const legacyStateId = (itemId: string, number: number) =>
 export function snapshotOf(item: PracticeItem): PracticeSnapshot {
   return {
     id: item.id,
+    ...(item.learningObjective ? { learningObjective: item.learningObjective } : {}),
+    ...(item.aiProvenance ? { aiProvenance: structuredClone(item.aiProvenance) } : {}),
     knowledgeUnitId: item.knowledgeUnitId,
     question: item.question,
     standardAnswer: item.standardAnswer,

@@ -1,3 +1,5 @@
+import { aiProvenanceSchema, assertAiAnchors } from '../ai/provenance';
+import { objectiveSchema } from '../ai/protocol';
 import {
   assessmentSchema,
   assessmentResult,
@@ -28,6 +30,8 @@ const source = z.object({
   recordIndex: z.number().int().positive().optional(),
 });
 const snapshot = z.object({
+  learningObjective: objectiveSchema.optional(),
+  aiProvenance: aiProvenanceSchema.optional(),
   id,
   knowledgeUnitId: id,
   question: z.string(),
@@ -66,6 +70,8 @@ const project = z.object({
   archivedAt: date.optional(),
 });
 const knowledge = z.object({
+  learningObjective: objectiveSchema.optional(),
+  aiProvenance: aiProvenanceSchema.optional(),
   id,
   projectId: id,
   title: z.string(),
@@ -324,6 +330,7 @@ export function validateBackup(raw: unknown): Backup {
     if (item && item.learningStateId === memory.learningStateId && memory.card.reps > 0) {
       const comparable = (text: string) => text.replace(/\s+/g, '').replace(/。$/u, '');
       if (
+        item.learningObjective !== rev!.snapshot.learningObjective ||
         comparable(item.question) !== comparable(rev!.snapshot.question) ||
         comparable(item.standardAnswer) !== comparable(rev!.snapshot.standardAnswer) ||
         item.answerCriteria.length !== rev!.snapshot.answerCriteria.length ||
@@ -451,6 +458,8 @@ export function validateBackup(raw: unknown): Backup {
     'confusionWarnings',
     'sourceReferences',
     'revision',
+    'learningObjective',
+    'aiProvenance',
   ] as const;
   const sameContent = (a: z.infer<typeof snapshot>, b: z.infer<typeof snapshot>) =>
     fields.every((field) => JSON.stringify(a[field]) === JSON.stringify(b[field]));
@@ -536,6 +545,42 @@ export function validateBackup(raw: unknown): Backup {
         previous.learningStateId === revision.learningStateId
       )
         throw new Error('实质性修订未隔离学习证据');
+    }
+  }
+  for (const revision of data.revisions) {
+    const trace = revision.snapshot.aiProvenance;
+    if (!trace) continue;
+    assertAiAnchors(trace);
+    const confirmed = revisions.get(trace.confirmedRevisionId);
+    if (!confirmed || confirmed.practiceItemId !== revision.practiceItemId)
+      throw new Error('AI 确认版本不存在或跨题引用');
+    if (
+      !trace.modifiedAfterConfirmation &&
+      (trace.confirmedRevisionId !== revision.id ||
+        trace.confirmation.question !== revision.snapshot.question ||
+        trace.confirmation.answer !== revision.snapshot.standardAnswer ||
+        JSON.stringify(trace.confirmation.criteria) !==
+          JSON.stringify(revision.snapshot.answerCriteria))
+    )
+      throw new Error('AI 确认内容与当时版本不一致');
+    if (trace.sourceKind === 'document') {
+      const doc = documents.get(trace.inputId);
+      if (
+        !doc ||
+        doc.projectId !== items.get(revision.practiceItemId)?.projectId ||
+        doc.sourceHash !== trace.documentHash ||
+        doc.extractedContent.slice(trace.inputStart, trace.inputStart + trace.inputText.length) !==
+          trace.inputText
+      )
+        throw new Error('AI 原文引用已失效');
+    } else {
+      const input = revisions.get(trace.inputRevisionId ?? '');
+      if (
+        !input ||
+        input.practiceItemId !== revision.practiceItemId ||
+        input.snapshot.standardAnswer !== trace.inputText
+      )
+        throw new Error('AI 评分要点缺少原答案版本');
     }
   }
   const activeProjects = new Set<string>();

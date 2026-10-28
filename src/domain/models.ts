@@ -1,3 +1,5 @@
+import type { AiProvenance } from '../ai/provenance';
+import type { LearningObjective } from '../ai/protocol';
 import type { AssessmentDraft, CriterionMark } from './assessment';
 import type { ReviewPlan, ReviewDecision } from '../scheduling/types';
 export interface LearningProject {
@@ -65,6 +67,8 @@ export interface SourceDocument {
 }
 
 export interface KnowledgeUnit {
+  learningObjective?: LearningObjective;
+  aiProvenance?: AiProvenance;
   id: string;
   projectId: string;
   title: string;
@@ -81,6 +85,8 @@ export interface KnowledgeUnit {
 }
 
 export interface PracticeItem {
+  learningObjective?: LearningObjective;
+  aiProvenance?: AiProvenance;
   qualityReviewedRevisionId?: string;
   focus?: boolean;
   id: string;
@@ -113,6 +119,8 @@ export type PracticeSnapshot = Pick<
   | 'id'
   | 'knowledgeUnitId'
   | 'question'
+  | 'learningObjective'
+  | 'aiProvenance'
   | 'standardAnswer'
   | 'answerCriteria'
   | 'hints'
