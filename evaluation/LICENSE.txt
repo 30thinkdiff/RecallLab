@@ -1,0 +1,1 @@
+The fictional learning texts and reference-point annotations in cases.json were authored for RecallLab testing and evaluation. They contain no private user material. They may be reused under CC0-1.0. Reference points are an authored test rubric, not a claim of universal pedagogical completeness.

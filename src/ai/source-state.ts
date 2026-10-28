@@ -7,7 +7,7 @@ export async function sourceChanges(db: RecallDatabase, sources: AiSource[], pro
   if (!project || project.archivedAt) messages.push('项目已不存在或已归档');
   const seen = new Set<string>();
   for (const source of sources) {
-    const key = `${source.kind}:${source.id}`;
+    const key = stable(source);
     if (seen.has(key)) continue;
     seen.add(key);
     if (source.kind === 'document') {

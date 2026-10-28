@@ -4,7 +4,7 @@ import type { PracticeItem } from '../domain/models';
 import { cardInputSchema, lines } from '../domain/validation';
 import { ConflictError } from '../domain/revisions';
 import { normalizedQuestion } from '../importing/types';
-import { promptProblem } from '../domain/readiness';
+import { candidateQualityProblem } from './quality';
 import { candidateEvidence, type AiCandidate, type GenerationState } from './generation';
 import { locateQuote, referenceFor } from './evidence';
 import type { AiConfirmation, EvidenceAnchor } from './provenance';
@@ -147,7 +147,11 @@ export async function confirmCandidates(
         sourceLabel: old?.sourceReferences[0]?.label ?? row.source.document?.filename ?? '',
         learningObjective: state.objective,
       });
-      const issue = promptProblem(input);
+      const issue = candidateQualityProblem(
+        input.question,
+        input.standardAnswer,
+        row.evidenceQuote,
+      );
       if (issue) throw new Error(issue);
       const start = row.source.kind === 'document' ? row.chunk.start : 0;
       const inputText = row.source.kind === 'document' ? row.chunk.text : row.source.text;
