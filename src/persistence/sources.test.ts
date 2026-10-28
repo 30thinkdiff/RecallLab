@@ -81,7 +81,7 @@ it('keeps original source text and old revision evidence when an imported answer
     input.standardAnswer,
   );
   const backup = await exportBackup(db);
-  expect(backup.databaseVersion).toBe(3);
+  expect(backup.databaseVersion).toBe(4);
   await restoreBackup(db, backup);
   expect((await db.sourceDocuments.get(document.id))?.sourceHash).toBe(document.sourceHash);
 });
@@ -123,4 +123,22 @@ it('rejects invented quotes, pages and cross-project references without leaving 
   ).rejects.toThrow('项目');
   expect(await db.practiceItems.count()).toBe(0);
   expect(await db.revisions.count()).toBe(0);
+});
+
+it('round trips an explicitly initialized memory state without backfilling any reviews', async () => {
+  const id = await repo.saveCard(projectId, input);
+  const item = (await db.practiceItems.get(id))!;
+  const { initialMemory } = await import('../scheduling/engine');
+  const memory = initialMemory(item, new Date('2026-10-27T12:00:00Z'));
+  await db.memoryStates.add(memory);
+  const backup = await exportBackup(db);
+  expect(backup.data.memoryStates).toEqual([memory]);
+  expect(backup.data.schedulingLogs).toEqual([]);
+  await restoreBackup(db, backup);
+  expect(await db.memoryStates.get(item.learningStateId)).toEqual(memory);
+  expect(await db.reviewEvents.count()).toBe(0);
+  const bad = structuredClone(backup);
+  bad.data.memoryStates[0]!.learningStateId = 'wrong';
+  await expect(restoreBackup(db, bad)).rejects.toThrow('版本');
+  expect(await db.memoryStates.get(item.learningStateId)).toEqual(memory);
 });

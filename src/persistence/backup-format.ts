@@ -1,4 +1,11 @@
+import { decide } from '../scheduling/policy';
 import { z } from 'zod';
+import {
+  memorySchema,
+  schedulingLogSchema,
+  decisionSchema,
+  planSchema,
+} from '../scheduling/schema';
 import { assertSourceReference } from '../domain/sources';
 
 const id = z.string().min(1).max(300);
@@ -45,6 +52,8 @@ const project = z.object({
   learningGoal: z.string(),
   targetDate: z.string(),
   dailyTimeBudget: z.number().int().min(1).max(1440),
+  priority: z.number().int().min(1).max(3).optional(),
+  newCardLimit: z.number().int().min(0).max(1000).optional(),
   createdAt: date,
   updatedAt: date,
   archivedAt: date.optional(),
@@ -74,6 +83,7 @@ const knowledge = z.object({
 const item = snapshot.omit({ revisionId: true }).extend({
   projectId: id,
   practiceType: z.literal('free_recall'),
+  focus: z.boolean().optional(),
   verificationStatus: z.literal('user_authored'),
   currentRevisionId: id.optional(),
   createdAt: date,
@@ -81,8 +91,11 @@ const item = snapshot.omit({ revisionId: true }).extend({
   archivedAt: date.optional(),
 });
 const event = z.object({
+  reviewedAt: date.optional(),
+  attemptedBeforeReveal: z.boolean().optional(),
   id,
-  schemaVersion: z.union([z.literal(1), z.literal(2)]),
+  schemaVersion: z.union([z.literal(1), z.literal(2), z.literal(3)]),
+  scheduling: decisionSchema.optional(),
   projectId: id,
   practiceItemId: id,
   knowledgeUnitId: id,
@@ -106,6 +119,7 @@ const event = z.object({
   snapshot,
 });
 const session = z.object({
+  reviewPlan: planSchema.optional(),
   id,
   projectId: id,
   queue: z.array(snapshot),
@@ -188,7 +202,7 @@ export const sourceDocumentSchema = z.object({
 export const backupSchema = z.object({
   format: z.literal('RecallLabBackup'),
   formatVersion: z.literal(1),
-  databaseVersion: z.union([z.literal(1), z.literal(2), z.literal(3)]),
+  databaseVersion: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]),
   createdAt: date,
   data: z.object({
     projects: z.array(project),
@@ -199,6 +213,8 @@ export const backupSchema = z.object({
     revisions: z.array(revision).default([]),
     draftRecoveries: z.array(recovery).default([]),
     sourceDocuments: z.array(sourceDocumentSchema).default([]),
+    memoryStates: z.array(memorySchema).default([]),
+    schedulingLogs: z.array(schedulingLogSchema).default([]),
   }),
 });
 export type Backup = z.infer<typeof backupSchema>;
@@ -206,6 +222,8 @@ export type Backup = z.infer<typeof backupSchema>;
 export function validateBackup(raw: unknown): Backup {
   const backup = backupSchema.parse(raw);
   const data = backup.data;
+  if (backup.databaseVersion < 4 && (data.memoryStates.length || data.schedulingLogs.length))
+    throw new Error('旧版本备份不能包含调度数据');
   const maps = Object.fromEntries(
     Object.entries(data).map(([name, rows]) => {
       const map = new Map(rows.map((row) => [row.id, row]));
@@ -262,6 +280,137 @@ export function validateBackup(raw: unknown): Backup {
     for (const itemId of doc.initialItemIds)
       if (items.get(itemId)?.projectId !== doc.projectId) throw new Error('资料导入题目引用无效');
   }
+  const stateOwners = new Map<string, string>();
+  for (const revision of data.revisions) {
+    const owner = stateOwners.get(revision.learningStateId);
+    if (owner && owner !== revision.practiceItemId) throw new Error('学习状态不能跨题目共享');
+    stateOwners.set(revision.learningStateId, revision.practiceItemId);
+  }
+  const memories = new Map(data.memoryStates.map((m) => [m.id, m]));
+  const eventsById = new Map(data.reviewEvents.map((e) => [e.id, e]));
+  for (const memory of data.memoryStates) {
+    const item = items.get(memory.practiceItemId);
+    const rev = revisions.get(memory.revisionId);
+    if (
+      !item ||
+      item.projectId !== memory.projectId ||
+      memory.id !== memory.learningStateId ||
+      !rev ||
+      rev.practiceItemId !== item.id ||
+      rev.learningStateId !== memory.learningStateId ||
+      rev.snapshot.knowledgeUnitId !== memory.knowledgeUnitId ||
+      memory.due !== memory.card.due
+    )
+      throw new Error('记忆调度状态与内容版本不一致');
+    if (item && item.learningStateId === memory.learningStateId && memory.card.reps > 0) {
+      const comparable = (text: string) => text.replace(/\s+/g, '').replace(/。$/u, '');
+      if (
+        comparable(item.question) !== comparable(rev!.snapshot.question) ||
+        comparable(item.standardAnswer) !== comparable(rev!.snapshot.standardAnswer) ||
+        item.answerCriteria.length !== rev!.snapshot.answerCriteria.length ||
+        item.answerCriteria.some(
+          (c, i) => comparable(c) !== comparable(rev!.snapshot.answerCriteria[i] ?? ''),
+        )
+      )
+        throw new Error('有效记忆状态不能继承不同知识内容的成绩');
+    }
+  }
+  for (const log of data.schedulingLogs) {
+    const event = eventsById.get(log.eventId),
+      memory = memories.get(log.learningStateId);
+    if (
+      !event ||
+      !memory ||
+      log.id !== log.eventId ||
+      event.practiceItemId !== log.practiceItemId ||
+      event.projectId !== log.projectId ||
+      event.snapshot.learningStateId !== log.learningStateId ||
+      event.snapshot.revisionId !== log.revisionId ||
+      JSON.stringify(event.scheduling) !== JSON.stringify(log.decision) ||
+      log.timestamp !== event.timestamp ||
+      log.versionAfter < log.versionBefore ||
+      log.versionAfter > memory.version
+    )
+      throw new Error('调度日志与原始学习事件不一致');
+    if (
+      log.decision.grade !== null &&
+      (!log.before ||
+        !log.after ||
+        !log.fsrsLog ||
+        log.fsrsLog.rating !== log.decision.grade ||
+        log.after.due !== log.decision.nextDue ||
+        log.fsrsLog.review !== (event.reviewedAt ?? log.timestamp))
+    )
+      throw new Error('FSRS 日志缺少真实更新证据');
+    if (log.decision.grade === null && (log.before || log.after || log.fsrsLog))
+      throw new Error('无评分事件不能伪造 FSRS 日志');
+  }
+  for (const log of data.schedulingLogs) {
+    const event = eventsById.get(log.eventId)!;
+    const expected = decide(
+      event,
+      log.decision.reason !== 'practice',
+      log.decision.difficulty ?? 'good',
+    );
+    for (const field of ['grade', 'reason', 'source', 'criteriaMet', 'difficulty'] as const)
+      if (expected[field] !== log.decision[field]) throw new Error('调度评分与实际回忆证据矛盾');
+  }
+  for (const memory of data.memoryStates) {
+    const logs = data.schedulingLogs.filter((l) => l.learningStateId === memory.id);
+    const graded = logs
+      .filter((l) => l.decision.grade !== null)
+      .sort((a, b) => a.versionAfter - b.versionAfter);
+    if (
+      memory.card.reps !== graded.length ||
+      memory.version !== Math.max(0, ...logs.map((l) => l.versionAfter))
+    )
+      throw new Error('记忆状态缺少对应的真实调度日志');
+    if (
+      graded.length &&
+      JSON.stringify(graded[graded.length - 1]!.after) !== JSON.stringify(memory.card)
+    )
+      throw new Error('记忆状态与最近一次调度结果不一致');
+    const changed = logs
+      .filter((l) => l.versionAfter > l.versionBefore)
+      .sort((a, b) => a.versionAfter - b.versionAfter)
+      .slice(-1)[0];
+    if (memory.retestDue !== changed?.decision.retestDue)
+      throw new Error('复测时间缺少原始教学事件依据');
+    if (
+      !graded.length &&
+      (memory.card.state !== 0 ||
+        memory.card.last_review ||
+        memory.card.stability !== 0 ||
+        memory.card.difficulty !== 0)
+    )
+      throw new Error('未复习的新状态不能伪造掌握记录');
+  }
+  for (const event of data.reviewEvents)
+    if (event.schemaVersion === 3) {
+      if (
+        event.reviewedAt &&
+        (event.scheduling?.reviewedAt !== event.reviewedAt ||
+          Date.parse(event.reviewedAt) > Date.parse(event.timestamp))
+      )
+        throw new Error('回忆发生时间与保存记录不一致');
+      if (
+        (event.responseMode === 'typed' &&
+          event.wasIndependentRecall &&
+          !event.userResponse.trim()) ||
+        (event.attemptedBeforeReveal === false && event.wasIndependentRecall)
+      )
+        throw new Error('正式复习缺少揭晓前的回忆证据');
+      const source =
+        event.assessmentResult === 'skipped' || event.assessmentResult === 'ungraded'
+          ? 'none'
+          : event.responseMode === 'typed'
+            ? 'user_checked'
+            : 'self_report';
+      if (event.assessmentSource !== source) throw new Error('正式复习评价来源不一致');
+    }
+  for (const event of data.reviewEvents)
+    if (event.scheduling && !data.schedulingLogs.some((l) => l.eventId === event.id))
+      throw new Error('正式复习事件缺少调度决策日志');
   const fields = [
     'id',
     'knowledgeUnitId',

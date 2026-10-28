@@ -25,6 +25,9 @@ import { tokenOf } from '../domain/revisions';
 import { StudyDraftController } from './study-draft';
 import { SourceLinks } from './Documents';
 import { SessionControls } from './SessionControls';
+import type { Difficulty, ReviewDecision } from '../scheduling/types';
+import { reasonLabels, gradeLabels } from '../scheduling/policy';
+import { dateTime } from '../components/actions';
 import { downloadJson } from '../persistence/backup';
 
 export function Study({
@@ -38,6 +41,10 @@ export function Study({
   projectName: string;
   cards: PracticeItem[];
 }) {
+  const last = events
+    .filter((e) => e.sessionId === session.id && e.queueIndex < session.index)
+    .sort((a, b) => a.queueIndex - b.queueIndex)
+    .slice(-1)[0]?.scheduling;
   if (session.status !== 'active') {
     const completed = events.filter((event) => event.sessionId === session.id);
     const skipped = completed.filter((event) => event.assessmentResult === 'skipped').length;
@@ -51,6 +58,12 @@ export function Study({
         <p>
           完成 {completed.length - skipped} 题，跳过 {skipped} 题。学习记录已保存在本地。
         </p>
+        {last && <DecisionFeedback decision={last} />}
+        {session.reviewPlan && (
+          <a className="button" href="#daily">
+            查看今日复习与下次到期
+          </a>
+        )}
         <div className="completion-note">
           花一点时间回想：哪些内容还需要下一次独立回忆？
           <br />
@@ -68,12 +81,15 @@ export function Study({
     );
   }
   return (
-    <StudyQuestion
-      key={`${session.id}:${session.index}:${session.queue[session.index]?.revisionId}`}
-      session={session}
-      projectName={projectName}
-      cards={cards}
-    />
+    <>
+      {last && <DecisionFeedback decision={last} />}
+      <StudyQuestion
+        key={`${session.id}:${session.index}:${session.queue[session.index]?.revisionId}`}
+        session={session}
+        projectName={projectName}
+        cards={cards}
+      />
+    </>
   );
 }
 
@@ -99,6 +115,7 @@ function StudyQuestion({
     confidenceBeforeReveal: confidence,
     attemptedBeforeReveal: attempted,
   } = view.draft;
+  const [difficulty, setDifficulty] = useState<Difficulty>('good');
   const [mastery, setMastery] = useState<SubjectiveMastery | null>(null);
   const [performance, setPerformance] = useState<Performance>('ungraded');
   const action = useAction();
@@ -119,6 +136,7 @@ function StudyQuestion({
         skipped ? 'skipped' : performance,
         skipped ? null : mastery,
         token,
+        difficulty,
       ),
     );
   }
@@ -153,6 +171,26 @@ function StudyQuestion({
         </div>
         <span className="tag">主动回忆</span>
       </div>
+      {session.reviewPlan && (
+        <section className="info-note" aria-label="复习安排说明">
+          <p>
+            {
+              {
+                due: '本题已到复习日',
+                retest: '提示或揭晓后的无提示复测',
+                new: '尚未建立可靠调度的新知识',
+                focus: '你设置的重点题目，提前练习',
+                practice: '临时练习',
+              }[session.reviewPlan.entries[item.id]?.reason ?? 'practice']
+            }{' '}
+            ·{' '}
+            {session.reviewPlan.entries[item.id]?.canSchedule
+              ? '符合条件的评价将用于间隔安排'
+              : '本次不更新长期记忆状态'}
+          </p>
+          <p>正确需满足全部必需内容；遗漏必需内容按失败处理。0–4 主观感受不决定调度评分。</p>
+        </section>
+      )}
       <SessionControls session={session} cards={cards} controller={controller} />
       {(contentConflict || view.conflict) && (
         <section className="conflict-panel" role="alert">
@@ -381,10 +419,38 @@ function StudyQuestion({
                 onChange={(event) => setPerformance(event.target.value as Performance)}
               >
                 <option value="ungraded">未核对 / 暂不判断</option>
-                <option value="correct">{performanceLabels.correct}</option>
+                <option value="correct">
+                  {session.reviewPlan ? '正确（必需内容全部满足）' : performanceLabels.correct}
+                </option>
                 <option value="partially_correct">{performanceLabels.partially_correct}</option>
                 <option value="incorrect">{performanceLabels.incorrect}</option>
               </select>
+              {session.reviewPlan &&
+                performance === 'correct' &&
+                hints === 0 &&
+                (mode === 'typed' ? !!response.trim() : attempted) && (
+                  <label>
+                    独立回忆难度
+                    <select
+                      aria-label="独立回忆难度"
+                      disabled={blocked}
+                      value={difficulty}
+                      onChange={(e) => setDifficulty(e.target.value as Difficulty)}
+                    >
+                      <option value="hard">正确但费力（Hard）</option>
+                      <option value="good">正常难度（Good，默认）</option>
+                      <option value="easy">正确且轻松（Easy）</option>
+                    </select>
+                  </label>
+                )}
+              {session.reviewPlan && (
+                <p className="muted">
+                  {mode === 'quick'
+                    ? '口头回忆成绩来自你的自报，不是系统客观验证。'
+                    : '保存原始回答，由你人工核对；系统未自动评分。'}
+                  有提示、直接揭晓、跳过或未核对，都不会成为正常成功回忆。
+                </p>
+              )}
               <h3>这次，你感觉掌握了多少？</h3>
               <p className="muted">主观评价单独记录，不代表客观正确率或记忆概率。</p>
               <div className="mastery-grid" role="radiogroup" aria-label="主观掌握评价">
@@ -439,5 +505,28 @@ function StudyQuestion({
         </button>
       </div>
     </div>
+  );
+}
+
+function DecisionFeedback({ decision }: { decision: ReviewDecision }) {
+  return (
+    <section className="info-note" aria-label="本次复习结果">
+      <p>{reasonLabels[decision.reason]}。</p>
+      <p>
+        {decision.grade === null ? '未更新 FSRS 长期状态' : gradeLabels[decision.grade]}
+        {decision.nextDue ? ` · 下次到期：${dateTime(decision.nextDue)}` : ''}
+        {decision.retestDue ? ` · 无提示复测：${dateTime(decision.retestDue)}` : ''}
+      </p>
+      {decision.grade !== null && (
+        <small>间隔按揭晓时保留的回忆证据安排，稍后保存不会额外延长。</small>
+      )}
+      <small>
+        {decision.source === 'self_report'
+          ? '来源：用户自报'
+          : decision.source === 'user_checked'
+            ? '来源：保留作答后的人工核对'
+            : '没有客观核验结果'}
+      </small>
+    </section>
   );
 }

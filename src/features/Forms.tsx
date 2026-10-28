@@ -19,6 +19,8 @@ export function ProjectForm({
     learningGoal: project?.learningGoal ?? '',
     targetDate: project?.targetDate ?? '',
     dailyTimeBudget: project?.dailyTimeBudget ?? 20,
+    priority: project?.priority ?? 2,
+    newCardLimit: project?.newCardLimit ?? 10,
   });
   const action = useAction();
   const set = (key: string, value: string | number) =>
@@ -83,6 +85,30 @@ export function ProjectForm({
               max={1440}
               value={values.dailyTimeBudget}
               onChange={(event) => set('dailyTimeBudget', event.target.valueAsNumber)}
+            />
+          </label>
+        </div>
+        <div className="form-grid">
+          <label>
+            学习优先级
+            <select
+              value={values.priority}
+              onChange={(e) => set('priority', Number(e.target.value))}
+            >
+              <option value={1}>低</option>
+              <option value={2}>普通</option>
+              <option value={3}>高</option>
+            </select>
+          </label>
+          <label>
+            每日新题上限
+            <input
+              type="number"
+              min={0}
+              max={1000}
+              required
+              value={values.newCardLimit}
+              onChange={(e) => set('newCardLimit', e.target.valueAsNumber)}
             />
           </label>
         </div>

@@ -1,4 +1,7 @@
+import type { ReviewPlan, ReviewDecision } from '../scheduling/types';
 export interface LearningProject {
+  priority?: number;
+  newCardLimit?: number;
   id: string;
   name: string;
   description: string;
@@ -77,6 +80,7 @@ export interface KnowledgeUnit {
 }
 
 export interface PracticeItem {
+  focus?: boolean;
   id: string;
   projectId: string;
   knowledgeUnitId: string;
@@ -169,6 +173,7 @@ export interface StudyDraft {
 }
 
 export interface StudySession {
+  reviewPlan?: ReviewPlan;
   id: string;
   projectId: string;
   queue: PracticeSnapshot[];
@@ -184,8 +189,11 @@ export interface StudySession {
 }
 
 export interface ReviewEvent {
+  reviewedAt?: string;
+  attemptedBeforeReveal?: boolean;
+  scheduling?: ReviewDecision;
   id: string;
-  schemaVersion: 1 | 2;
+  schemaVersion: 1 | 2 | 3;
   projectId: string;
   practiceItemId: string;
   knowledgeUnitId: string;

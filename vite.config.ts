@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 
 export default defineConfig({
+  optimizeDeps: { include: ['ts-fsrs'] },
   plugins: [
     react(),
     viteStaticCopy({

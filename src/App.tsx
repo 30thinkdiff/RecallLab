@@ -7,7 +7,11 @@ import { DataBoundary, ConfirmDialog, ErrorNotice } from './components/shared';
 import { useAction } from './components/actions';
 import { CardForm, ProjectForm } from './features/Forms';
 import { History, Overview, ProjectDetail, Projects } from './features/Workspace';
-import { Study } from './features/Study';
+import { PendingPrompts } from './features/PendingPrompts';
+const DailyReview = lazy(() =>
+  import('./features/DailyReview').then((m) => ({ default: m.DailyReview })),
+);
+const Study = lazy(() => import('./features/Study').then((m) => ({ default: m.Study })));
 import type { LearningProject, PracticeItem } from './domain/models';
 const ImportPage = lazy(() =>
   import('./features/ImportPage').then((module) => ({ default: module.ImportPage })),
@@ -104,6 +108,7 @@ function Workspace() {
     'archive',
     'import',
     'documents',
+    'daily',
     'document',
   ].includes(section ?? '')
     ? section
@@ -133,6 +138,7 @@ function Workspace() {
         <nav aria-label="主导航">
           {[
             { name: '学习概览', route: 'home', icon: LayoutDashboard },
+            { name: '今日复习', route: 'daily', icon: Clock3 },
             { name: '学习项目', route: 'projects', icon: BookOpen },
             { name: '学习记录', route: 'history', icon: Clock3 },
             { name: '备份与恢复', route: 'backup', icon: ShieldCheck },
@@ -161,7 +167,7 @@ function Workspace() {
           </p>
         </div>
         <div className="sidebar-footer">
-          RECALL. REFLECT. REPEAT.<span>0.3.1 · 资料与主动回忆</span>
+          RECALL. REFLECT. REPEAT.<span>0.4 · 证据与间隔复习</span>
         </div>
       </aside>
       <main id="main-content" tabIndex={-1}>
@@ -171,6 +177,7 @@ function Workspace() {
             {
               {
                 home: '学习概览',
+                daily: '今日复习',
                 history: '学习记录',
                 projects: '学习项目',
                 backup: '备份与恢复',
@@ -191,6 +198,17 @@ function Workspace() {
             <p role="status">正在读取本地学习数据…</p>
           ) : section === 'home' ? (
             <Overview data={data} onCreate={createProject} />
+          ) : section === 'daily' ? (
+            <Suspense fallback={<p role="status">正在准备今日复习…</p>}>
+              <DailyReview
+                key={id ?? 'daily'}
+                initialProjectId={id}
+                onEditProject={(pid) => {
+                  const p = data.projects.find((p) => p.id === pid);
+                  if (p) setModal({ type: 'project', project: p });
+                }}
+              />
+            </Suspense>
           ) : section === 'projects' ? (
             <Projects data={data} onCreate={createProject} />
           ) : section === 'history' ? (
@@ -220,6 +238,8 @@ function Workspace() {
             <ArchivePage projects={data.allProjects} cards={data.allCards} />
           ) : section === 'backup' ? (
             <BackupPage />
+          ) : section === 'pending' && id ? (
+            <PendingPrompts projectId={id} cards={data.allCards} />
           ) : section === 'project' && project ? (
             <ProjectDetail
               key={project.id}
@@ -239,14 +259,16 @@ function Workspace() {
               }
             />
           ) : section === 'study' && session ? (
-            <Study
-              session={session}
-              events={data.events}
-              cards={data.allCards}
-              projectName={
-                data.projects.find((project) => project.id === session.projectId)?.name ?? ''
-              }
-            />
+            <Suspense fallback={<p role="status">正在准备学习页面…</p>}>
+              <Study
+                session={session}
+                events={data.events}
+                cards={data.allCards}
+                projectName={
+                  data.projects.find((project) => project.id === session.projectId)?.name ?? ''
+                }
+              />
+            </Suspense>
           ) : (
             <div className="empty-card spacious">
               <h1>没有找到此内容</h1>
@@ -264,7 +286,7 @@ function Workspace() {
           onClose={() => setModal(null)}
           onSaved={(id) => {
             setModal(null);
-            location.hash = `project/${id}`;
+            location.hash = section === 'daily' ? `daily/${id}` : `project/${id}`;
           }}
         />
       )}

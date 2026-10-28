@@ -152,13 +152,20 @@ export function BackupPage() {
         {candidate && (
           <div className="restore-preview">
             <h3>备份预览 · 数据库 v{candidate.databaseVersion}</h3>
+            {candidate.databaseVersion < 4 && (
+              <p className="info-note">
+                此旧备份不含正式间隔复习状态。恢复后保留旧学习记录，调度从新评价开始；恢复前仍会保护当前完整数据。
+              </p>
+            )}
             <p className="muted">
               {filename} · 导出时间 {candidate.createdAt}
             </p>
             <p>
               {candidate.data.projects.length} 个项目 · {candidate.data.practiceItems.length} 道题 ·{' '}
               {candidate.data.reviewEvents.length} 条事件 · {candidate.data.revisions.length} 个修订
-              · {candidate.data.sourceDocuments.length} 份资料
+              · {candidate.data.sourceDocuments.length} 份资料 ·{' '}
+              {candidate.data.memoryStates.length} 个记忆状态 ·{' '}
+              {candidate.data.schedulingLogs.length} 条调度决策
             </p>
             <label className="checkbox-label">
               <input

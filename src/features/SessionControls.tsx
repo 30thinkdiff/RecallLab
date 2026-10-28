@@ -19,9 +19,11 @@ export function SessionControls({
   const [confirm, setConfirm] = useState<'end' | 'restart' | null>(null);
   const [deferred, setDeferred] = useState(false);
   const planned = new Set(session.queue.map((snapshot) => snapshot.id));
-  const added = cards.filter(
-    (card) => card.projectId === session.projectId && !card.archivedAt && !planned.has(card.id),
-  );
+  const added = session.reviewPlan
+    ? []
+    : cards.filter(
+        (card) => card.projectId === session.projectId && !card.archivedAt && !planned.has(card.id),
+      );
   async function sync(includeNew: boolean) {
     if (controller)
       await controller.withCurrent((current, token) =>
@@ -72,9 +74,16 @@ export function SessionControls({
         <button className="button secondary" onClick={() => setConfirm('end')}>
           结束当前轮次
         </button>
-        <button className="text-button" onClick={() => setConfirm('restart')}>
-          重新开始一轮
-        </button>
+        {!session.reviewPlan && (
+          <button className="text-button" onClick={() => setConfirm('restart')}>
+            重新开始一轮
+          </button>
+        )}
+        {session.reviewPlan && (
+          <a className="text-link" href="#daily">
+            暂停并返回今日复习
+          </a>
+        )}
       </div>
       <details className="remaining-list">
         <summary>查看本轮剩余题目（{session.queue.length - session.index}）</summary>
