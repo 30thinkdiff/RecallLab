@@ -135,6 +135,13 @@ export function DocumentDetail({
         {document.fileType.toUpperCase()} · {dateTime(document.importedAt)} · {linked.length}{' '}
         道关联题目
       </p>
+      {!archived && (
+        <p>
+          <a className="button secondary" href={`#ai/document/${document.id}`}>
+            AI 辅助整理
+          </a>
+        </p>
+      )}
       {document.warnings.map((warning) => (
         <p className="info-note" key={warning}>
           {warning}

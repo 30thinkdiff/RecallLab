@@ -18,6 +18,11 @@ export function PendingPrompts({ projectId, cards }: { projectId: string; cards:
       <a className="text-link" href={`#project/${projectId}`}>
         返回项目题库
       </a>
+      <p>
+        <a className="button secondary" href={`#ai/project/${projectId}`}>
+          AI 辅助完善题干
+        </a>
+      </p>
       <h1>批量完善题干</h1>
       <p>
         保留原答案与来源，只填写合适的问题。保存后重新建立学习状态；待完善内容不会进入学习队列。

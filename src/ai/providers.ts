@@ -110,7 +110,7 @@ export class HttpProvider implements AiProvider {
   readonly kind: 'ollama' | 'compatible';
   constructor(
     private readonly config: ProviderConfig,
-    private readonly fetcher: typeof fetch = fetch,
+    private readonly fetcher: typeof fetch = (...args) => fetch(...args),
   ) {
     this.kind = config.kind === 'ollama' ? 'ollama' : 'compatible';
     destination(config);

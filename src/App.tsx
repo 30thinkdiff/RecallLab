@@ -8,6 +8,9 @@ import { useAction } from './components/actions';
 import { CardForm, ProjectForm } from './features/Forms';
 import { History, Overview, ProjectDetail, Projects } from './features/Workspace';
 import { PendingPrompts } from './features/PendingPrompts';
+const AiWorkspace = lazy(() =>
+  import('./features/AiWorkspace').then((m) => ({ default: m.AiWorkspace })),
+);
 const QuestionQuality = lazy(() =>
   import('./features/QuestionQuality').then((m) => ({ default: m.QuestionQuality })),
 );
@@ -76,7 +79,7 @@ function Workspace() {
         .sort((a, b) => a.timestamp.localeCompare(b.timestamp) || a.id.localeCompare(b.id)) ?? [],
     sessions: rawData?.sessions.filter((session) => ids.has(session.projectId)) ?? [],
   };
-  const [section, id] = route.split('/');
+  const [section, id, aiId] = route.split('/');
   const project = data.projects.find((project) => project.id === id);
   const session = data.sessions.find((session) => session.id === id);
   const item = data.allCards.find((card) => card.id === id);
@@ -147,7 +150,7 @@ function Workspace() {
           </p>
         </div>
         <div className="sidebar-footer">
-          RECALL. REFLECT. REPEAT.<span>0.4.1 · 学习质量与可靠性</span>
+          RECALL. REFLECT. REPEAT.<span>0.5 Alpha · 来源可核对的辅助整理</span>
           <OfflineStatus />
         </div>
       </aside>
@@ -202,6 +205,10 @@ function Workspace() {
                 cards={data.allCards}
                 initialProjectId={id}
               />
+            </Suspense>
+          ) : section === 'ai' && id && aiId ? (
+            <Suspense fallback={<p role="status">正在准备 AI 辅助整理…</p>}>
+              <AiWorkspace key={`${id}/${aiId}`} kind={id} id={aiId} cards={data.allCards} />
             </Suspense>
           ) : section === 'documents' ? (
             <Documents projects={data.allProjects} />

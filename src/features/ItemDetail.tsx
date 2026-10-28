@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { objectiveLabels } from '../ai/protocol';
 import type {
   PracticeItem,
   PracticeItemRevision,
@@ -42,6 +43,50 @@ export function ItemDetail({ item, data }: { item: PracticeItem; data: Workspace
         当前有效修订 {item.revision} · {item.archivedAt ? '已归档，不参与正常学习' : '有效题目'} ·{' '}
         {currentRevision ? changeLabels[currentRevision.changeType] : ''}
       </p>
+      {!archivedProject && !item.archivedAt && (
+        <p>
+          <a className="button secondary" href={`#ai/item/${item.id}`}>
+            AI 建议要点与题干
+          </a>
+        </p>
+      )}
+      {item.learningObjective && <p>学习目标：{objectiveLabels[item.learningObjective]}</p>}
+      {item.aiProvenance && (
+        <details className="info-note">
+          <summary>
+            {item.aiProvenance.isMock ? '模拟演示来源（非真实 AI）' : 'AI 辅助来源与人工确认'}
+          </summary>
+          <p>
+            模型：{item.aiProvenance.model} · {dateTime(item.aiProvenance.generatedAt)} · 人工确认于{' '}
+            {dateTime(item.aiProvenance.confirmation.at)}
+          </p>
+          <p>
+            引用已逐字定位；语义与完整性由用户核对，不是机器独立验证。
+            {item.aiProvenance.modifiedAfterConfirmation
+              ? '此后内容已有修改，以下为当时的确认记录。'
+              : ''}
+          </p>
+          <p className="preserve-lines">原始依据：{item.aiProvenance.evidence.quote}</p>
+          <p className="preserve-lines">确认的标准答案：{item.aiProvenance.confirmation.answer}</p>
+          <details>
+            <summary>原始模型建议与确认的评分要点</summary>
+            {item.aiProvenance.original.items.map((o, i) => (
+              <div key={i}>
+                <p>建议题干：{o.question}</p>
+                <p className="preserve-lines">建议表述：{o.answerSuggestion}</p>
+                {o.qualityNotes.map((n, j) => (
+                  <p key={j}>{n}</p>
+                ))}
+              </div>
+            ))}
+            {item.aiProvenance.acceptedCriteria.map((c, i) => (
+              <p key={i}>
+                {c.text} · 依据：{c.anchors.map((a) => a.quote).join('；')}
+              </p>
+            ))}
+          </details>
+        </details>
+      )}
       <section className="answer-panel">
         <span className="section-kicker">当前标准答案</span>
         <p className="preserve-lines">{item.standardAnswer}</p>
