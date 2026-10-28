@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { pageText, textQuality } from './pdf-layout';
+import { pageText, textQuality, unreadablePdfMessage } from './pdf-layout';
 it('keeps extraction order, line changes and word gaps without inventing content', () => {
   expect(
     pageText([
@@ -14,4 +14,10 @@ it('flags empty and replacement/control characters instead of silently accepting
   expect(textQuality('文字�缺失')).toBe('suspect');
   expect(textQuality('异常\0内容')).toBe('suspect');
   expect(textQuality('有效文字🙂\n下一行')).toBe('ready');
+});
+
+it('does not misdiagnose decoder failures as scanned documents', () => {
+  expect(unreadablePdfMessage(['failed', 'failed'])).toContain('解析失败');
+  expect(unreadablePdfMessage(['failed', 'empty'])).toContain('1/2');
+  expect(unreadablePdfMessage(['empty', 'empty'])).toContain('没有 OCR');
 });
