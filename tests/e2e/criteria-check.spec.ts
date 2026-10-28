@@ -11,7 +11,7 @@ test('detailed criterion evidence survives pause and refresh, overrides mastery,
   await page.getByRole('button', { name: '输入作答', exact: true }).click();
   await page.getByLabel('你的回答').fill('公开虚构回答：遗漏第二项。');
   await page.getByRole('button', { name: '揭晓答案', exact: true }).click();
-  await page.getByLabel('核对方式').selectOption('detailed');
+  await page.getByRole('combobox', { name: '核对方式', exact: true }).selectOption('detailed');
   await page.getByLabel('必需要点 1 核对').selectOption('correct');
   await page.getByLabel('必需要点 2 核对').selectOption('omitted');
   await page.getByRole('radio', { name: '4 完全掌握', exact: true }).click();

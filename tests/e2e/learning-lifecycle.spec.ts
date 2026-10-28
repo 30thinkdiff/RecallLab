@@ -22,6 +22,9 @@ test('69-item learning lifecycle retains sources and isolates a corrected answer
   await page.getByRole('button', { name: '输入作答', exact: true }).click();
   await page.getByLabel('你的回答').fill('公开虚构原始回答：第一要点、第二要点。');
   await rate(page, true);
+  await expect(
+    page.getByRole('link', { name: '查看今日复习与下次到期', exact: true }),
+  ).toBeVisible();
   const first = await page.evaluate(async () => {
     const path = '/src/persistence/database.ts';
     const { db } = await import(path);

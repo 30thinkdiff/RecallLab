@@ -158,3 +158,5 @@ StudyDraft 可选 assessment 保存核对方式、标记、整体人工结果、
 workspace-data 按视图查询事件/修订/活动轮次，分开订阅避免 sessions 写入触发 reviewEvents 全表扫描；review-data 在每日页按所选项目查询，统计直接复用同份结果。本地日历缓存 Intl 格式器但每次按实际 Date 计算，未缓存时区偏移，不改变夏令时语义。根模块按 React/存储/校验拆块，PDF/OCR/调度仍按需加载，不改变 FSRS 公式。
 
 发布构建生成 service-worker.js，仅缓存公共壳、哈希 JS/CSS（含学习路由和调度），同源 PDF/OCR 资源按需缓存。安装完整缓存后才激活；不 skipWaiting 打断旧标签页，激活后清理旧壳。GET 白名单不包括数据 API、上传或 IndexedDB；缓存失败不得阻塞正常读取。不在开发/测试 Vite 模式注册持久缓存。离线不能替代完整备份，浏览器清站点数据仍会丢失本地记录。
+
+初始化探测使用 native IndexedDB open，不指定新版本；只有不存在时会触发 upgradeneeded，此时 abort 自己的临时创建，不删除数据库。避免 Dexie.exists 在缺库时删除临时库与其他标签页首次建库竞争。旧库使用单个只读 native 事务捕获原布局（native 版本 / 10 为 Dexie 版本），关闭连接后再由原有备份门禁与正式迁移继续；升级流程和不可变事件没有改写。

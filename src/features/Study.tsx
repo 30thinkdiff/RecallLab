@@ -5,7 +5,7 @@ import {
   type CriterionMark,
   type AssessmentDraft,
 } from '../domain/assessment';
-import { useEffect, useState, useSyncExternalStore } from 'react';
+import { Fragment, useEffect, useState, useSyncExternalStore } from 'react';
 import {
   ArrowLeft,
   ArrowRight,
@@ -259,7 +259,7 @@ function StudyQuestion({
         <div className="question-number">QUESTION {String(session.index + 1).padStart(2, '0')}</div>
         <h2 className="study-question">{item.question}</h2>
         {!revealed && (
-          <>
+          <Fragment key="recall-input">
             <div className="mode-switch" role="group" aria-label="作答模式">
               <button
                 className={mode === 'quick' ? 'selected' : ''}
@@ -336,7 +336,7 @@ function StudyQuestion({
                 ))}
               </select>
             </label>
-          </>
+          </Fragment>
         )}
         {hints > 0 && (
           <div className="hint-panel">
@@ -378,7 +378,7 @@ function StudyQuestion({
           </div>
         )}
         {revealed && (
-          <>
+          <Fragment key="answer-assessment">
             {session.draft.responseMode === 'typed' && (
               <div className="original-response">
                 <span className="section-kicker">你的原始回答</span>
@@ -558,7 +558,7 @@ function StudyQuestion({
                 </button>
               </div>
             </div>
-          </>
+          </Fragment>
         )}
         <ErrorNotice message={action.error || view.error} />
       </section>

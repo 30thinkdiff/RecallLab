@@ -35,11 +35,14 @@ export async function editCard(page: Page, index: number, answer: string, kind =
 }
 export async function rate(page: Page, last = false) {
   await page.getByRole('button', { name: '揭晓答案', exact: true }).click();
-  await page.getByLabel('自行核对结果').selectOption('correct');
+  await page.getByRole('combobox', { name: '自行核对结果', exact: true }).selectOption('correct');
   await page.getByRole('radio', { name: '3 基本掌握', exact: true }).click();
   await page
     .getByRole('button', { name: last ? '保存并完成本轮' : '保存并下一题', exact: true })
     .click();
+  // A click may return before the IndexedDB transaction and live view finish.
+  // The assessment region remains present (even while busy) until progress commits.
+  await expect(page.locator('.assessment-footer')).toHaveCount(0);
 }
 
 export async function restoreFixture(page: Page) {

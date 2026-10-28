@@ -1,5 +1,5 @@
 import Dexie from 'dexie';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import legacyJson from '../../tests/fixtures/legacy-v1.json';
 import { validateBackup } from './backup-format';
 import { RecallDatabase } from './database';
@@ -283,5 +283,38 @@ it('v3 to v4 preserves old events, creates no FSRS evidence, protects a backup a
       expect(await upgraded.recoveryBackups.count()).toBe(1);
       upgraded.close();
     }
+  }
+});
+
+it('does not create or delete a database while probing an absent name', async () => {
+  const name = `missing-probe-${crypto.randomUUID()}`;
+  names.push(name);
+  const deletion = vi.spyOn(indexedDB, 'deleteDatabase');
+  try {
+    expect(await inspectBeforeUpgrade(name)).toBeNull();
+    expect(deletion).not.toHaveBeenCalled();
+    expect((await indexedDB.databases()).some((d) => d.name === name)).toBe(false);
+  } finally {
+    deletion.mockRestore();
+  }
+});
+it('simultaneous startup probes never delete a concurrent first writer or its original rows', async () => {
+  const name = `startup-race-${crypto.randomUUID()}`;
+  names.push(name);
+  const db = new RecallDatabase(name),
+    deletion = vi.spyOn(indexedDB, 'deleteDatabase');
+  try {
+    await Promise.all([
+      inspectBeforeUpgrade(name),
+      inspectBeforeUpgrade(name),
+      db.projects.add(legacyJson.data.projects[0]!),
+    ]);
+    expect(deletion).not.toHaveBeenCalled();
+    expect(await db.projects.toArray()).toEqual([legacyJson.data.projects[0]!]);
+    expect(await inspectBeforeUpgrade(name)).toBeNull();
+    expect(await db.projects.count()).toBe(1);
+  } finally {
+    deletion.mockRestore();
+    db.close();
   }
 });
