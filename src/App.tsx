@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, lazy, Suspense } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { BookOpen, Clock3, FlaskConical, LayoutDashboard, ShieldCheck } from 'lucide-react';
 import { db } from './persistence/database';
@@ -9,6 +9,10 @@ import { CardForm, ProjectForm } from './features/Forms';
 import { History, Overview, ProjectDetail, Projects } from './features/Workspace';
 import { Study } from './features/Study';
 import type { LearningProject, PracticeItem } from './domain/models';
+const ImportPage = lazy(() =>
+  import('./features/ImportPage').then((module) => ({ default: module.ImportPage })),
+);
+import { Documents, DocumentDetail } from './features/Documents';
 import { ItemDetail } from './features/ItemDetail';
 import { ArchivePage } from './features/Archive';
 import { StorageGate, BackupPage } from './features/Storage';
@@ -93,7 +97,15 @@ function Workspace() {
   const session = data.sessions.find((session) => session.id === id);
   const item = data.allCards.find((card) => card.id === id);
   const createProject = () => setModal({ type: 'project' });
-  const activePage = ['home', 'history', 'backup', 'archive'].includes(section ?? '')
+  const activePage = [
+    'home',
+    'history',
+    'backup',
+    'archive',
+    'import',
+    'documents',
+    'document',
+  ].includes(section ?? '')
     ? section
     : 'projects';
   return (
@@ -125,6 +137,8 @@ function Workspace() {
             { name: '学习记录', route: 'history', icon: Clock3 },
             { name: '备份与恢复', route: 'backup', icon: ShieldCheck },
             { name: '归档内容', route: 'archive', icon: BookOpen },
+            { name: '导入资料', route: 'import', icon: BookOpen },
+            { name: '学习资料', route: 'documents', icon: BookOpen },
           ].map(({ name, route, icon: Icon }) => (
             <a
               key={route}
@@ -147,7 +161,7 @@ function Workspace() {
           </p>
         </div>
         <div className="sidebar-footer">
-          RECALL. REFLECT. REPEAT.<span>0.2 · 知识与学习记录</span>
+          RECALL. REFLECT. REPEAT.<span>0.3 · 资料与主动回忆</span>
         </div>
       </aside>
       <main id="main-content" tabIndex={-1}>
@@ -161,6 +175,9 @@ function Workspace() {
                 projects: '学习项目',
                 backup: '备份与恢复',
                 archive: '归档内容',
+                import: '导入资料',
+                documents: '学习资料',
+                document: '原文资料',
               }[activePage ?? 'projects']
             }
           </span>
@@ -178,6 +195,25 @@ function Workspace() {
             <Projects data={data} onCreate={createProject} />
           ) : section === 'history' ? (
             <History data={data} />
+          ) : section === 'import' ? (
+            <Suspense fallback={<p role="status">正在准备资料导入…</p>}>
+              <ImportPage
+                key={id ?? 'import'}
+                projects={data.projects}
+                cards={data.allCards}
+                initialProjectId={id}
+              />
+            </Suspense>
+          ) : section === 'documents' ? (
+            <Documents projects={data.allProjects} />
+          ) : section === 'document' && id ? (
+            <DocumentDetail
+              key={id}
+              documentId={id}
+              projects={data.allProjects}
+              cards={data.allCards}
+              page={route.split('/')[2]}
+            />
           ) : section === 'item' && item ? (
             <ItemDetail key={`${item.id}:${item.currentRevisionId}`} item={item} data={data} />
           ) : section === 'archive' ? (

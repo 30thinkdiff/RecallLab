@@ -23,6 +23,7 @@ import { ErrorNotice } from '../components/shared';
 import { useAction } from '../components/actions';
 import { tokenOf } from '../domain/revisions';
 import { StudyDraftController } from './study-draft';
+import { SourceLinks } from './Documents';
 import { SessionControls } from './SessionControls';
 import { downloadJson } from '../persistence/backup';
 
@@ -350,11 +351,7 @@ function StudyQuestion({
                   </ul>
                 </>
               )}
-              {item.sourceReferences.length > 0 && (
-                <div className="source-note">
-                  来源：{item.sourceReferences.map((source) => source.label).join('；')}
-                </div>
-              )}
+              {item.sourceReferences.length > 0 && <SourceLinks sources={item.sourceReferences} />}
               {item.mnemonics && (
                 <p className="supplement preserve-lines">
                   <strong>助记技巧</strong>

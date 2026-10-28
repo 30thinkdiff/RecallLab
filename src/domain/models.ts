@@ -14,7 +14,44 @@ export interface SourceReference {
   documentId?: string;
   page?: number;
   excerpt?: string;
+  startOffset?: number;
+  endOffset?: number;
+  sectionId?: string;
+  recordIndex?: number;
   label: string;
+}
+
+export type DocumentFormat = 'json' | 'csv' | 'tsv' | 'txt' | 'markdown' | 'pdf';
+export interface DocumentPage {
+  number: number;
+  text: string;
+  startOffset: number;
+  status: 'ready' | 'empty' | 'failed' | 'suspect';
+  warnings: string[];
+}
+export interface DocumentSection {
+  id: string;
+  title: string;
+  startOffset: number;
+  endOffset: number;
+  page?: number;
+}
+export interface SourceDocument {
+  id: string;
+  projectId: string;
+  filename: string;
+  fileType: DocumentFormat;
+  importedAt: string;
+  sourceHash: string;
+  byteLength: number;
+  extractedContent: string;
+  pages: DocumentPage[];
+  sections: DocumentSection[];
+  extractionStatus: 'ready' | 'needs_review' | 'partial';
+  warnings: string[];
+  parserVersion: string;
+  importDigest: string;
+  initialItemIds: string[];
 }
 
 export interface KnowledgeUnit {

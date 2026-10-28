@@ -15,6 +15,8 @@ jobs:
           node-version: '20.20.2'
           cache: npm
       - run: npm ci
+      - name: Dependency security audit
+        run: npm audit --audit-level=moderate
       - name: Fixture reproducibility, types, lint, formatting, unit tests and build
         run: npm run check
       - name: Install isolated browser
@@ -24,10 +26,12 @@ jobs:
       - name: Commit-associated test summary
         if: always()
         run: npm run test:summary
+        env:
+          RECALLLAB_REVIEW_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: actions/upload-artifact@v7
         if: always()
         with:
-          name: playwright-report-${{ github.sha }}
+          name: playwright-report-${{ github.event.pull_request.head.sha || github.sha }}
           path: |
             playwright-report/
             test-results/

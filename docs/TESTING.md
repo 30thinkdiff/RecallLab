@@ -95,6 +95,32 @@ GitHub Actions 自动运行检查与浏览器矩阵。始终尝试上传 `playwr
 ## 审查建议与边界
 
 先看备份/迁移、修订状态与 token 检查，再看 UI 和对应测试；各阶段的记录在 CHECKPOINTS_V2.md。
-本轮 PR #2 以 PR #1 的分支为基础，未自动合并或发布。
+V0.2 PR #2 以 PR #1 为基础；当前 V0.3 继续叠加在 PR #3 上，均不自动合并或发布。
 测试通过只验证所覆盖情形；尚未覆盖 Firefox/WebKit、真实系统崩溃、所有存储配额与大规模数据压力。
 没有为可选审查预览发布公开网站，也没有上传任何本地真实 IndexedDB 数据。
+
+## V0.3 导入验收矩阵
+
+当前本地验证：78 项单元/组件、32 项浏览器，包含前述 V0.2 A–N 回归。远程结果以具体 SHA 的 CI 为准。
+
+| 本轮要求                               | 定位与证据                                                            |
+| -------------------------------------- | --------------------------------------------------------------------- |
+| 合法 JSON / 69 题一次确认              | importing/text.test.ts；import.spec.ts 的 69 题用例                   |
+| CSV/TSV 分隔、引号、多行、中文/Unicode | text.test.ts 三种分隔；import.spec.ts 各格式完整学习                  |
+| TXT/Markdown 明确结构与未知正文        | text.test.ts；import.spec.ts；pdf.spec.ts 普通 TXT 选文               |
+| 损坏/不完整与预览取消                  | import.spec.ts；缺答案可补全后导入；取消不写资料/项目                 |
+| 重复与已有项目追加                     | service.test.ts、import.spec.ts；重复默认不选，不覆盖原答案           |
+| 事务失败回滚与重试幂等                 | service.test.ts：第二条写入失败时所有新增回滚，双确认只创建一次       |
+| PDF 页码/位置、真实文本提取            | pdf.spec.ts 使用实际 PDF.js 与双页合法 PDF，选第二页、备份核对 page=2 |
+| 扫描、损坏、混合空白页、疑似乱码       | pdf.spec.ts 三种真实 PDF；pdf-layout.test.ts 的替换/控制字符检测      |
+| 导入即学、改题后来源与旧历史           | import.spec.ts、pdf.spec.ts、sources.test.ts、service.test.ts         |
+| 旧数据升级/旧备份、资料备份恢复        | backup.test.ts 的 v1/v2→v3 与失败回滚；PDF 完整备份 UI 恢复           |
+| 桌面与基本手机操作                     | import.spec.ts CSV；pdf.spec.ts PDF 选文与无横向溢出                  |
+
+新夹具位于 `tests/fixtures/import`，生成脚本为 `generate-import-fixtures.mjs` 和 `generate-pdf-fixtures.mjs`，包含公开虚构 69 题、结构化小样、普通讲义、文本/图片/混合/损坏 PDF。
+CSV 使用人工独立编码的已知字段，PDF 由最小标准对象/xref 生成；并非用解析器输出反过来伪装期望值。
+PDF 桌面用例还断言没有向本机测试 origin 以外的 HTTP 服务发请求。
+
+`npm run fixtures` 会生成全部公开夹具，`fixtures:check` 检查字节可复现。原始 Markdown 夹具保留问答换行，不接受格式器将 Q/A 合并为普通段落。
+CI 额外运行依赖审计；审查入口为 V0.3 PR，基础是已通过 CI 的 PR #3。
+当前未覆盖加密 PDF 的完整密码交互、所有字体/复杂排版、系统级断电/配额边界或非 Chromium 引擎；不将这些写成已验证。

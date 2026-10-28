@@ -7,6 +7,10 @@ const source = z.object({
   documentId: z.string().optional(),
   page: z.number().int().positive().optional(),
   excerpt: z.string().optional(),
+  startOffset: z.number().int().nonnegative().optional(),
+  endOffset: z.number().int().nonnegative().optional(),
+  sectionId: z.string().optional(),
+  recordIndex: z.number().int().positive().optional(),
 });
 const snapshot = z.object({
   id,
@@ -141,10 +145,43 @@ const recovery = z.object({
   reason: z.string(),
   draft,
 });
+export const sourceDocumentSchema = z.object({
+  id,
+  projectId: id,
+  filename: z.string().min(1).max(500),
+  fileType: z.enum(['json', 'csv', 'tsv', 'txt', 'markdown', 'pdf']),
+  importedAt: date,
+  sourceHash: z.string().regex(/^[a-f0-9]{64}$/),
+  byteLength: z.number().int().nonnegative(),
+  extractedContent: z.string(),
+  pages: z.array(
+    z.object({
+      number: z.number().int().positive(),
+      text: z.string(),
+      startOffset: z.number().int().nonnegative(),
+      status: z.enum(['ready', 'empty', 'failed', 'suspect']),
+      warnings: z.array(z.string()),
+    }),
+  ),
+  sections: z.array(
+    z.object({
+      id,
+      title: z.string(),
+      startOffset: z.number().int().nonnegative(),
+      endOffset: z.number().int().nonnegative(),
+      page: z.number().int().positive().optional(),
+    }),
+  ),
+  extractionStatus: z.enum(['ready', 'needs_review', 'partial']),
+  warnings: z.array(z.string()),
+  parserVersion: z.string(),
+  importDigest: z.string().regex(/^[a-f0-9]{64}$/),
+  initialItemIds: z.array(id),
+});
 export const backupSchema = z.object({
   format: z.literal('RecallLabBackup'),
   formatVersion: z.literal(1),
-  databaseVersion: z.union([z.literal(1), z.literal(2)]),
+  databaseVersion: z.union([z.literal(1), z.literal(2), z.literal(3)]),
   createdAt: date,
   data: z.object({
     projects: z.array(project),
@@ -154,6 +191,7 @@ export const backupSchema = z.object({
     sessions: z.array(session),
     revisions: z.array(revision).default([]),
     draftRecoveries: z.array(recovery).default([]),
+    sourceDocuments: z.array(sourceDocumentSchema).default([]),
   }),
 });
 export type Backup = z.infer<typeof backupSchema>;
@@ -173,6 +211,70 @@ export function validateBackup(raw: unknown): Backup {
   }
   const items = new Map(data.practiceItems.map((item) => [item.id, item]));
   const revisions = new Map(data.revisions.map((revision) => [revision.id, revision]));
+  const documents = new Map(data.sourceDocuments.map((document) => [document.id, document]));
+  function validateSources(refs: z.infer<typeof source>[], projectId: string) {
+    for (const ref of refs) {
+      if (!ref.documentId) continue;
+      const doc = documents.get(ref.documentId);
+      if (!doc || doc.projectId !== projectId) throw new Error('来源资料不存在或跨项目引用');
+      if (
+        ref.page &&
+        !doc.pages.some((page) => page.number === ref.page && page.status !== 'failed')
+      )
+        throw new Error('来源页码无效');
+      if (ref.sectionId && !doc.sections.some((section) => section.id === ref.sectionId))
+        throw new Error('来源章节无效');
+      if (
+        ref.startOffset === undefined ||
+        ref.endOffset === undefined ||
+        ref.startOffset > ref.endOffset ||
+        ref.endOffset > doc.extractedContent.length ||
+        doc.extractedContent.slice(ref.startOffset, ref.endOffset) !== ref.excerpt
+      )
+        throw new Error('来源原文与位置不一致');
+      const page = doc.pages.find((page) => page.number === ref.page);
+      if (
+        page &&
+        (ref.startOffset < page.startOffset || ref.endOffset > page.startOffset + page.text.length)
+      )
+        throw new Error('来源位置超出指定页');
+    }
+  }
+  for (const doc of data.sourceDocuments) {
+    requireRef('projects', doc.projectId, '资料');
+    const pageNumbers = new Set<number>();
+    let pageIndex = 0;
+    let previousEnd = 0;
+    for (const page of doc.pages) {
+      if (
+        page.number !== ++pageIndex ||
+        page.startOffset < previousEnd ||
+        (pageIndex === 1 && page.startOffset !== 0)
+      )
+        throw new Error('资料页码或原文顺序不一致');
+      previousEnd = page.startOffset + page.text.length;
+      if (
+        pageNumbers.has(page.number) ||
+        doc.extractedContent.slice(page.startOffset, page.startOffset + page.text.length) !==
+          page.text
+      )
+        throw new Error('资料页面与提取原文不一致');
+      pageNumbers.add(page.number);
+    }
+    const sections = new Set<string>();
+    for (const section of doc.sections) {
+      if (
+        sections.has(section.id) ||
+        section.startOffset > section.endOffset ||
+        section.endOffset > doc.extractedContent.length ||
+        (section.page && !pageNumbers.has(section.page))
+      )
+        throw new Error('资料章节位置无效');
+      sections.add(section.id);
+    }
+    for (const itemId of doc.initialItemIds)
+      if (items.get(itemId)?.projectId !== doc.projectId) throw new Error('资料导入题目引用无效');
+  }
   const fields = [
     'id',
     'knowledgeUnitId',
@@ -187,7 +289,10 @@ export function validateBackup(raw: unknown): Backup {
   ] as const;
   const sameContent = (a: z.infer<typeof snapshot>, b: z.infer<typeof snapshot>) =>
     fields.every((field) => JSON.stringify(a[field]) === JSON.stringify(b[field]));
-  for (const unit of data.knowledgeUnits) requireRef('projects', unit.projectId, '知识单元');
+  for (const unit of data.knowledgeUnits) {
+    requireRef('projects', unit.projectId, '知识单元');
+    validateSources(unit.sourceReferences, unit.projectId);
+  }
   for (const item of data.practiceItems) {
     requireRef('projects', item.projectId, '题目');
     requireRef('knowledgeUnits', item.knowledgeUnitId, '题目');
@@ -196,7 +301,8 @@ export function validateBackup(raw: unknown): Backup {
       item.projectId
     )
       throw new Error('知识单元跨项目引用');
-    if (backup.databaseVersion === 2) {
+    validateSources(item.sourceReferences, item.projectId);
+    if (backup.databaseVersion >= 2) {
       const revision = revisions.get(item.currentRevisionId ?? '');
       if (
         !revision ||
@@ -211,6 +317,10 @@ export function validateBackup(raw: unknown): Backup {
   for (const revision of data.revisions) {
     requireRef('practiceItems', revision.practiceItemId, '修订');
     requireRef('knowledgeUnits', revision.snapshot.knowledgeUnitId, '修订');
+    validateSources(
+      revision.snapshot.sourceReferences,
+      items.get(revision.practiceItemId)!.projectId,
+    );
     if (
       revision.snapshot.id !== revision.practiceItemId ||
       revision.snapshot.revision !== revision.revisionNumber
@@ -272,7 +382,7 @@ export function validateBackup(raw: unknown): Backup {
       activeProjects.add(session.projectId);
     }
     if (
-      backup.databaseVersion === 2 &&
+      backup.databaseVersion >= 2 &&
       (session.generation === undefined ||
         session.planVersion === undefined ||
         session.draftVersion === undefined)
@@ -284,14 +394,14 @@ export function validateBackup(raw: unknown): Backup {
       if (items.get(snapshot.id)?.projectId !== session.projectId)
         throw new Error('轮次题目跨项目');
       if (
-        backup.databaseVersion === 2 &&
+        backup.databaseVersion >= 2 &&
         (!snapshot.revisionId ||
           !revisions.has(snapshot.revisionId) ||
           revisions.get(snapshot.revisionId)?.learningStateId !== snapshot.learningStateId)
       )
         throw new Error('轮次修订引用无效');
       if (
-        backup.databaseVersion === 2 &&
+        backup.databaseVersion >= 2 &&
         !sameContent(snapshot, revisions.get(snapshot.revisionId!)!.snapshot)
       )
         throw new Error('轮次与修订内容不一致');
@@ -324,14 +434,14 @@ export function validateBackup(raw: unknown): Backup {
     if (positions.has(position)) throw new Error('复习事件位置重复');
     positions.add(position);
     if (
-      backup.databaseVersion === 2 &&
+      backup.databaseVersion >= 2 &&
       !revisions.has(
         event.snapshot.revisionId ?? `${event.practiceItemId}:r${event.snapshot.revision}`,
       )
     )
       throw new Error('历史修订引用不存在');
     if (
-      backup.databaseVersion === 2 &&
+      backup.databaseVersion >= 2 &&
       !sameContent(
         event.snapshot,
         revisions.get(

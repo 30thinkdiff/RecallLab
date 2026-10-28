@@ -9,6 +9,7 @@ import type {
   ReviewEvent,
   StudySession,
   DraftRecovery,
+  SourceDocument,
 } from '../domain/models';
 import { legacyStateId, revisionId } from '../domain/revisions';
 
@@ -20,6 +21,7 @@ export interface LearningData {
   sessions: StudySession[];
   revisions: PracticeItemRevision[];
   draftRecoveries: DraftRecovery[];
+  sourceDocuments: SourceDocument[];
 }
 export const dataTables = [
   'projects',
@@ -29,11 +31,13 @@ export const dataTables = [
   'sessions',
   'revisions',
   'draftRecoveries',
+  'sourceDocuments',
 ] as const;
 export const legacyTables = dataTables.slice(0, 5);
+export const v2Tables = dataTables.slice(0, 7);
 
 export function migrateBackup(input: Backup): LearningData {
-  if (input.databaseVersion === 2) return input.data as LearningData;
+  if (input.databaseVersion >= 2) return input.data as LearningData;
   const observed = new Map<string, PracticeSnapshot>();
   function add(snapshot: PracticeSnapshot) {
     const key = revisionId(snapshot.id, snapshot.revision);
@@ -102,6 +106,7 @@ export function migrateBackup(input: Backup): LearningData {
     })),
     revisions,
     draftRecoveries: [],
+    sourceDocuments: [],
   };
   validateBackup({ ...input, databaseVersion: 2, data });
   return data;

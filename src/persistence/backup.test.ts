@@ -38,7 +38,7 @@ describe('backup and real v1 upgrade', () => {
     );
     const db = new RecallDatabase(name);
     await db.open();
-    expect(db.verno).toBe(2);
+    expect(db.verno).toBe(3);
     expect(await db.reviewEvents.toArray()).toEqual(
       [...legacyJson.data.reviewEvents].sort((a, b) => a.id.localeCompare(b.id)),
     );
@@ -52,9 +52,13 @@ describe('backup and real v1 upgrade', () => {
     const event = await db.reviewEvents.get('s-second:0');
     expect(revisions.filter((r) => r.practiceItemId === 'q-crystal')).toHaveLength(2);
     expect(evidenceIsCurrent(event!, item!, revisions)).toBe(false);
-    const copy = await db.recoveryBackups.toCollection().first();
+    const copy = await db.recoveryBackups
+      .filter(
+        (copy) => (JSON.parse(copy.json) as { databaseVersion: number }).databaseVersion === 1,
+      )
+      .first();
     expect(JSON.parse(copy!.json).data.reviewEvents).toEqual(before?.data.reviewEvents);
-    await expect(exportBackup(db)).resolves.toMatchObject({ databaseVersion: 2 });
+    await expect(exportBackup(db)).resolves.toMatchObject({ databaseVersion: 3 });
     db.close();
   });
 
@@ -171,5 +175,65 @@ describe('backup and real v1 upgrade', () => {
     expect(copies.some((copy) => copy.json.includes('损坏后的内容'))).toBe(true);
     expect((await exportBackup(db)).data.reviewEvents).toEqual(good.data.reviewEvents);
     db.close();
+  });
+  it('upgrades a real v2 database without rewriting evidence, and accepts its old backup', async () => {
+    const name = `v2-${crypto.randomUUID()}`;
+    names.push(name);
+    const data = migrateBackup(validateBackup(legacyJson));
+    const old = new Dexie(name);
+    old.version(2).stores({
+      projects: 'id, updatedAt',
+      knowledgeUnits: 'id, projectId',
+      practiceItems: 'id, projectId, knowledgeUnitId',
+      reviewEvents: 'id, projectId, practiceItemId, sessionId, timestamp, &[sessionId+queueIndex]',
+      sessions: 'id, projectId, status, [projectId+status]',
+      revisions: 'id, practiceItemId, learningStateId, &[practiceItemId+revisionNumber]',
+      draftRecoveries: 'id, sessionId, practiceItemId, createdAt',
+      recoveryBackups: 'id, createdAt',
+    });
+    await old.open();
+    for (const [table, rows] of Object.entries(data))
+      if (table !== 'sourceDocuments') await old.table(table).bulkAdd(rows);
+    old.close();
+    const before = await inspectBeforeUpgrade(name);
+    expect(before?.databaseVersion).toBe(2);
+    const current = new RecallDatabase(name);
+    await current.open();
+    expect(current.verno).toBe(3);
+    expect((await exportBackup(current)).data.reviewEvents).toEqual(before?.data.reviewEvents);
+    expect(await current.sourceDocuments.count()).toBe(0);
+    await restoreBackup(current, before!);
+    expect((await exportBackup(current)).data.revisions).toEqual(before?.data.revisions);
+    current.close();
+  });
+  it('rolls back a v2 to v3 upgrade when old references are broken', async () => {
+    const name = `v2-broken-${crypto.randomUUID()}`;
+    names.push(name);
+    const old = new Dexie(name);
+    old.version(2).stores({
+      projects: 'id',
+      knowledgeUnits: 'id',
+      practiceItems: 'id',
+      reviewEvents: 'id',
+      sessions: 'id',
+      revisions: 'id',
+      draftRecoveries: 'id',
+      recoveryBackups: 'id',
+    });
+    await old.open();
+    const data = migrateBackup(validateBackup(legacyJson));
+    for (const [table, rows] of Object.entries(data))
+      if (table !== 'sourceDocuments') await old.table(table).bulkAdd(rows);
+    await old.table('knowledgeUnits').update('k-q-long', { projectId: 'missing' });
+    old.close();
+    const current = new RecallDatabase(name);
+    await expect(current.open()).rejects.toThrow('引用');
+    current.close();
+    const reopened = new Dexie(name);
+    await reopened.open();
+    expect(reopened.verno).toBe(2);
+    expect(await reopened.table('reviewEvents').count()).toBe(4);
+    expect(reopened.tables.some((table) => table.name === 'sourceDocuments')).toBe(false);
+    reopened.close();
   });
 });
