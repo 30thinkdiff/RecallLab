@@ -30,6 +30,7 @@ export interface AiCandidate {
   confusion: string;
   notes: string[];
   selected: boolean;
+  userEdited?: boolean;
 }
 export interface GenerationState {
   id: string;

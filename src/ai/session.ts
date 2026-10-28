@@ -9,8 +9,8 @@ export const aiSession: {
   enabled: false,
   config: {
     kind: 'compatible',
-    endpoint: 'http://127.0.0.1:8088/v1',
-    model: 'qwen2.5-0.5b-instruct',
+    endpoint: 'http://127.0.0.1:8089/v1',
+    model: 'qwen2.5-1.5b-instruct',
     apiKey: '',
     jsonMode: 'schema',
   },

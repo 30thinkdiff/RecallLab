@@ -227,7 +227,7 @@ export const sourceDocumentSchema = z.object({
 export const backupSchema = z.object({
   format: z.literal('RecallLabBackup'),
   formatVersion: z.literal(1),
-  databaseVersion: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]),
+  databaseVersion: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5)]),
   createdAt: date,
   data: z.object({
     projects: z.array(project),

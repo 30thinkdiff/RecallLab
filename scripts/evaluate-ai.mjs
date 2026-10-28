@@ -4,7 +4,7 @@ import { URL } from 'node:url';
 import console from 'node:console';
 // Opt-in, real local model evaluation. Public fictional text only; no keys or raw model output logged.
 import { createServer } from 'vite';
-const endpoint = process.env.RECALLLAB_AI_LOCAL_URL || 'http://127.0.0.1:8088/v1';
+const endpoint = process.env.RECALLLAB_AI_LOCAL_URL || 'http://127.0.0.1:8089/v1';
 if (!['127.0.0.1', 'localhost', '[::1]'].includes(new URL(endpoint).hostname))
   throw Error('Evaluation is local only');
 const server = await createServer({ server: { middlewareMode: true } });
@@ -16,7 +16,7 @@ try {
   const provider = new HttpProvider({
     kind: 'compatible',
     endpoint,
-    model: process.env.RECALLLAB_AI_MODEL || 'qwen2.5-0.5b-instruct',
+    model: process.env.RECALLLAB_AI_MODEL || 'qwen2.5-1.5b-instruct',
     apiKey: '',
     jsonMode: 'schema',
   });
@@ -53,7 +53,7 @@ try {
       c.task,
       'verbatim',
       provider,
-      process.env.RECALLLAB_AI_MODEL || 'qwen2.5-0.5b-instruct',
+      process.env.RECALLLAB_AI_MODEL || 'qwen2.5-1.5b-instruct',
       new AbortController().signal,
       () => {},
     );
@@ -83,7 +83,7 @@ try {
       {
         provider: 'real local model; not Mock',
         endpoint,
-        model: process.env.RECALLLAB_AI_MODEL || 'qwen2.5-0.5b-instruct',
+        model: process.env.RECALLLAB_AI_MODEL || 'qwen2.5-1.5b-instruct',
         cases: results,
         note: 'Literal source checks are not semantic correctness; no candidates automatically confirmed.',
       },

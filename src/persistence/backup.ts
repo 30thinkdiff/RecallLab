@@ -1,3 +1,4 @@
+import { DATABASE_VERSION } from './version';
 import type { RecallDatabase } from './database';
 import { backupSchema, validateBackup, type Backup } from './backup-format';
 import { dataTables, legacyTables, v2Tables, v3Tables, migrateBackup } from './migration';
@@ -23,9 +24,18 @@ export async function inspectBeforeUpgrade(name: string): Promise<Backup | null>
   const existing = await openExistingDatabase(name);
   if (!existing) return null;
   try {
-    const version = existing.version / 10;
-    if (version >= 4) return null;
-    const tables = version === 1 ? legacyTables : version === 2 ? v2Tables : v3Tables;
+    const version = Math.floor(existing.version / 10);
+    if (Math.floor(version) > DATABASE_VERSION)
+      throw new Error('这份数据来自更新版本，请使用最新 RecallLab 打开；不要清除网站数据。');
+    if (version >= DATABASE_VERSION) return null;
+    const tables =
+      version === 1
+        ? legacyTables
+        : version === 2
+          ? v2Tables
+          : version === 3
+            ? v3Tables
+            : dataTables;
     const data = await new Promise<Record<string, unknown[]>>((resolve, reject) => {
       const result: Record<string, unknown[]> = {};
       const transaction = existing.transaction([...tables], 'readonly');
@@ -62,7 +72,7 @@ async function captureBackup(db: RecallDatabase) {
       return {
         format: 'RecallLabBackup',
         formatVersion: 1,
-        databaseVersion: 4,
+        databaseVersion: DATABASE_VERSION,
         createdAt: new Date().toISOString(),
         data,
       };

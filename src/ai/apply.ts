@@ -41,13 +41,7 @@ export function generationMetrics(state: GenerationState, cards: PracticeItem[],
     missingSource: state.candidates.length - matches.length,
     duplicates: duplicateCandidates(state.candidates, cards).size,
     confirmed,
-    edited: state.candidates.filter(
-      (c) =>
-        c.question !== c.original[0]?.question ||
-        c.answerSuggestion !== c.original[0]?.answerSuggestion ||
-        JSON.stringify(c.criteria.map((d) => d.text)) !==
-          JSON.stringify(c.original.flatMap((o) => o.criteria.map((d) => d.text))),
-    ).length,
+    edited: state.candidates.filter((c) => c.userEdited).length,
     elapsedMs: Math.max(0, Date.now() - Date.parse(state.startedAt)),
   };
 }

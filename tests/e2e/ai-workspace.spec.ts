@@ -88,6 +88,7 @@ test('AI off stays local; mock candidates require confirmation, preserve edits a
   });
   expect(data.before.practiceItems[0].standardAnswer).toBe(original);
   expect(data.before.practiceItems[0].aiProvenance.isMock).toBe(true);
+  expect(data.before.practiceItems[0].aiProvenance.metrics.edited).toBe(1);
   expect(data.before.reviewEvents[0].scheduling.grade).toBe(3);
   expect(data.after.practiceItems).toEqual(data.before.practiceItems);
   expect(data.after.schedulingLogs).toEqual(data.before.schedulingLogs);
