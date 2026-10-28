@@ -1,10 +1,15 @@
-import { useReviewClock, useReviewData } from './review-data';
+import type { ReviewData } from './review-data';
 import { reviewStatistics } from '../scheduling/analytics';
 import { dateTime } from '../components/actions';
-export function ReviewStats({ projectId }: { projectId?: string }) {
-  const data = useReviewData(),
-    now = useReviewClock();
-  if (!data) return null;
+export function ReviewStats({
+  projectId,
+  data,
+  now,
+}: {
+  projectId?: string;
+  data: ReviewData;
+  now: Date;
+}) {
   const ids = new Set(
     data.projects.filter((p) => !projectId || p.id === projectId).map((p) => p.id),
   );

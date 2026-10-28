@@ -1,13 +1,20 @@
 import type { LearningProject, PracticeItem, ReviewEvent } from '../domain/models';
 import { promptProblem } from '../domain/readiness';
 import type { MemoryState, ReviewMode, QueueReason } from './types';
+const dayFormatters = new Map<string, Intl.DateTimeFormat>();
 export function localDay(date: Date, timezone = Intl.DateTimeFormat().resolvedOptions().timeZone) {
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: timezone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).formatToParts(date);
+  let formatter = dayFormatters.get(timezone);
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
+    if (dayFormatters.size > 20) dayFormatters.clear();
+    dayFormatters.set(timezone, formatter);
+  }
+  const parts = formatter.formatToParts(date);
   return ['year', 'month', 'day'].map((k) => parts.find((p) => p.type === k)!.value).join('-');
 }
 export function isDue(memory: MemoryState, now: Date, timezone: string) {

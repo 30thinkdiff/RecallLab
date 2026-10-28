@@ -1,3 +1,4 @@
+import { freshAssessment, type AssessmentDraft } from '../domain/assessment';
 import type { PracticeSnapshot, SessionToken, StudyDraft, StudySession } from '../domain/models';
 import { ConflictError, tokenOf } from '../domain/revisions';
 import { errorMessage } from '../components/actions';
@@ -121,6 +122,18 @@ export class StudyDraftController {
   }
   edit(patch: DraftPatch) {
     this.local = { ...this.local, ...patch };
+    this.enqueue(() => this.repo.updateDraft(this.base.id, this.base.index, patch, this.token()));
+  }
+  editAssessment(patch: Partial<AssessmentDraft>) {
+    this.local = {
+      ...this.local,
+      assessment: { ...freshAssessment(), ...this.local.assessment, ...patch },
+    };
+    this.enqueue(() =>
+      this.repo.updateAssessment(this.base.id, this.base.index, patch, this.token()),
+    );
+  }
+  private enqueue(write: () => Promise<StudySession>) {
     this.hasLocalEdits = true;
     this.buffer();
     if (this.conflict) {
@@ -132,13 +145,7 @@ export class StudyDraftController {
     this.chain = this.chain
       .then(async () => {
         if (this.conflict) return;
-        const updated = await this.repo.updateDraft(
-          this.base.id,
-          this.base.index,
-          patch,
-          this.token(),
-        );
-        this.base = updated;
+        this.base = await write();
       })
       .catch((cause: unknown) => {
         this.conflict = true;

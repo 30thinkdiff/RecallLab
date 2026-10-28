@@ -1,3 +1,9 @@
+import {
+  assessmentSchema,
+  assessmentResult,
+  freshAssessment,
+  type AssessmentDraft,
+} from '../domain/assessment';
 import { db as defaultDb, type RecallDatabase } from './database';
 import {
   cardInputSchema,
@@ -361,6 +367,44 @@ export class Repository {
       return updated;
     });
   }
+  async confirmQualityBatch(rows: { id: string; expectedRevisionId: string }[]) {
+    await this.write(async () => {
+      for (const r of rows) await this.confirmQuality(r.id, r.expectedRevisionId);
+    });
+  }
+  async confirmQuality(itemId: string, expectedRevisionId: string) {
+    await this.write(async () => {
+      const item = await this.db.practiceItems.get(itemId);
+      if (!item || item.archivedAt || item.currentRevisionId !== expectedRevisionId)
+        throw new ConflictError('题目已更新，请重新核对当前版本');
+      await this.db.practiceItems.update(itemId, { qualityReviewedRevisionId: expectedRevisionId });
+    });
+  }
+  async updateAssessment(
+    sessionId: string,
+    index: number,
+    patch: Partial<AssessmentDraft>,
+    token: SessionToken,
+  ) {
+    return this.write(async () => {
+      const session = await this.requireSession(sessionId, index, token);
+      if (!session.draft.wasAnswerRevealed) throw new Error('请先独立作答并揭晓，再核对要点');
+      const assessment = assessmentSchema.parse({
+        ...freshAssessment(),
+        ...session.draft.assessment,
+        ...patch,
+      });
+      assessmentResult(assessment, session.queue[index]!);
+      const updated = {
+        ...session,
+        draft: { ...session.draft, assessment },
+        draftVersion: session.draftVersion + 1,
+        lastWriterId: token.writerId,
+      };
+      await this.db.sessions.put(updated);
+      return updated;
+    });
+  }
   private async retain(
     session: StudySession,
     reason: string,
@@ -483,7 +527,7 @@ export class Repository {
           this.db,
           session,
           event,
-          difficulty,
+          session.draft.assessment?.difficulty ?? difficulty,
           new Date(now),
         );
       }

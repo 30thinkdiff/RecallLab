@@ -1,10 +1,25 @@
 import { defineConfig } from 'vitest/config';
+import { offlineShell } from './build/offline';
 import react from '@vitejs/plugin-react';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 
 export default defineConfig({
   optimizeDeps: { include: ['ts-fsrs'] },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('/node_modules/')) {
+            if (/\/(react|react-dom|scheduler)\//.test(id)) return 'react-vendor';
+            if (id.includes('/dexie')) return 'storage-vendor';
+            if (id.includes('/zod/')) return 'validation-vendor';
+          }
+        },
+      },
+    },
+  },
   plugins: [
+    offlineShell(),
     react(),
     viteStaticCopy({
       targets: [

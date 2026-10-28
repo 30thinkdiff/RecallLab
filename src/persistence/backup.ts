@@ -1,30 +1,51 @@
-import Dexie from 'dexie';
 import type { RecallDatabase } from './database';
 import { backupSchema, validateBackup, type Backup } from './backup-format';
 import { dataTables, legacyTables, v2Tables, v3Tables, migrateBackup } from './migration';
 
+// Dexie.exists() may delete its temporary database when a missing-name probe aborts.
+// A concurrent tab can create real data in between; never delete a database to inspect it.
+async function openExistingDatabase(name: string): Promise<IDBDatabase | null> {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(name);
+    let missing = false;
+    request.onupgradeneeded = () => {
+      missing = true;
+      request.transaction!.abort();
+    };
+    request.onerror = () => {
+      if (missing && request.error?.name === 'AbortError') resolve(null);
+      else reject(request.error ?? new Error('无法读取本地数据库，请保留浏览器数据。'));
+    };
+    request.onsuccess = () => resolve(request.result);
+  });
+}
 export async function inspectBeforeUpgrade(name: string): Promise<Backup | null> {
-  if (!(await Dexie.exists(name))) return null;
-  const existing = new Dexie(name);
+  const existing = await openExistingDatabase(name);
+  if (!existing) return null;
   try {
-    await existing.open();
-    if (existing.verno >= 4) return null;
-    return await existing.transaction('r', existing.tables, async () => {
-      const data: Record<string, unknown[]> = {};
-      for (const name of existing.verno === 1
-        ? legacyTables
-        : existing.verno === 2
-          ? v2Tables
-          : v3Tables)
-        data[name] = await existing.table(name).toArray();
-      // Export is possible even when later relational validation blocks the upgrade.
-      return backupSchema.parse({
-        format: 'RecallLabBackup',
-        formatVersion: 1,
-        databaseVersion: existing.verno,
-        createdAt: new Date().toISOString(),
-        data,
-      });
+    const version = existing.version / 10;
+    if (version >= 4) return null;
+    const tables = version === 1 ? legacyTables : version === 2 ? v2Tables : v3Tables;
+    const data = await new Promise<Record<string, unknown[]>>((resolve, reject) => {
+      const result: Record<string, unknown[]> = {};
+      const transaction = existing.transaction([...tables], 'readonly');
+      transaction.oncomplete = () => resolve(result);
+      transaction.onabort = transaction.onerror = () =>
+        reject(transaction.error ?? new Error('读取升级前数据失败，请保留浏览器数据。'));
+      for (const table of tables) {
+        const request = transaction.objectStore(table).getAll();
+        request.onsuccess = () => {
+          result[table] = request.result;
+        };
+      }
+    });
+    // Export the original layout even when later relational validation blocks upgrade.
+    return backupSchema.parse({
+      format: 'RecallLabBackup',
+      formatVersion: 1,
+      databaseVersion: version,
+      createdAt: new Date().toISOString(),
+      data,
     });
   } finally {
     existing.close();

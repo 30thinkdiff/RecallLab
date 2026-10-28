@@ -1,0 +1,36 @@
+import { defineConfig } from '@playwright/test';
+export default defineConfig({
+  testDir: './tests/e2e',
+  testMatch: [
+    'criteria-check.spec.ts',
+    'daily-review.spec.ts',
+    'learning-lifecycle.spec.ts',
+    'concurrency.spec.ts',
+    'scale.spec.ts',
+    'chinese-extraction.spec.ts',
+  ],
+  workers: 1,
+  forbidOnly: !!process.env.CI,
+  timeout: 90000,
+  outputDir: 'test-results/firefox',
+  reporter: [
+    ['list'],
+    ['html', { open: 'never', outputFolder: 'playwright-report/firefox' }],
+    ['json', { outputFile: 'test-results/firefox/results.json' }],
+    ['junit', { outputFile: 'test-results/firefox/junit.xml' }],
+  ],
+  use: {
+    baseURL: 'http://127.0.0.1:5174',
+    browserName: 'firefox',
+    locale: 'zh-CN',
+    timezoneId: 'America/New_York',
+    viewport: { width: 1440, height: 1000 },
+    trace: 'retain-on-failure',
+    screenshot: 'only-on-failure',
+  },
+  webServer: {
+    command: 'npm run test:serve',
+    url: 'http://127.0.0.1:5174',
+    reuseExistingServer: false,
+  },
+});

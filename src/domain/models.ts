@@ -1,3 +1,4 @@
+import type { AssessmentDraft, CriterionMark } from './assessment';
 import type { ReviewPlan, ReviewDecision } from '../scheduling/types';
 export interface LearningProject {
   priority?: number;
@@ -80,6 +81,7 @@ export interface KnowledgeUnit {
 }
 
 export interface PracticeItem {
+  qualityReviewedRevisionId?: string;
   focus?: boolean;
   id: string;
   projectId: string;
@@ -162,6 +164,7 @@ export interface SessionToken {
 }
 
 export interface StudyDraft {
+  assessment?: AssessmentDraft;
   responseMode: ResponseMode;
   userResponse: string;
   hintLevelUsed: number;
@@ -189,11 +192,18 @@ export interface StudySession {
 }
 
 export interface ReviewEvent {
+  assessmentMode?: 'simple' | 'detailed';
+  criterionChecks?: {
+    index: number;
+    criterion: string;
+    result: CriterionMark;
+    source: 'user_checked';
+  }[];
   reviewedAt?: string;
   attemptedBeforeReveal?: boolean;
   scheduling?: ReviewDecision;
   id: string;
-  schemaVersion: 1 | 2 | 3;
+  schemaVersion: 1 | 2 | 3 | 4;
   projectId: string;
   practiceItemId: string;
   knowledgeUnitId: string;

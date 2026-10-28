@@ -338,12 +338,14 @@ export function ProjectDetail({
   busy: boolean;
 }) {
   const [search, setSearch] = useState('');
+  const [limit, setLimit] = useState(100);
   const cards = data.cards.filter((card) => card.projectId === project.id);
   const matching = cards.filter((card) =>
     card.question.toLowerCase().includes(search.toLowerCase()),
   );
   const active = data.sessions.find(
-    (session) => session.projectId === project.id && session.status === 'active',
+    (session) =>
+      session.projectId === project.id && session.status === 'active' && !session.reviewPlan,
   );
   const events = data.events.filter((event) => event.projectId === project.id);
   const learned = new Set(
@@ -394,6 +396,7 @@ export function ProjectDetail({
           {active ? `继续学习 (${active.index}/${active.queue.length})` : '开始学习'}
         </button>
       </div>
+      <p className="muted">这里是自由练习，不更新长期复习安排；正式复习请进入“今日复习”。</p>
       {active && (
         <p className="info-note">
           新题由你选择是否加入本轮。更新只处理剩余题目，保留已完成历史；当前题目变化时需载入新版重新作答。
@@ -402,6 +405,9 @@ export function ProjectDetail({
       {active && <SessionControls session={active} cards={data.allCards} />}
       <a className="button" href={`#daily/${project.id}`}>
         按间隔计划复习
+      </a>
+      <a className="text-link" href={`#quality/${project.id}`}>
+        题目质量核对
       </a>
       <a className="text-link" href={`#pending/${project.id}`}>
         批量管理待完善题干
@@ -430,7 +436,7 @@ export function ProjectDetail({
       </div>
       {matching.length ? (
         <div className="card-list">
-          {matching.map((card, index) => {
+          {matching.slice(0, limit).map((card, index) => {
             const last = events
               .filter(
                 (event) =>
@@ -507,6 +513,11 @@ export function ProjectDetail({
             </>
           )}
         </div>
+      )}
+      {matching.length > limit && (
+        <button className="button secondary" onClick={() => setLimit(limit + 100)}>
+          继续显示题目（已显示 {limit} / {matching.length}）
+        </button>
       )}
     </>
   );

@@ -14,9 +14,9 @@ export function DailyReview({
   initialProjectId?: string;
   onEditProject: (id: string) => void;
 }) {
-  const data = useReviewData(),
-    now = useReviewClock();
   const [selectedProject, setProject] = useState(initialProjectId ?? '');
+  const data = useReviewData(selectedProject, true),
+    now = useReviewClock();
   const [mode, setMode] = useState<ReviewMode>('daily');
   const [sectionId, setSectionId] = useState('');
   const [customIds, setCustomIds] = useState<string[]>([]);
@@ -265,7 +265,7 @@ export function DailyReview({
           );
         })}
       </details>
-      <ReviewStats projectId={project.id} />
+      <ReviewStats projectId={project.id} data={data} now={now} />
       <details>
         <summary>复习规则与默认设置</summary>
         <p>

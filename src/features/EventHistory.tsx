@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { markLabels } from '../domain/assessment';
 import { reasonLabels, gradeLabels } from '../scheduling/policy';
 import type {
   LearningProject,
@@ -21,9 +23,10 @@ export function EventHistory({
   cards: PracticeItem[];
   revisions: PracticeItemRevision[];
 }) {
+  const [limit, setLimit] = useState(100);
   return (
     <div className="history-list">
-      {events.map((event) => (
+      {events.slice(0, limit).map((event) => (
         <details className="history-entry" key={event.id}>
           <summary>
             <div>
@@ -107,6 +110,25 @@ export function EventHistory({
                 )}
               </section>
             )}
+            {event.assessmentMode && (
+              <p>
+                核对方式：
+                {event.assessmentMode === 'detailed' ? '逐项人工核对' : '简洁整体人工判断'}
+                （非机器验证）
+              </p>
+            )}
+            {!!event.criterionChecks?.length && (
+              <section aria-label="当时的逐项核对">
+                <h4>当时的必需要点与人工标记</h4>
+                <ol>
+                  {event.criterionChecks.map((c) => (
+                    <li key={c.index}>
+                      {c.criterion} · {markLabels[c.result]} · 来源：用户人工核对
+                    </li>
+                  ))}
+                </ol>
+              </section>
+            )}
             <h4>原始作答</h4>
             <p className="preserve-lines">
               {event.responseMode === 'quick'
@@ -131,6 +153,11 @@ export function EventHistory({
           </div>
         </details>
       ))}
+      {events.length > limit && (
+        <button className="button secondary" onClick={() => setLimit(limit + 100)}>
+          继续显示记录（已显示 {limit} / {events.length}）
+        </button>
+      )}
     </div>
   );
 }

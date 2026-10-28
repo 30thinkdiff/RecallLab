@@ -1,4 +1,11 @@
-import { useEffect, useState, useSyncExternalStore } from 'react';
+import {
+  freshAssessment,
+  assessmentResult,
+  markLabels,
+  type CriterionMark,
+  type AssessmentDraft,
+} from '../domain/assessment';
+import { Fragment, useEffect, useState, useSyncExternalStore } from 'react';
 import {
   ArrowLeft,
   ArrowRight,
@@ -115,14 +122,18 @@ function StudyQuestion({
     confidenceBeforeReveal: confidence,
     attemptedBeforeReveal: attempted,
   } = view.draft;
-  const [difficulty, setDifficulty] = useState<Difficulty>('good');
-  const [mastery, setMastery] = useState<SubjectiveMastery | null>(null);
-  const [performance, setPerformance] = useState<Performance>('ungraded');
+  const assessment = view.draft.assessment ?? freshAssessment();
+  const { mastery, difficulty } = assessment;
+  const setMastery = (value: SubjectiveMastery) => controller.editAssessment({ mastery: value });
+  const setDifficulty = (value: Difficulty) => controller.editAssessment({ difficulty: value });
+  const setPerformance = (value: Performance) =>
+    controller.editAssessment({ performance: value as AssessmentDraft['performance'] });
   const action = useAction();
   const revealed = session.draft.wasAnswerRevealed;
   const hints = session.draft.hintLevelUsed;
   if (!item) return <ErrorNotice message="学习队列无法读取，请保留数据并重新加载。" />;
 
+  const performance = assessmentResult(assessment, item);
   const current = cards.find((card) => card.id === item.id);
   const contentConflict =
     !current || !!current.archivedAt || current.currentRevisionId !== item.revisionId;
@@ -248,7 +259,7 @@ function StudyQuestion({
         <div className="question-number">QUESTION {String(session.index + 1).padStart(2, '0')}</div>
         <h2 className="study-question">{item.question}</h2>
         {!revealed && (
-          <>
+          <Fragment key="recall-input">
             <div className="mode-switch" role="group" aria-label="作答模式">
               <button
                 className={mode === 'quick' ? 'selected' : ''}
@@ -325,7 +336,7 @@ function StudyQuestion({
                 ))}
               </select>
             </label>
-          </>
+          </Fragment>
         )}
         {hints > 0 && (
           <div className="hint-panel">
@@ -367,7 +378,7 @@ function StudyQuestion({
           </div>
         )}
         {revealed && (
-          <>
+          <Fragment key="answer-assessment">
             {session.draft.responseMode === 'typed' && (
               <div className="original-response">
                 <span className="section-kicker">你的原始回答</span>
@@ -412,19 +423,78 @@ function StudyQuestion({
                     : '保存原回答，由你人工核对'}
                 </span>
               </div>
-              <select
-                aria-label="自行核对结果"
-                disabled={blocked}
-                value={performance}
-                onChange={(event) => setPerformance(event.target.value as Performance)}
-              >
-                <option value="ungraded">未核对 / 暂不判断</option>
-                <option value="correct">
-                  {session.reviewPlan ? '正确（必需内容全部满足）' : performanceLabels.correct}
-                </option>
-                <option value="partially_correct">{performanceLabels.partially_correct}</option>
-                <option value="incorrect">{performanceLabels.incorrect}</option>
-              </select>
+              {item.answerCriteria.length > 0 && (
+                <label>
+                  核对方式
+                  <select
+                    aria-label="核对方式"
+                    disabled={blocked}
+                    value={assessment.mode}
+                    onChange={(e) =>
+                      controller.editAssessment({
+                        mode: e.target.value as AssessmentDraft['mode'],
+                        performance: 'ungraded',
+                        marks:
+                          assessment.marks.length === item.answerCriteria.length
+                            ? assessment.marks
+                            : item.answerCriteria.map(() => 'uncertain'),
+                      })
+                    }
+                  >
+                    <option value="simple">简洁核对（整体人工判断）</option>
+                    <option value="detailed">逐项核对全部必需要点</option>
+                  </select>
+                </label>
+              )}
+              {assessment.mode === 'detailed' ? (
+                <div aria-label="逐项人工核对">
+                  <p className="muted">每项均由你人工核对，系统只汇总标记，不自动理解答案。</p>
+                  {item.answerCriteria.map((criterion, index) => (
+                    <label key={index}>
+                      {index + 1}. {criterion}
+                      <select
+                        aria-label={`必需要点 ${index + 1} 核对`}
+                        disabled={blocked}
+                        value={assessment.marks[index] ?? 'uncertain'}
+                        onChange={(e) => {
+                          const marks = [...assessment.marks];
+                          marks[index] = e.target.value as CriterionMark;
+                          controller.editAssessment({ marks });
+                        }}
+                      >
+                        {Object.entries(markLabels).map(([value, label]) => (
+                          <option key={value} value={value}>
+                            {label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  ))}
+                  <p role="status">
+                    要点汇总：{performanceLabels[performance]}
+                    。全部必需项确认正确才可通过；遗漏/错误按完整回忆失败，无法确认不冒充正确。
+                  </p>
+                </div>
+              ) : (
+                <select
+                  aria-label="自行核对结果"
+                  disabled={blocked}
+                  value={performance}
+                  onChange={(event) => setPerformance(event.target.value as Performance)}
+                >
+                  <option value="ungraded">未核对 / 暂不判断</option>
+                  <option value="correct">
+                    {session.reviewPlan ? '正确（必需内容全部满足）' : performanceLabels.correct}
+                  </option>
+                  <option value="partially_correct">{performanceLabels.partially_correct}</option>
+                  <option value="incorrect">{performanceLabels.incorrect}</option>
+                </select>
+              )}
+              {assessment.mode === 'simple' && (
+                <p className="muted">
+                  这是整体人工判断；选择正确表示你已核对全部必需内容。主观掌握感不能替代核对。
+                </p>
+              )}
               {session.reviewPlan &&
                 performance === 'correct' &&
                 hints === 0 &&
@@ -488,7 +558,7 @@ function StudyQuestion({
                 </button>
               </div>
             </div>
-          </>
+          </Fragment>
         )}
         <ErrorNotice message={action.error || view.error} />
       </section>

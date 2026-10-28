@@ -1,3 +1,4 @@
+import { assessmentResult as resultFromCriteria } from './assessment';
 import type {
   Performance,
   PracticeSnapshot,
@@ -40,6 +41,11 @@ export function buildReviewEvent(
   now: string,
 ): ReviewEvent {
   const draft = session.draft;
+  const assessment = draft.assessment;
+  if (assessment && assessmentResult !== 'skipped') {
+    assessmentResult = resultFromCriteria(assessment, snapshot);
+    subjectiveMastery = assessment.mastery;
+  }
   const skipped = assessmentResult === 'skipped';
   if (!skipped && (!draft.wasAnswerRevealed || subjectiveMastery === null)) {
     throw new Error('请先揭晓答案并完成主观评价');
@@ -56,7 +62,21 @@ export function buildReviewEvent(
     draft.responseMode === 'typed' ? !!draft.userResponse.trim() : draft.attemptedBeforeReveal;
   return {
     id: `${session.id}:${session.index}`,
-    schemaVersion: 2,
+    schemaVersion: assessment ? 4 : 2,
+    ...(assessment
+      ? {
+          assessmentMode: assessment.mode,
+          criterionChecks:
+            assessment.mode === 'detailed'
+              ? snapshot.answerCriteria.map((criterion, index) => ({
+                  index,
+                  criterion,
+                  result: assessment.marks[index]!,
+                  source: 'user_checked' as const,
+                }))
+              : [],
+        }
+      : {}),
     projectId: session.projectId,
     practiceItemId: snapshot.id,
     knowledgeUnitId: snapshot.knowledgeUnitId,
