@@ -9,3 +9,4 @@ package-lock.json
 tests/fixtures/import/*.md
 
 .marscode/
+.local-ai/

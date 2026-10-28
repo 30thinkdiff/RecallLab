@@ -2177,3 +2177,19 @@ select:focus {
   width: 100%;
   max-width: 100%;
 }
+
+.table-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+}
+.table-scroll table {
+  border-collapse: collapse;
+  width: 100%;
+  text-align: left;
+}
+.table-scroll th,
+.table-scroll td {
+  padding: 0.8rem;
+  border-bottom: 1px solid var(--border, #e1e5e2);
+  white-space: nowrap;
+}

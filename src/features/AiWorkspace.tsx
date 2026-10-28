@@ -1,4 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { candidateQualityProblem } from '../ai/quality';
+import { reviewQueue } from '../ai/review-queue';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../persistence/database';
 import { repository } from '../persistence/repository';
@@ -19,14 +21,15 @@ import {
   type AiCandidate,
   type GenerationState,
 } from '../ai/generation';
-import {
-  candidateAnswer,
-  confirmCandidates,
-  duplicateCandidates,
-  generationMetrics,
-} from '../ai/apply';
+import { candidateAnswer, duplicateCandidates, generationMetrics } from '../ai/apply';
 import { referenceFor, uncoveredText, type AiSource } from '../ai/evidence';
 import { aiSession } from '../ai/session';
+import { useAiDraft, type LoadedDraft } from './useAiDraft';
+import { confirmDraft } from '../ai/confirm-draft';
+import { downloadJson } from '../persistence/backup';
+import { packState } from '../ai/drafts-format';
+import { assertCurrentSources } from '../ai/source-state';
+import { ModelStatus } from './ModelStatus';
 
 const taskNames: Record<AiTask, string> = {
   extract: '整理候选知识与题目',
@@ -47,9 +50,14 @@ export function AiWorkspace({
     () => (kind === 'document' ? db.sourceDocuments.get(id) : undefined),
     [kind, id],
   );
+  const [draftProjectId, setDraftProjectId] = useState<string | undefined>();
   const item = cards.find((c) => c.id === id);
   const projectId =
-    kind === 'document' ? document?.projectId : kind === 'item' ? item?.projectId : id;
+    kind === 'document'
+      ? (document?.projectId ?? draftProjectId)
+      : kind === 'item'
+        ? (item?.projectId ?? draftProjectId)
+        : id;
   const project = useLiveQuery(
     () => (projectId ? db.projects.get(projectId) : undefined),
     [projectId],
@@ -57,7 +65,7 @@ export function AiWorkspace({
   const key = `${kind}/${id}`;
   const [enabled, setEnabled] = useState(aiSession.enabled);
   const [config, setConfig] = useState<ProviderConfig>({ ...aiSession.config });
-  const [state, setState] = useState<GenerationState | undefined>(() => aiSession.drafts.get(key));
+  const [state, setState] = useState<GenerationState | undefined>();
   const [task, setTask] = useState<AiTask>(
     state?.task ?? (kind === 'document' ? 'extract' : kind === 'item' ? 'criteria' : 'rewrite'),
   );
@@ -77,28 +85,47 @@ export function AiWorkspace({
   const [consent, setConsent] = useState(false),
     [reviewed, setReviewed] = useState(false),
     [complete, setComplete] = useState(false);
+  const [reviewFilter, setReviewFilter] = useState('all');
   const [saved, setSaved] = useState<string[]>([]);
   const abort = useRef<AbortController | null>(null),
     running = useRef(false);
   const action = useAction();
   const busy = state?.status === 'running';
   const hasDraft = Boolean(state?.candidates.length);
-  useEffect(() => {
-    const warn = (event: BeforeUnloadEvent) => {
-      if (aiSession.drafts.size) {
-        event.preventDefault();
-        event.returnValue = '';
-      }
-    };
-    window.addEventListener('beforeunload', warn);
-    return () => {
-      window.removeEventListener('beforeunload', warn);
-      abort.current?.abort();
-    };
+  const restoreDraft = useCallback((value: LoadedDraft | null) => {
+    if (!value) {
+      setState(undefined);
+      setSaved([]);
+      setReviewed(false);
+      setComplete(false);
+      return;
+    }
+    setDraftProjectId(value.row.projectId);
+    setState(value.state);
+    setTask(value.state.task);
+    setObjective(value.state.objective);
+    setConfig({ ...value.row.config, apiKey: '' });
+    setSelectedIds(value.sources.filter((s) => s.kind === 'answer').map((s) => s.id));
+    setSaved(value.state.confirmed?.map((c) => c.itemId) ?? []);
+    setReviewed(false);
+    setComplete(false);
+    setConsent(false);
+    const doc = value.sources.find((s) => s.document);
+    if (doc?.document) {
+      const pages = doc.document.pages;
+      setFirstPage(pages.find((p) => p.startOffset === doc.range?.start)?.number ?? 1);
+      setLastPage(
+        doc.range?.end && doc.range.end < doc.text.length
+          ? (pages.find((p) => p.startOffset === doc.range?.end)?.number ?? 1) - 1
+          : 0,
+      );
+    }
   }, []);
+  const draft = useAiDraft(key, restoreDraft);
+  useEffect(() => () => abort.current?.abort(), []);
   function update(next: GenerationState) {
-    aiSession.drafts.set(key, next);
     setState(next);
+    if (projectId) draft.queue(next, draft.pinned.current, config, projectId);
   }
   function edit(rowId: string, patch: Partial<AiCandidate>) {
     if (!state) return;
@@ -124,6 +151,7 @@ export function AiWorkspace({
     setConsent(false);
   }
   const available = cards.filter((c) => !c.archivedAt && c.projectId === projectId);
+  const reviewEntries = state ? reviewQueue(state, available) : [];
   const sources: AiSource[] =
     kind === 'document' && document
       ? [
@@ -201,6 +229,9 @@ export function AiWorkspace({
       if (!enabled) throw new Error('请先主动启用本次 AI 辅助。');
       if (!sources.length) throw new Error('请先选择需要整理的内容。');
       if (chars > 100000) throw new Error('本批最多 10 万字符，请缩小页面或题目范围。');
+      const generationSources = state?.inputs.length ? draft.pinned.current : sources;
+      await assertCurrentSources(db, generationSources, projectId!);
+      draft.pinned.current = generationSources;
       const provider = providerFor(config, consent, chars);
       abort.current = new AbortController();
       running.current = true;
@@ -210,7 +241,7 @@ export function AiWorkspace({
       setSaved([]);
       try {
         await generateCandidates(
-          sources,
+          generationSources,
           task,
           objective,
           provider,
@@ -224,9 +255,11 @@ export function AiWorkspace({
       }
     });
   }
-  if (!projectId || !project || (kind === 'document' && !document))
+  if (!draft.loaded) return <p role="status">正在恢复本地候选草稿…</p>;
+  if (!projectId || !project || (kind === 'document' && !document && !state))
     return <p role="status">正在读取原文与项目；若内容已被恢复操作替换，请返回资料重新选择。</p>;
-  if (project.archivedAt || item?.archivedAt) return <p>此内容已归档，请恢复后再整理。</p>;
+  if ((project.archivedAt || item?.archivedAt) && !state)
+    return <p>此内容已归档，请恢复后再整理。</p>;
   return (
     <>
       <a
@@ -249,8 +282,51 @@ export function AiWorkspace({
         选择内容 → 生成建议 → 对照原文 → 人工确认 → 开始学习。AI 只提出候选，不判断你的回答对错。
       </p>
       <p className="info-note">
-        默认关闭。原有导入和复习随时可用。草稿与密钥仅在当前页面进程中保留，刷新或关闭会丢失；已确认内容才进入本地题库与备份。
+        默认关闭。候选和修改自动保存在当前浏览器，刷新后可恢复；API
+        密钥不保存。草稿含私人资料，只有人工确认后才成为学习题目。
       </p>
+      <ModelStatus disabled={Boolean(busy) || hasDraft} config={config} onConfig={changeConfig} />
+      <p role="status" data-testid="ai-draft-status">
+        {draft.saving ? '正在保存草稿…' : draft.status}
+      </p>
+      <ErrorNotice message={draft.error} />
+      {draft.stale.map((m) => (
+        <p className="info-note" key={m}>
+          {m}
+        </p>
+      ))}
+      {state && (
+        <div className="button-row">
+          <button
+            className="button secondary"
+            onClick={() =>
+              downloadJson(
+                {
+                  format: 'RecallLabAiDraft',
+                  version: 1,
+                  payload: packState(state, draft.pinned.current),
+                },
+                'RecallLab-候选草稿.json',
+              )
+            }
+          >
+            导出当前候选草稿
+          </button>
+          <button
+            className="button secondary"
+            disabled={busy || draft.saving}
+            onClick={() => {
+              if (
+                !draft.error ||
+                window.confirm('载入最新草稿会替换当前未保存编辑，请先导出。确定继续？')
+              )
+                void draft.restore();
+            }}
+          >
+            载入最新草稿
+          </button>
+        </div>
+      )}
       <label className="checkbox-label">
         <input
           type="checkbox"
@@ -375,12 +451,13 @@ export function AiWorkspace({
               ))}
             </details>
           </fieldset>
-          <fieldset disabled={busy || hasDraft} className="ai-settings">
+          <fieldset disabled={busy} className="ai-settings">
             <legend>模型连接（仅本次内存保存）</legend>
             <label>
               服务类型
               <select
                 value={config.kind}
+                disabled={hasDraft}
                 onChange={(e) => {
                   const v = e.target.value as ProviderConfig['kind'];
                   changeConfig({
@@ -405,6 +482,7 @@ export function AiWorkspace({
                   接口地址
                   <input
                     value={config.endpoint}
+                    disabled={hasDraft}
                     onChange={(e) => changeConfig({ endpoint: e.target.value })}
                     autoComplete="off"
                   />
@@ -413,6 +491,7 @@ export function AiWorkspace({
                   模型名称
                   <input
                     value={config.model}
+                    disabled={hasDraft}
                     onChange={(e) => changeConfig({ model: e.target.value })}
                     autoComplete="off"
                   />
@@ -428,9 +507,23 @@ export function AiWorkspace({
                   />
                 </label>
                 <label>
+                  引用方式
+                  <select
+                    value={config.strategy ?? 'standard'}
+                    disabled={hasDraft}
+                    onChange={(e) =>
+                      changeConfig({ strategy: e.target.value as 'standard' | 'anchored' })
+                    }
+                  >
+                    <option value="standard">逐字引用（原有方案）</option>
+                    <option value="anchored">原文片段编号（试验方案，仍需核对）</option>
+                  </select>
+                </label>
+                <label>
                   输出格式
                   <select
                     value={config.jsonMode}
+                    disabled={hasDraft}
                     onChange={(e) =>
                       changeConfig({ jsonMode: e.target.value as ProviderConfig['jsonMode'] })
                     }
@@ -460,10 +553,21 @@ export function AiWorkspace({
           <div className="button-row">
             <button
               className="button"
-              disabled={busy || Boolean(configurationError) || (config.kind !== 'mock' && !consent)}
+              disabled={
+                busy ||
+                Boolean(state?.confirmed?.length) ||
+                state?.status === 'completed' ||
+                !draft.canConfirm ||
+                Boolean(configurationError) ||
+                (config.kind !== 'mock' && !consent)
+              }
               onClick={() => void generate()}
             >
-              {hasDraft ? '继续未完成段落' : '生成候选'}
+              {state?.status === 'completed'
+                ? '本批生成已完成'
+                : hasDraft
+                  ? '继续未完成段落'
+                  : '生成候选'}
             </button>
             {busy && (
               <button className="button secondary" onClick={() => abort.current?.abort()}>
@@ -475,11 +579,14 @@ export function AiWorkspace({
                 className="button secondary"
                 onClick={() => {
                   if (window.confirm('清空尚未确认的候选与编辑？已经保存的题目不受影响。')) {
-                    aiSession.drafts.delete(key);
-                    setState(undefined);
-                    setReviewed(false);
-                    setComplete(false);
-                    setConsent(false);
+                    void action.run(async () => {
+                      await draft.remove();
+                      setState(undefined);
+                      setSaved([]);
+                      setReviewed(false);
+                      setComplete(false);
+                      setConsent(false);
+                    });
                   }
                 }}
               >
@@ -517,7 +624,7 @@ export function AiWorkspace({
           )}
           <button
             className="button secondary"
-            disabled={busy}
+            disabled={busy || !draft.canConfirm}
             onClick={() => {
               update({
                 ...state,
@@ -526,10 +633,11 @@ export function AiWorkspace({
                   selected:
                     candidateEvidence(c).valid &&
                     !duplicate.has(c.id) &&
-                    !promptProblem({
-                      question: c.question,
-                      standardAnswer: candidateAnswer(c, state),
-                    }),
+                    !candidateQualityProblem(
+                      c.question,
+                      candidateAnswer(c, state),
+                      c.evidenceQuote,
+                    ),
                 })),
               });
               setReviewed(false);
@@ -544,17 +652,90 @@ export function AiWorkspace({
               个字符未被候选引用覆盖。引用覆盖不是知识完整性判断，请对照发送范围中的原文检查遗漏。
             </p>
           )}
-          {state.candidates.map((row, index) => (
-            <CandidateEditor
-              key={row.id}
-              row={row}
-              state={state}
-              index={index}
-              busy={Boolean(busy) || saved.length > 0}
-              duplicate={duplicate.has(row.id)}
-              edit={(patch) => edit(row.id, patch)}
-            />
-          ))}
+          {state.candidates.length > 0 && (
+            <>
+              <label>
+                审阅范围
+                <select value={reviewFilter} onChange={(e) => setReviewFilter(e.target.value)}>
+                  <option value="all">全部候选（优先显示待核对风险）</option>
+                  <option value="risk">有质量提示</option>
+                  <option value="source">来源或引用不足</option>
+                  <option value="duplicate">疑似重复</option>
+                  <option value="edited">我已修改</option>
+                </select>
+              </label>
+              <button
+                className="button secondary"
+                disabled={busy || !draft.canConfirm}
+                onClick={() => {
+                  const flagged = new Set(
+                    reviewEntries
+                      .filter((c) => !candidateEvidence(c.row).valid || c.comparisons.length)
+                      .map((c) => c.row.id),
+                  );
+                  update({
+                    ...state,
+                    candidates: state.candidates.map((c) =>
+                      flagged.has(c.id) ? { ...c, selected: false } : c,
+                    ),
+                  });
+                  setReviewed(false);
+                  setComplete(false);
+                }}
+              >
+                取消选择来源不足及重复候选
+              </button>
+              <p className="muted">
+                提示由规则检查产生，不能发现所有语义问题；批量选择仍需你核对。修改会自动保存，已确认的条目不再显示。
+              </p>
+            </>
+          )}
+          {Array.from(new Set(reviewEntries.map((entry) => entry.group))).map((group) => {
+            const entries = reviewEntries.filter(
+              (entry) =>
+                entry.group === group &&
+                (reviewFilter === 'all' ||
+                  (reviewFilter === 'risk' && entry.flags.length) ||
+                  (reviewFilter === 'source' && !candidateEvidence(entry.row).valid) ||
+                  (reviewFilter === 'duplicate' && entry.comparisons.length) ||
+                  (reviewFilter === 'edited' && entry.row.userEdited)),
+            );
+            if (!entries.length) return null;
+            const first = entries[0]!.row;
+            return (
+              <section className="question-panel" key={group} aria-label="按来源分组的候选">
+                <h3>
+                  {first.source.document?.filename ?? first.source.question ?? '已有标准答案'} ·
+                  原文段 {first.chunk.start + 1}—{first.chunk.end}
+                </h3>
+                {entries.map(({ row, index, flags, comparisons }) => (
+                  <div key={row.id}>
+                    {flags.length > 0 && <p className="info-note">待核对：{flags.join(' · ')}</p>}
+                    {comparisons.length > 0 && (
+                      <details>
+                        <summary>比较重复题目的答案差异</summary>
+                        <p>当前候选：{candidateAnswer(row, state)}</p>
+                        {comparisons.map((c, i) => (
+                          <p className="preserve-lines" key={i}>
+                            {c.label}：{c.question}
+                            {c.answer}
+                          </p>
+                        ))}
+                      </details>
+                    )}
+                    <CandidateEditor
+                      row={row}
+                      state={state}
+                      index={index}
+                      busy={Boolean(busy) || !draft.canConfirm}
+                      duplicate={duplicate.has(row.id)}
+                      edit={(patch) => edit(row.id, patch)}
+                    />
+                  </div>
+                ))}
+              </section>
+            );
+          })}
           {state.candidates.length > 0 && (
             <>
               <label className="checkbox-label">
@@ -585,17 +766,29 @@ export function AiWorkspace({
                   action.busy ||
                   !reviewed ||
                   !complete ||
-                  saved.length > 0 ||
+                  !draft.canConfirm ||
                   !state.candidates.some((c) => c.selected)
                 }
                 onClick={() =>
                   void action.run(async () => {
-                    const ids = await confirmCandidates(repository, projectId, state, {
-                      humanReviewed: reviewed,
-                      completenessReviewed: complete,
-                    });
-                    setSaved(ids);
-                    aiSession.drafts.delete(key);
+                    await draft.flush();
+                    const result = await confirmDraft(
+                      repository,
+                      key,
+                      projectId,
+                      state,
+                      draft.pinned.current,
+                      config,
+                      draft.token.current,
+                      draft.writer.current,
+                      { humanReviewed: reviewed, completenessReviewed: complete },
+                    );
+                    draft.adopt(result.row);
+                    draft.pinned.current = result.sources;
+                    setState(result.state);
+                    setSaved(result.state.confirmed?.map((c) => c.itemId) ?? result.ids);
+                    setReviewed(false);
+                    setComplete(false);
                   })
                 }
               >
@@ -650,7 +843,7 @@ function CandidateEditor({
         ? evidence.match.anchor.start
         : 0,
     );
-  const problem = promptProblem({ question: row.question, standardAnswer: answer });
+  const problem = candidateQualityProblem(row.question, answer, row.evidenceQuote);
   return (
     <details className="ai-candidate" open={index === 0}>
       <summary>
@@ -716,7 +909,17 @@ function CandidateEditor({
           <summary>AI 原始答案建议、解释与质量意见（均未验证）</summary>
           {row.original.map((o, i) => (
             <div key={i}>
+              <p>AI 原始题干：{o.question}</p>
+              <p>AI 原始引用（片段模式可能是编号）：{o.evidenceQuote}</p>
               <p className="preserve-lines">{o.answerSuggestion}</p>
+              <ul>
+                {o.criteria.map((c, j) => (
+                  <li key={j}>
+                    {c.text} · {c.importance === 'required' ? '模型建议必需' : '模型建议可选'} ·{' '}
+                    {c.quote}
+                  </li>
+                ))}
+              </ul>
               {o.qualityNotes.map((n, j) => (
                 <p key={j}>{n}</p>
               ))}

@@ -85,7 +85,7 @@ test('M: actual v1 browser database downloads a pre-upgrade backup and preserves
   await page.goto('/#study/s-active');
   await expect(page.getByLabel('你的回答')).toHaveValue('尚未完成的虚构长答案草稿');
   await page.getByRole('link', { name: '备份与恢复', exact: true }).click();
-  await expect(page.locator('.recovery-row')).toHaveCount(4);
+  await expect(page.locator('.recovery-row')).toHaveCount(5);
   await expect(page.locator('.recovery-row').first()).toContainText('升级前');
 });
 
@@ -114,7 +114,7 @@ test('N: backup restore and a real browser restart retain revision links and his
       databaseVersion: number;
       data: { reviewEvents: unknown[]; revisions: unknown[]; sessions: unknown[] };
     };
-    expect(exported.databaseVersion).toBe(5);
+    expect(exported.databaseVersion).toBe(6);
     expect(exported.data.reviewEvents).toHaveLength(4);
     expect(exported.data.revisions).toHaveLength(6);
     await page.getByLabel('选择 JSON 备份').setInputFiles(file);
@@ -263,16 +263,18 @@ test('v4 upgrade first downloads a backup, preserves formal scheduling byte-for-
     await repository.submitReview(sid, 0, 'correct', 4, tokenOf(session));
     const backup = await exportBackup(db),
       name = db.name;
-    const schema = db.tables.map((t: import('dexie').Table) => ({
-      name: t.name,
-      key: t.schema.primKey.keyPath,
-      indexes: t.schema.indexes.map((i: import('dexie').IndexSpec) => ({
-        name: i.name,
-        key: i.keyPath,
-        unique: i.unique,
-        multi: i.multi,
-      })),
-    }));
+    const schema = db.tables
+      .filter((t: import('dexie').Table) => t.name !== 'aiDrafts')
+      .map((t: import('dexie').Table) => ({
+        name: t.name,
+        key: t.schema.primKey.keyPath,
+        indexes: t.schema.indexes.map((i: import('dexie').IndexSpec) => ({
+          name: i.name,
+          key: i.keyPath,
+          unique: i.unique,
+          multi: i.multi,
+        })),
+      }));
     db.close();
     await new Promise<void>((resolve, reject) => {
       const req = indexedDB.deleteDatabase(name);
@@ -294,8 +296,13 @@ test('v4 upgrade first downloads a backup, preserves formal scheduling byte-for-
       req.onerror = () => reject(req.error);
       req.onsuccess = () => {
         const native = req.result;
-        const tx = native.transaction(Object.keys(backup.data), 'readwrite');
-        for (const [table, rows] of Object.entries(backup.data))
+        const tx = native.transaction(
+          Object.keys(backup.data).filter((k) => k !== 'aiDrafts'),
+          'readwrite',
+        );
+        for (const [table, rows] of Object.entries(backup.data).filter(
+          ([table]) => table !== 'aiDrafts',
+        ))
           for (const row of rows as { id: string }[]) tx.objectStore(table).add(row);
         tx.oncomplete = () => {
           native.close();
@@ -324,6 +331,8 @@ test('v4 upgrade first downloads a backup, preserves formal scheduling byte-for-
       b = '/src/persistence/backup.ts';
     const { db } = await import(d),
       { exportBackup } = await import(b);
+    const f = '/src/persistence/backup-format.ts';
+    const { validateBackup } = await import(f);
     const after = await exportBackup(db);
     const oldWriter = await new Promise<string>((resolve) => {
       const req = indexedDB.open(db.name, 40);
@@ -337,11 +346,13 @@ test('v4 upgrade first downloads a backup, preserves formal scheduling byte-for-
       after,
       version: db.verno,
       oldWriter,
-      copies: (await db.recoveryBackups.toArray()).map((c: { json: string }) => JSON.parse(c.json)),
+      copies: (await db.recoveryBackups.toArray()).map((c: { json: string }) =>
+        validateBackup(JSON.parse(c.json)),
+      ),
     };
   });
-  expect(result.version).toBe(5);
-  expect(result.after.databaseVersion).toBe(5);
+  expect(result.version).toBe(6);
+  expect(result.after.databaseVersion).toBe(6);
   expect(result.after.data).toEqual(before);
   expect(result.oldWriter).toBe('VersionError');
   expect(

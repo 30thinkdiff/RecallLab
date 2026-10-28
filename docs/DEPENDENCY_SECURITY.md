@@ -52,3 +52,7 @@ V0.4 最终本机 `npm audit --json` 与 `npm audit --omit=dev --json` 均为 0�
 真实效果验收使用临时 CPU llama.cpp v0.7.0（无工具、仅 loopback、仅本机来源 CORS、关闭正文日志）和官方 [Qwen2.5-1.5B-Instruct-GGUF](https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF)（Apache-2.0）。固定 revision 91cad51170dc346986eccefdc2dd33a9da36ead9，Q4_K_M 1117320736 字节；下载 SHA256 校验为 6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e。二进制/权重不进入网页包或仓库，也未执行文档内指令。API 来源匹配不消除语义错误与提示注入对模型建议的影响，人工核对仍必需。
 
 正式 schema v5 原地保护升级与旧备份兼容。旧 Dexie 的兼容重试不能被版本号当作写锁，明确不支持旧版编辑升级后的库；当前版本拒绝未来主版本和保留升级前副本，不能虚称所有旧客户端已被追溯阻止。
+
+## V0.5.1（2026-10-28）
+
+当前锁文件完整 npm audit 实测为0（info/low/moderate/high/critical均0）。本轮未新增或强制升级npm依赖，只变更应用版本号。本机模型不随npm或Git分发，没有自动下载/系统安装/开机服务。真实模型版本与局限、启动授权和动态库目录见V051_CHECKPOINTS及AI_GUIDE。

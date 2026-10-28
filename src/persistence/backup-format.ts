@@ -1,3 +1,6 @@
+import { aiDraftSchema, assertDraftRecord, MAX_DRAFT_TOTAL_BYTES } from '../ai/drafts-format';
+import { source, sourceDocumentSchema } from './source-schema';
+export { sourceDocumentSchema } from './source-schema';
 import { aiProvenanceSchema, assertAiAnchors } from '../ai/provenance';
 import { objectiveSchema } from '../ai/protocol';
 import {
@@ -18,17 +21,6 @@ import { assertSourceReference } from '../domain/sources';
 
 const id = z.string().min(1).max(300);
 const date = z.iso.datetime();
-const source = z.object({
-  label: z.string(),
-  documentId: z.string().optional(),
-  page: z.number().int().positive().optional(),
-  endPage: z.number().int().positive().optional(),
-  excerpt: z.string().optional(),
-  startOffset: z.number().int().nonnegative().optional(),
-  endOffset: z.number().int().nonnegative().optional(),
-  sectionId: z.string().optional(),
-  recordIndex: z.number().int().positive().optional(),
-});
 const snapshot = z.object({
   learningObjective: objectiveSchema.optional(),
   aiProvenance: aiProvenanceSchema.optional(),
@@ -186,50 +178,20 @@ const recovery = z.object({
   reason: z.string(),
   draft,
 });
-export const sourceDocumentSchema = z.object({
-  id,
-  projectId: id,
-  filename: z.string().min(1).max(500),
-  title: z.string().max(200).optional(),
-  fileType: z.enum(['json', 'csv', 'tsv', 'txt', 'markdown', 'pdf']),
-  importedAt: date,
-  sourceHash: z.string().regex(/^[a-f0-9]{64}$/),
-  byteLength: z.number().int().nonnegative(),
-  extractedContent: z.string(),
-  pages: z.array(
-    z.object({
-      number: z.number().int().positive(),
-      text: z.string(),
-      startOffset: z.number().int().nonnegative(),
-      status: z.enum(['ready', 'empty', 'failed', 'suspect']),
-      method: z.enum(['text', 'ocr']).optional(),
-      textLayer: z.string().optional(),
-      confidence: z.number().min(0).max(100).optional(),
-      kind: z.enum(['text', 'image', 'mixed', 'blank', 'failed']).optional(),
-      warnings: z.array(z.string()),
-    }),
-  ),
-  sections: z.array(
-    z.object({
-      id,
-      title: z.string(),
-      startOffset: z.number().int().nonnegative(),
-      endOffset: z.number().int().nonnegative(),
-      page: z.number().int().positive().optional(),
-    }),
-  ),
-  extractionStatus: z.enum(['ready', 'needs_review', 'partial']),
-  warnings: z.array(z.string()),
-  parserVersion: z.string(),
-  importDigest: z.string().regex(/^[a-f0-9]{64}$/),
-  initialItemIds: z.array(id),
-});
 export const backupSchema = z.object({
   format: z.literal('RecallLabBackup'),
   formatVersion: z.literal(1),
-  databaseVersion: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5)]),
+  databaseVersion: z.union([
+    z.literal(1),
+    z.literal(2),
+    z.literal(3),
+    z.literal(4),
+    z.literal(5),
+    z.literal(6),
+  ]),
   createdAt: date,
   data: z.object({
+    aiDrafts: z.array(aiDraftSchema).max(20).default([]),
     projects: z.array(project),
     knowledgeUnits: z.array(knowledge),
     practiceItems: z.array(item),
@@ -259,6 +221,14 @@ export function validateBackup(raw: unknown): Backup {
   function requireRef(table: keyof typeof data, value: string, context: string) {
     if (!maps[table]?.has(value)) throw new Error(`${context} 引用不存在：${table}`);
   }
+  for (const draft of data.aiDrafts) {
+    requireRef('projects', draft.projectId, '候选草稿');
+    assertDraftRecord(draft);
+  }
+  if (data.aiDrafts.reduce((n, d) => n + d.bytesStored, 0) > MAX_DRAFT_TOTAL_BYTES)
+    throw new Error('草稿总容量超过 12 MB');
+  if (backup.databaseVersion < 6 && data.aiDrafts.length)
+    throw new Error('旧版备份不能含有持久候选草稿');
   const items = new Map(data.practiceItems.map((item) => [item.id, item]));
   const revisions = new Map(data.revisions.map((revision) => [revision.id, revision]));
   const documents = new Map(data.sourceDocuments.map((document) => [document.id, document]));

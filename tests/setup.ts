@@ -7,15 +7,17 @@ import { afterEach } from 'vitest';
 afterEach(cleanup);
 
 // jsdom does not implement the native dialog methods; E2E uses real Chromium dialogs.
-Object.defineProperty(HTMLDialogElement.prototype, 'showModal', {
-  value: function (this: HTMLDialogElement) {
-    this.setAttribute('open', '');
-  },
-});
-Object.defineProperty(HTMLDialogElement.prototype, 'close', {
-  value: function (this: HTMLDialogElement) {
-    this.removeAttribute('open');
-  },
-});
+if (typeof HTMLDialogElement !== 'undefined') {
+  Object.defineProperty(HTMLDialogElement.prototype, 'showModal', {
+    value: function (this: HTMLDialogElement) {
+      this.setAttribute('open', '');
+    },
+  });
+  Object.defineProperty(HTMLDialogElement.prototype, 'close', {
+    value: function (this: HTMLDialogElement) {
+      this.removeAttribute('open');
+    },
+  });
 
-Object.defineProperty(globalThis, 'crypto', { value: webcrypto, configurable: true });
+  Object.defineProperty(globalThis, 'crypto', { value: webcrypto, configurable: true });
+}

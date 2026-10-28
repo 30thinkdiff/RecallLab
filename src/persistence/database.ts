@@ -1,5 +1,6 @@
 import Dexie, { type Table } from 'dexie';
 import { DATABASE_VERSION } from './version';
+import type { AiDraftRecord } from '../ai/drafts-format';
 import type { MemoryState, SchedulingLog } from '../scheduling/types';
 import type {
   KnowledgeUnit,
@@ -12,10 +13,11 @@ import type {
   RecoveryBackup,
   SourceDocument,
 } from '../domain/models';
-import { dataTables, v2Tables, v3Tables, legacyTables, migrateBackup } from './migration';
+import { v5Tables, v2Tables, v3Tables, legacyTables, migrateBackup } from './migration';
 import { validateBackup } from './backup-format';
 
 export class RecallDatabase extends Dexie {
+  aiDrafts!: Table<AiDraftRecord, string>;
   projects!: Table<LearningProject, string>;
   knowledgeUnits!: Table<KnowledgeUnit, string>;
   practiceItems!: Table<PracticeItem, string>;
@@ -120,7 +122,7 @@ export class RecallDatabase extends Dexie {
       .stores({})
       .upgrade(async (transaction) => {
         const data: Record<string, unknown[]> = {};
-        for (const name of dataTables) data[name] = await transaction.table(name).toArray();
+        for (const name of v5Tables) data[name] = await transaction.table(name).toArray();
         const backup = {
           format: 'RecallLabBackup',
           formatVersion: 1,
@@ -136,6 +138,27 @@ export class RecallDatabase extends Dexie {
         });
         validateBackup(backup);
         // No data transforms or history replay. Exported v5 backups reject legacy v4 parsers; old Dexie clients can still auto-open newer databases, so downgrade editing is unsupported.
+      });
+    this.version(6)
+      .stores({ aiDrafts: 'id, projectId, updatedAt, bytesStored' })
+      .upgrade(async (transaction) => {
+        const data: Record<string, unknown[]> = {};
+        for (const name of v5Tables) data[name] = await transaction.table(name).toArray();
+        const before = {
+          format: 'RecallLabBackup',
+          formatVersion: 1,
+          databaseVersion: 5,
+          createdAt: new Date().toISOString(),
+          data,
+        };
+        await transaction.table('recoveryBackups').add({
+          id: crypto.randomUUID(),
+          createdAt: before.createdAt,
+          reason: 'migration',
+          json: JSON.stringify(before),
+        });
+        validateBackup(before);
+        // Only add empty candidate drafts. Do not rewrite events, confirmed sources, or scheduling.
       });
   }
 }

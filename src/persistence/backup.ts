@@ -1,7 +1,7 @@
 import { DATABASE_VERSION } from './version';
 import type { RecallDatabase } from './database';
 import { backupSchema, validateBackup, type Backup } from './backup-format';
-import { dataTables, legacyTables, v2Tables, v3Tables, migrateBackup } from './migration';
+import { dataTables, v5Tables, legacyTables, v2Tables, v3Tables, migrateBackup } from './migration';
 
 // Dexie.exists() may delete its temporary database when a missing-name probe aborts.
 // A concurrent tab can create real data in between; never delete a database to inspect it.
@@ -35,7 +35,9 @@ export async function inspectBeforeUpgrade(name: string): Promise<Backup | null>
           ? v2Tables
           : version === 3
             ? v3Tables
-            : dataTables;
+            : version < 6
+              ? v5Tables
+              : dataTables;
     const data = await new Promise<Record<string, unknown[]>>((resolve, reject) => {
       const result: Record<string, unknown[]> = {};
       const transaction = existing.transaction([...tables], 'readonly');
@@ -85,7 +87,8 @@ export async function exportBackup(db: RecallDatabase): Promise<Backup> {
 }
 
 export function parseBackup(text: string) {
-  if (text.length > 50 * 1024 * 1024) throw new Error('备份超过 50 MB，暂不支持通过浏览器恢复');
+  if (new TextEncoder().encode(text).length > 50 * 1024 * 1024)
+    throw new Error('备份超过 50 MB，暂不支持通过浏览器恢复');
   let raw: unknown;
   try {
     raw = JSON.parse(text) as unknown;
@@ -100,6 +103,12 @@ export async function restoreBackup(db: RecallDatabase, input: Backup) {
   const backup = validateBackup(input);
   const migrated = migrateBackup(backup);
   // New generations invalidate all open tabs' pre-restore write tokens, even for identical IDs.
+  migrated.aiDrafts = migrated.aiDrafts.map((d) => ({
+    ...d,
+    epoch: crypto.randomUUID(),
+    version: 1,
+    writerId: 'restore',
+  }));
   migrated.sessions = migrated.sessions.map((session) => ({
     ...session,
     generation: crypto.randomUUID(),
@@ -126,9 +135,7 @@ export function downloadJson(
   value: unknown,
   filename = `RecallLab-backup-${new Date().toISOString().replaceAll(':', '-')}.json`,
 ) {
-  const url = URL.createObjectURL(
-    new Blob([JSON.stringify(value, null, 2)], { type: 'application/json' }),
-  );
+  const url = URL.createObjectURL(new Blob([JSON.stringify(value)], { type: 'application/json' }));
   const link = document.createElement('a');
   link.href = url;
   link.download = filename;

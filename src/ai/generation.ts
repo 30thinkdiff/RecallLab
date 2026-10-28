@@ -1,3 +1,4 @@
+import { ResolvedOutput } from './inference';
 import {
   AiError,
   MAX_GENERATED_ITEMS,
@@ -33,6 +34,8 @@ export interface AiCandidate {
   userEdited?: boolean;
 }
 export interface GenerationState {
+  strategy?: 'standard' | 'anchored';
+  confirmed?: { candidateId: string; itemId: string; sourceId: string }[];
   id: string;
   inputs: {
     id: string;
@@ -141,6 +144,7 @@ export async function generateCandidates(
     ? structuredClone(resume)
     : {
         id: crypto.randomUUID(),
+        strategy: provider.strategy ?? 'standard',
         inputs: sources.map((s) => ({
           id: s.id,
           text: s.text,
@@ -162,7 +166,8 @@ export async function generateCandidates(
     state.task !== task ||
     state.objective !== objective ||
     state.provider !== provider.kind ||
-    state.model !== model
+    state.model !== model ||
+    (state.strategy ?? 'standard') !== (provider.strategy ?? 'standard')
   )
     throw new AiError(
       'configuration',
@@ -208,7 +213,7 @@ export async function generateCandidates(
         },
         signal,
       );
-      const parsed = modelOutputSchema.safeParse(raw);
+      const parsed = modelOutputSchema.safeParse(raw instanceof ResolvedOutput ? raw.data : raw);
       if (!parsed.success || parsed.data.items.length > maxItems)
         throw new AiError(
           'invalid-output',
@@ -218,17 +223,22 @@ export async function generateCandidates(
         state.status = 'cancelled';
         break;
       }
-      for (const item of parsed.data.items) {
+      for (const [index, item] of parsed.data.items.entries()) {
+        const original = raw instanceof ResolvedOutput ? raw.wire.items[index]! : item;
         if (state.candidates.length >= MAX_GENERATED_ITEMS) break;
         const previous =
           source.kind === 'answer'
             ? state.candidates.find((c) => c.source.id === source.id)
             : undefined;
         if (previous) {
-          previous.original.push(structuredClone(item));
+          previous.original.push(structuredClone(original));
           previous.criteria.push(...rowFor(source, chunk, item, task).criteria);
           previous.notes.push(...item.qualityNotes);
-        } else state.candidates.push(rowFor(source, chunk, item, task));
+        } else {
+          const row = rowFor(source, chunk, item, task);
+          row.original = [structuredClone(original)];
+          state.candidates.push(row);
+        }
       }
       state.completed.push(chunk.id);
     } catch (e) {
