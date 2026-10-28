@@ -128,6 +128,24 @@ export class Repository {
       const itemId = id ?? crypto.randomUUID();
       const number = (existing?.revision ?? 0) + 1;
       const impact = change?.impactOnLearningState ?? 'reset';
+      // A user-supplied label is not sufficient proof that a revision is only cosmetic.
+      // Never carry earlier recall evidence over to a different question, answer, or rubric.
+      const comparable = (value: string) => value.replace(/\s+/g, '').replace(/。$/u, '');
+      if (existing && impact === 'preserve') {
+        const unchangedQuestion = comparable(existing.question) === comparable(input.question);
+        const unchangedAnswer =
+          comparable(existing.standardAnswer) === comparable(input.standardAnswer);
+        const newCriteria = lines(input.answerCriteria);
+        const unchangedCriteria =
+          existing.answerCriteria.length === newCriteria.length &&
+          existing.answerCriteria.every(
+            (criterion, index) => comparable(criterion) === comparable(newCriteria[index] ?? ''),
+          );
+        if (!unchangedQuestion || !unchangedAnswer || !unchangedCriteria)
+          throw new Error(
+            '题干、标准答案或核对要点有内容变化；请使用重新学习的修订类型，不能继承旧成绩',
+          );
+      }
       const knowledgeUnitId =
         existing && change?.changeType !== 'replacement'
           ? existing.knowledgeUnitId
