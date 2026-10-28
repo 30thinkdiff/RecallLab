@@ -4,7 +4,13 @@ import { sha256 } from './text';
 import { MAX_PDF_BYTES, type ParsedMaterial } from './types';
 import type { DocumentPage } from '../domain/models';
 import { extractNumbered } from './numbered';
-import { classifyPdfPage, pageText, textQuality, unreadablePdfMessage } from './pdf-layout';
+import {
+  classifyPdfPage,
+  pageText,
+  reconcileOcrText,
+  textQuality,
+  unreadablePdfMessage,
+} from './pdf-layout';
 import type { PDFPageProxy } from 'pdfjs-dist/types/src/display/api';
 import type { createLocalOcr } from './ocr';
 
@@ -157,24 +163,34 @@ export async function parsePdfBytes(
           try {
             const recognized = await ocr.recognize(page);
             check();
-            text = recognized.text;
-            confidence = recognized.confidence;
-            method = 'ocr';
+            const outcome = reconcileOcrText(textLayer, recognized.text);
+            text = outcome.text;
             previews[number] = recognized.preview;
-            status = text.trim() ? 'suspect' : 'empty';
-            warnings.push(
-              text
-                ? '文字来自本地 OCR，尚未验证；请对照页面图像修改问题和答案。'
-                : 'OCR 没有识别出文字，请核对页面清晰度。',
-            );
-            if (confidence < 75) warnings.push('识别把握较低，可能有缺字或误字，请重点核对。');
+            if (outcome.hasOcrText) {
+              confidence = recognized.confidence;
+              method = 'ocr';
+              status = 'suspect';
+              warnings.push('文字来自本地 OCR，尚未验证；请对照页面图像修改问题和答案。');
+              if (confidence < 75) warnings.push('识别把握较低，可能有缺字或误字，请重点核对。');
+            } else {
+              status = outcome.preservedNativeText ? textQuality(textLayer) : 'empty';
+              warnings.push(
+                outcome.preservedNativeText
+                  ? 'OCR 没有识别出图片中的附加文字，原 PDF 文字层已保留；请核对图片部分。'
+                  : 'OCR 没有识别出文字，请核对页面清晰度。',
+              );
+            }
           } catch (cause) {
             check();
-            status = 'failed';
+            const outcome = reconcileOcrText(textLayer, '');
+            text = outcome.text;
+            status = outcome.preservedNativeText ? textQuality(textLayer) : 'failed';
             warnings.push(
-              cause instanceof Error && cause.message.startsWith('本地')
-                ? cause.message
-                : '本地 OCR 未能完成，此页仍未识别，请重试。',
+              outcome.preservedNativeText
+                ? '本地 OCR 未能完成，已保留原 PDF 文字层；图片部分尚未验证。'
+                : cause instanceof Error && cause.message.startsWith('本地')
+                  ? cause.message
+                  : '本地 OCR 未能完成，此页仍未识别，请重试。',
             );
           }
         }
