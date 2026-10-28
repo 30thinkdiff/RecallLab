@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import {
   ArrowLeft,
   ArrowRight,
@@ -10,22 +10,34 @@ import {
   MessageCircle,
   SkipForward,
 } from 'lucide-react';
-import type { Performance, ReviewEvent, StudySession, SubjectiveMastery } from '../domain/models';
+import type {
+  Performance,
+  ReviewEvent,
+  StudySession,
+  SubjectiveMastery,
+  PracticeItem,
+} from '../domain/models';
 import { masteryLabels, performanceLabels } from '../domain/review';
 import { repository } from '../persistence/repository';
 import { ErrorNotice } from '../components/shared';
-import { errorMessage, useAction } from '../components/actions';
+import { useAction } from '../components/actions';
+import { tokenOf } from '../domain/revisions';
+import { StudyDraftController } from './study-draft';
+import { SessionControls } from './SessionControls';
+import { downloadJson } from '../persistence/backup';
 
 export function Study({
   session,
   events,
   projectName,
+  cards,
 }: {
   session: StudySession;
   events: ReviewEvent[];
   projectName: string;
+  cards: PracticeItem[];
 }) {
-  if (session.status === 'completed') {
+  if (session.status !== 'active') {
     const completed = events.filter((event) => event.sessionId === session.id);
     const skipped = completed.filter((event) => event.assessmentResult === 'skipped').length;
     return (
@@ -34,7 +46,7 @@ export function Study({
           <CheckCircle2 size={38} />
         </span>
         <div className="eyebrow">SESSION COMPLETE</div>
-        <h1>这一轮，完成了。</h1>
+        <h1>{session.status === 'ended' ? '本轮已结束。' : '这一轮，完成了。'}</h1>
         <p>
           完成 {completed.length - skipped} 题，跳过 {skipped} 题。学习记录已保存在本地。
         </p>
@@ -56,51 +68,66 @@ export function Study({
   }
   return (
     <StudyQuestion
-      key={`${session.id}:${session.index}`}
+      key={`${session.id}:${session.index}:${session.queue[session.index]?.revisionId}`}
       session={session}
       projectName={projectName}
+      cards={cards}
     />
   );
 }
 
-function StudyQuestion({ session, projectName }: { session: StudySession; projectName: string }) {
+function StudyQuestion({
+  session,
+  projectName,
+  cards,
+}: {
+  session: StudySession;
+  projectName: string;
+  cards: PracticeItem[];
+}) {
   const item = session.queue[session.index];
-  const [mode, setMode] = useState(session.draft.responseMode);
-  const [response, setResponse] = useState(session.draft.userResponse);
-  const [confidence, setConfidence] = useState(session.draft.confidenceBeforeReveal);
-  const [attempted, setAttempted] = useState(session.draft.attemptedBeforeReveal);
+  const [controller] = useState(() => new StudyDraftController(session));
+  const view = useSyncExternalStore(controller.subscribe, controller.getSnapshot);
+  useEffect(() => {
+    controller.receive(session);
+  }, [controller, session]);
+  useEffect(() => () => controller.dispose(), [controller]);
+  const {
+    responseMode: mode,
+    userResponse: response,
+    confidenceBeforeReveal: confidence,
+    attemptedBeforeReveal: attempted,
+  } = view.draft;
   const [mastery, setMastery] = useState<SubjectiveMastery | null>(null);
   const [performance, setPerformance] = useState<Performance>('ungraded');
-  const [draftError, setDraftError] = useState('');
   const action = useAction();
   const revealed = session.draft.wasAnswerRevealed;
   const hints = session.draft.hintLevelUsed;
   if (!item) return <ErrorNotice message="学习队列无法读取，请保留数据并重新加载。" />;
 
-  const patch = {
-    responseMode: mode,
-    userResponse: response,
-    confidenceBeforeReveal: confidence,
-    attemptedBeforeReveal: attempted,
-  };
-  // Each patch is merged inside a serialized IndexedDB transaction; a late input write
-  // cannot overwrite hints/reveal flags or the next question's draft.
-  function persist(value: Parameters<typeof repository.updateDraft>[2]) {
-    void repository
-      .updateDraft(session.id, session.index, value)
-      .then(() => setDraftError(''))
-      .catch((cause: unknown) => setDraftError(errorMessage(cause)));
-  }
+  const current = cards.find((card) => card.id === item.id);
+  const contentConflict =
+    !current || !!current.archivedAt || current.currentRevisionId !== item.revisionId;
+  const blocked = action.busy || contentConflict || view.conflict;
+  const persist = (patch: Parameters<StudyDraftController['edit']>[0]) => controller.edit(patch);
   async function submit(skipped = false) {
-    if (!revealed) await repository.updateDraft(session.id, session.index, patch);
-    await repository.submitReview(
-      session.id,
-      session.index,
-      skipped ? 'skipped' : performance,
-      skipped ? null : mastery,
+    await controller.withCurrent((latest, token) =>
+      repository.submitReview(
+        latest.id,
+        latest.index,
+        skipped ? 'skipped' : performance,
+        skipped ? null : mastery,
+        token,
+      ),
     );
   }
-
+  async function reloadContent() {
+    await controller.protectLocal();
+    const latest = await repository.db.sessions.get(session.id);
+    if (!latest) throw new Error('轮次不存在');
+    await repository.syncSession(latest.id, latest.index, tokenOf(latest), { reloadCurrent: true });
+    controller.acknowledgeTransition();
+  }
   return (
     <div className="study-workspace">
       <div className="study-topline">
@@ -125,6 +152,59 @@ function StudyQuestion({ session, projectName }: { session: StudySession; projec
         </div>
         <span className="tag">主动回忆</span>
       </div>
+      <SessionControls session={session} cards={cards} controller={controller} />
+      {(contentConflict || view.conflict) && (
+        <section className="conflict-panel" role="alert">
+          <h2>
+            {contentConflict
+              ? current?.archivedAt
+                ? '当前题目已归档'
+                : '当前题目已更新'
+              : '另一页面已更新草稿'}
+          </h2>
+          <p>已暂停旧状态的揭晓和评分。本页输入保留，不能静默覆盖其他页面或记入新版本。</p>
+          <label>
+            本页保留的输入
+            <textarea readOnly value={response} rows={3} />
+          </label>
+          <div className="button-row">
+            <button
+              className="button"
+              disabled={action.busy}
+              onClick={() =>
+                void action.run(
+                  contentConflict ? reloadContent : () => controller.retainAndReload(),
+                )
+              }
+            >
+              {contentConflict
+                ? current?.archivedAt
+                  ? '保留输入并移除归档题'
+                  : '保留输入并载入最新版'
+                : '保留本页输入并载入最新草稿'}
+            </button>
+            <button
+              className="button secondary"
+              onClick={() =>
+                downloadJson(
+                  { question: item.question, revision: item.revision, draft: view.draft },
+                  'RecallLab-local-draft.json',
+                )
+              }
+            >
+              下载本页输入副本
+            </button>
+          </div>
+        </section>
+      )}
+      <p className="muted" role="status" data-testid="draft-status">
+        {view.conflict
+          ? '本页输入尚未合并，请处理冲突'
+          : view.pending
+            ? '正在保存草稿…'
+            : '草稿已保存'}{' '}
+        · 当前修订 {item.revision}
+      </p>
       <section className="question-panel" aria-label="当前题目">
         <div className="question-number">QUESTION {String(session.index + 1).padStart(2, '0')}</div>
         <h2 className="study-question">{item.question}</h2>
@@ -133,9 +213,8 @@ function StudyQuestion({ session, projectName }: { session: StudySession; projec
             <div className="mode-switch" role="group" aria-label="作答模式">
               <button
                 className={mode === 'quick' ? 'selected' : ''}
-                disabled={action.busy}
+                disabled={blocked}
                 onClick={() => {
-                  setMode('quick');
                   persist({ responseMode: 'quick' });
                 }}
               >
@@ -143,9 +222,8 @@ function StudyQuestion({ session, projectName }: { session: StudySession; projec
               </button>
               <button
                 className={mode === 'typed' ? 'selected' : ''}
-                disabled={action.busy}
+                disabled={blocked}
                 onClick={() => {
-                  setMode('typed');
                   persist({ responseMode: 'typed' });
                 }}
               >
@@ -160,9 +238,8 @@ function StudyQuestion({ session, projectName }: { session: StudySession; projec
                   value={response}
                   rows={6}
                   maxLength={20000}
-                  disabled={action.busy}
+                  disabled={blocked}
                   onChange={(event) => {
-                    setResponse(event.target.value);
                     persist({ userResponse: event.target.value });
                   }}
                   placeholder="先试着写下来，不必担心不完整…"
@@ -175,9 +252,8 @@ function StudyQuestion({ session, projectName }: { session: StudySession; projec
                 <p>在脑中回想，或试着说出你的答案。</p>
                 <button
                   className={attempted ? 'button soft' : 'button secondary'}
-                  disabled={action.busy}
+                  disabled={blocked}
                   onClick={() => {
-                    setAttempted(!attempted);
                     persist({ attemptedBeforeReveal: !attempted });
                   }}
                 >
@@ -195,11 +271,10 @@ function StudyQuestion({ session, projectName }: { session: StudySession; projec
               揭晓前的信心 <span>可选</span>
               <select
                 aria-label="揭晓前的信心"
-                disabled={action.busy}
+                disabled={blocked}
                 value={confidence ?? ''}
                 onChange={(event) => {
                   const value = event.target.value === '' ? null : Number(event.target.value);
-                  setConfidence(value);
                   persist({ confidenceBeforeReveal: value });
                 }}
               >
@@ -229,10 +304,10 @@ function StudyQuestion({ session, projectName }: { session: StudySession; projec
           <div className="question-actions">
             <button
               className="button secondary"
-              disabled={action.busy || hints >= item.hints.length}
+              disabled={blocked || hints >= item.hints.length}
               onClick={() =>
                 void action.run(async () => {
-                  await repository.updateDraft(session.id, session.index, patch, 'hint');
+                  await controller.perform('hint');
                 })
               }
             >
@@ -241,10 +316,10 @@ function StudyQuestion({ session, projectName }: { session: StudySession; projec
             </button>
             <button
               className="button"
-              disabled={action.busy}
+              disabled={blocked}
               onClick={() =>
                 void action.run(async () => {
-                  await repository.updateDraft(session.id, session.index, patch, 'reveal');
+                  await controller.perform('reveal');
                 })
               }
             >
@@ -304,6 +379,7 @@ function StudyQuestion({ session, projectName }: { session: StudySession; projec
               </div>
               <select
                 aria-label="自行核对结果"
+                disabled={blocked}
                 value={performance}
                 onChange={(event) => setPerformance(event.target.value as Performance)}
               >
@@ -319,6 +395,7 @@ function StudyQuestion({ session, projectName }: { session: StudySession; projec
                   <button
                     key={label}
                     role="radio"
+                    disabled={blocked}
                     aria-checked={mastery === index}
                     className={mastery === index ? 'mastery-option selected' : 'mastery-option'}
                     onClick={() => setMastery(index as SubjectiveMastery)}
@@ -336,7 +413,7 @@ function StudyQuestion({ session, projectName }: { session: StudySession; projec
                 </span>
                 <button
                   className="button"
-                  disabled={mastery === null || action.busy}
+                  disabled={mastery === null || blocked}
                   onClick={() => void action.run(() => submit())}
                 >
                   {action.busy
@@ -350,7 +427,7 @@ function StudyQuestion({ session, projectName }: { session: StudySession; projec
             </div>
           </>
         )}
-        <ErrorNotice message={action.error || draftError} />
+        <ErrorNotice message={action.error || view.error} />
       </section>
       <div className="study-bottom">
         <span>
@@ -358,7 +435,7 @@ function StudyQuestion({ session, projectName }: { session: StudySession; projec
         </span>
         <button
           className="text-button"
-          disabled={action.busy}
+          disabled={blocked}
           onClick={() => void action.run(() => submit(true))}
         >
           <SkipForward size={14} /> 跳过此题

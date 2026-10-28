@@ -56,7 +56,7 @@ export function buildReviewEvent(
     draft.responseMode === 'typed' ? !!draft.userResponse.trim() : draft.attemptedBeforeReveal;
   return {
     id: `${session.id}:${session.index}`,
-    schemaVersion: 1,
+    schemaVersion: 2,
     projectId: session.projectId,
     practiceItemId: snapshot.id,
     knowledgeUnitId: snapshot.knowledgeUnitId,

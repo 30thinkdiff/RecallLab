@@ -9,6 +9,9 @@ import { CardForm, ProjectForm } from './features/Forms';
 import { History, Overview, ProjectDetail, Projects } from './features/Workspace';
 import { Study } from './features/Study';
 import type { LearningProject, PracticeItem } from './domain/models';
+import { ItemDetail } from './features/ItemDetail';
+import { ArchivePage } from './features/Archive';
+import { StorageGate, BackupPage } from './features/Storage';
 
 type ModalState =
   | { type: 'project'; project?: LearningProject }
@@ -20,7 +23,9 @@ type ModalState =
 export function App() {
   return (
     <DataBoundary>
-      <Workspace />
+      <StorageGate>
+        <Workspace />
+      </StorageGate>
     </DataBoundary>
   );
 }
@@ -37,18 +42,24 @@ function Workspace() {
   const rawData = useLiveQuery(async () => {
     return db.transaction(
       'r',
-      db.projects,
-      db.practiceItems,
-      db.reviewEvents,
-      db.sessions,
+      [
+        db.projects,
+        db.practiceItems,
+        db.reviewEvents,
+        db.sessions,
+        db.revisions,
+        db.draftRecoveries,
+      ],
       async () => {
-        const [projects, cards, events, sessions] = await Promise.all([
+        const [projects, cards, events, sessions, revisions, draftRecoveries] = await Promise.all([
           db.projects.toArray(),
           db.practiceItems.toArray(),
           db.reviewEvents.toArray(),
           db.sessions.toArray(),
+          db.revisions.toArray(),
+          db.draftRecoveries.toArray(),
         ]);
-        return { projects, cards, events, sessions };
+        return { projects, cards, events, sessions, revisions, draftRecoveries };
       },
     );
   });
@@ -59,6 +70,14 @@ function Workspace() {
   const ids = new Set(projects.map((project) => project.id));
   const data = {
     projects,
+    allCards: rawData?.cards ?? [],
+    allEvents:
+      rawData?.events
+        .slice()
+        .sort((a, b) => a.timestamp.localeCompare(b.timestamp) || a.id.localeCompare(b.id)) ?? [],
+    allProjects: rawData?.projects ?? [],
+    revisions: rawData?.revisions ?? [],
+    draftRecoveries: rawData?.draftRecoveries ?? [],
     cards:
       rawData?.cards
         .filter((card) => !card.archivedAt && ids.has(card.projectId))
@@ -72,11 +91,21 @@ function Workspace() {
   const [section, id] = route.split('/');
   const project = data.projects.find((project) => project.id === id);
   const session = data.sessions.find((session) => session.id === id);
+  const item = data.allCards.find((card) => card.id === id);
   const createProject = () => setModal({ type: 'project' });
-  const activePage = section === 'home' ? 'home' : section === 'history' ? 'history' : 'projects';
+  const activePage = ['home', 'history', 'backup', 'archive'].includes(section ?? '')
+    ? section
+    : 'projects';
   return (
     <div className="app-shell">
-      <a href="#main-content" className="skip-link">
+      <a
+        href="#main-content"
+        className="skip-link"
+        onClick={(event) => {
+          event.preventDefault();
+          document.getElementById('main-content')?.focus();
+        }}
+      >
         跳到主要内容
       </a>
       <aside className="sidebar">
@@ -94,6 +123,8 @@ function Workspace() {
             { name: '学习概览', route: 'home', icon: LayoutDashboard },
             { name: '学习项目', route: 'projects', icon: BookOpen },
             { name: '学习记录', route: 'history', icon: Clock3 },
+            { name: '备份与恢复', route: 'backup', icon: ShieldCheck },
+            { name: '归档内容', route: 'archive', icon: BookOpen },
           ].map(({ name, route, icon: Icon }) => (
             <a
               key={route}
@@ -116,18 +147,22 @@ function Workspace() {
           </p>
         </div>
         <div className="sidebar-footer">
-          RECALL. REFLECT. REPEAT.<span>M1 · 主动回忆学习闭环</span>
+          RECALL. REFLECT. REPEAT.<span>0.2 · 知识与学习记录</span>
         </div>
       </aside>
       <main id="main-content" tabIndex={-1}>
         <header className="topbar">
           <span>
             个人学习空间 <span className="topbar-separator">/</span>{' '}
-            {activePage === 'home'
-              ? '学习概览'
-              : activePage === 'history'
-                ? '学习记录'
-                : '学习项目'}
+            {
+              {
+                home: '学习概览',
+                history: '学习记录',
+                projects: '学习项目',
+                backup: '备份与恢复',
+                archive: '归档内容',
+              }[activePage ?? 'projects']
+            }
           </span>
           <span className="local-badge">
             <i /> 数据保存在当前浏览器
@@ -143,6 +178,12 @@ function Workspace() {
             <Projects data={data} onCreate={createProject} />
           ) : section === 'history' ? (
             <History data={data} />
+          ) : section === 'item' && item ? (
+            <ItemDetail key={`${item.id}:${item.currentRevisionId}`} item={item} data={data} />
+          ) : section === 'archive' ? (
+            <ArchivePage projects={data.allProjects} cards={data.allCards} />
+          ) : section === 'backup' ? (
+            <BackupPage />
           ) : section === 'project' && project ? (
             <ProjectDetail
               key={project.id}
@@ -165,6 +206,7 @@ function Workspace() {
             <Study
               session={session}
               events={data.events}
+              cards={data.allCards}
               projectName={
                 data.projects.find((project) => project.id === session.projectId)?.name ?? ''
               }
@@ -196,7 +238,7 @@ function Workspace() {
       {modal?.type === 'deleteProject' && (
         <ConfirmDialog
           title="删除学习项目"
-          description={`确定删除“${modal.project.name}”？项目和题库将从工作台隐藏。历史数据会保留在本地数据库中，M1 暂无恢复入口。`}
+          description={`确定删除“${modal.project.name}”？项目和题库将从工作台隐藏。历史数据会保留，可从“归档内容”查看和恢复。`}
           onClose={() => setModal(null)}
           onConfirm={async () => {
             await repository.archiveProject(modal.project.id);

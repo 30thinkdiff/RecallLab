@@ -51,11 +51,13 @@ export function ConfirmDialog({
   description,
   onClose,
   onConfirm,
+  confirmLabel = '确认删除',
 }: {
   title: string;
   description: string;
   onClose: () => void;
   onConfirm: () => Promise<void>;
+  confirmLabel?: string;
 }) {
   const action = useAction();
   return (
@@ -76,7 +78,7 @@ export function ConfirmDialog({
             })
           }
         >
-          确认删除
+          {confirmLabel}
         </button>
       </div>
     </Modal>

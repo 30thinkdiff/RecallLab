@@ -1,25 +1,5 @@
-import { test, expect, type Page } from '@playwright/test';
-
-async function createProject(page: Page, name = '认知心理学复习') {
-  await page.getByRole('button', { name: '创建项目', exact: true }).click();
-  await page.getByLabel('项目名称').fill(name);
-  await page.getByLabel('学习目标').fill('能够无提示复述核心知识');
-  await page.getByRole('button', { name: '保存项目' }).click();
-  await expect(page.getByRole('heading', { name, exact: true })).toBeVisible();
-}
-
-async function addCard(page: Page, index: number) {
-  await page.getByRole('button', { name: '添加问答题', exact: true }).first().click();
-  await page.getByLabel('问题', { exact: false }).fill(`第 ${index} 题：什么是主动回忆？`);
-  await page.getByLabel('标准答案').fill(`答案 ${index}：不查看资料，主动从记忆中提取知识。`);
-  await page.getByLabel('核对要点', { exact: false }).fill('不查看资料\n主动提取');
-  await page.getByLabel('渐进提示', { exact: false }).fill('先不要看资料\n从记忆中提取');
-  await page.getByRole('button', { name: '保存题目' }).click();
-  await expect(page.getByRole('dialog')).toHaveCount(0);
-  await expect(
-    page.getByRole('heading', { name: `第 ${index} 题：什么是主动回忆？`, exact: true }),
-  ).toBeVisible();
-}
+import { test, expect } from '@playwright/test';
+import { createProject, addCard } from './helpers';
 
 test('ten-card study round preserves distinct evidence, resumes and survives refresh', async ({
   page,
@@ -100,6 +80,7 @@ test('project and card CRUD, cancellation, project isolation and historical answ
   await page.getByRole('link', { name: '返回题库', exact: true }).click();
   await page.getByRole('button', { name: '编辑题目：第 1 题：什么是主动回忆？' }).click();
   await page.getByLabel('标准答案').fill('修改后的标准答案');
+  await page.getByLabel('修改原因').fill('更正测试资料');
   await page.getByRole('button', { name: '保存题目' }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await page.getByRole('link', { name: '学习记录', exact: true }).click();
@@ -141,7 +122,7 @@ test('a real browser restart retains projects, cards and learning records on dis
   });
   try {
     let page = await context.newPage();
-    await page.goto('http://127.0.0.1:5173');
+    await page.goto('http://127.0.0.1:5174');
     await createProject(page, '重启浏览器验证');
     await addCard(page, 1);
     await page.getByRole('button', { name: '开始学习' }).click();
@@ -155,7 +136,7 @@ test('a real browser restart retains projects, cards and learning records on dis
       channel: 'chromium',
     });
     page = await context.newPage();
-    await page.goto('http://127.0.0.1:5173/#projects');
+    await page.goto('http://127.0.0.1:5174/#projects');
     await expect(page.getByRole('heading', { name: '重启浏览器验证', exact: true })).toBeVisible();
     await page.getByRole('link', { name: /重启浏览器验证/ }).click();
     await expect(page.locator('.library-card')).toHaveCount(1);

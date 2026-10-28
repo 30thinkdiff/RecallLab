@@ -1,6 +1,6 @@
 import { useAction } from '../components/actions';
 import { useState, type FormEvent } from 'react';
-import type { LearningProject, PracticeItem } from '../domain/models';
+import type { LearningProject, PracticeItem, ChangeType } from '../domain/models';
 import { repository } from '../persistence/repository';
 import { ErrorNotice, Modal } from '../components/shared';
 
@@ -118,13 +118,32 @@ export function CardForm({
     confusionWarnings: card?.confusionWarnings ?? '',
     sourceLabel: card?.sourceReferences[0]?.label ?? '',
   });
+  const [changeType, setChangeType] =
+    useState<Exclude<ChangeType, 'initial' | 'legacy'>>('substantive');
+  const [changeSummary, setChangeSummary] = useState('');
+  const [preserve, setPreserve] = useState(false);
   const action = useAction();
   const set = (key: keyof typeof values, value: string) =>
     setValues((current) => ({ ...current, [key]: value }));
   function submit(event: FormEvent) {
     event.preventDefault();
     void action.run(async () => {
-      await repository.saveCard(projectId, values, card?.id);
+      await repository.saveCard(
+        projectId,
+        values,
+        card?.id,
+        card
+          ? {
+              expectedRevisionId: card.currentRevisionId,
+              changeType,
+              changeSummary,
+              impactOnLearningState:
+                changeType === 'cosmetic' || (changeType === 'clarification' && preserve)
+                  ? 'preserve'
+                  : 'reset',
+            }
+          : undefined,
+      );
       onClose();
     });
   }
@@ -134,7 +153,7 @@ export function CardForm({
         <p className="form-intro">一个问题，一次主动回忆。提示和补充信息均为可选。</p>
         {card && (
           <p className="info-note">
-            修改后会生成新修订。历史记录及已开始的学习轮次保留原题与原答案。
+            当前修订 {card.revision}。历史不会改写；修改后，正在作答的旧页面需重新载入最新版。
           </p>
         )}
         <label>
@@ -208,6 +227,52 @@ export function CardForm({
             />
           </label>
         </details>
+        {card && (
+          <section className="revision-options">
+            <h3>这次修改如何影响学习？</h3>
+            <label>
+              修订类型
+              <select
+                value={changeType}
+                onChange={(event) => {
+                  setChangeType(event.target.value as typeof changeType);
+                  setPreserve(false);
+                }}
+              >
+                <option value="substantive">实质性更正（默认，需要重新学习）</option>
+                <option value="cosmetic">格式性修改（不改变含义与考核要求）</option>
+                <option value="clarification">澄清说明（需判断是否改变考核要求）</option>
+                <option value="replacement">知识替换（建立新的知识单元）</option>
+              </select>
+            </label>
+            {changeType === 'clarification' && (
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={preserve}
+                  onChange={(event) => setPreserve(event.target.checked)}
+                />
+                我确认不改变正确性标准和必需掌握要点，保留有效学习证据
+              </label>
+            )}
+            <p className="info-note">
+              {changeType === 'cosmetic' || (changeType === 'clarification' && preserve)
+                ? '你已声明本次修改不影响学习要求，原有效证据继续适用。'
+                : '新版本需要重新学习。旧成绩保留为历史，不再代表当前版本表现；不推断你已经形成错误记忆。'}
+            </p>
+            <label>
+              修改原因 <span>*</span>
+              <textarea
+                required
+                maxLength={2000}
+                value={changeSummary}
+                onChange={(event) => setChangeSummary(event.target.value)}
+                placeholder="说明修改了什么，以及为什么修改"
+                rows={2}
+              />
+            </label>
+          </section>
+        )}
         <ErrorNotice message={action.error} />
         <div className="form-actions">
           <button type="button" className="button secondary" onClick={onClose}>

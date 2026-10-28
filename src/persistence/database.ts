@@ -5,7 +5,12 @@ import type {
   PracticeItem,
   ReviewEvent,
   StudySession,
+  PracticeItemRevision,
+  DraftRecovery,
+  RecoveryBackup,
 } from '../domain/models';
+import { dataTables, legacyTables, migrateBackup } from './migration';
+import { validateBackup } from './backup-format';
 
 export class RecallDatabase extends Dexie {
   projects!: Table<LearningProject, string>;
@@ -13,8 +18,11 @@ export class RecallDatabase extends Dexie {
   practiceItems!: Table<PracticeItem, string>;
   reviewEvents!: Table<ReviewEvent, string>;
   sessions!: Table<StudySession, string>;
+  revisions!: Table<PracticeItemRevision, string>;
+  draftRecoveries!: Table<DraftRecovery, string>;
+  recoveryBackups!: Table<RecoveryBackup, string>;
 
-  constructor(name = 'RecallLab') {
+  constructor(name = import.meta.env.MODE === 'test' ? 'RecallLab-test' : 'RecallLab') {
     super(name);
     // Never edit a released schema. Add version(2).stores(...).upgrade(...) for migrations.
     this.version(1).stores({
@@ -24,6 +32,35 @@ export class RecallDatabase extends Dexie {
       reviewEvents: 'id, projectId, practiceItemId, sessionId, timestamp, &[sessionId+queueIndex]',
       sessions: 'id, projectId, status, [projectId+status]',
     });
+    this.version(2)
+      .stores({
+        revisions: 'id, practiceItemId, learningStateId, &[practiceItemId+revisionNumber]',
+        draftRecoveries: 'id, sessionId, practiceItemId, createdAt',
+        recoveryBackups: 'id, createdAt',
+      })
+      .upgrade(async (transaction) => {
+        const raw: Record<string, unknown[]> = {};
+        for (const name of legacyTables) raw[name] = await transaction.table(name).toArray();
+        const backup = {
+          format: 'RecallLabBackup',
+          formatVersion: 1,
+          databaseVersion: 1,
+          createdAt: new Date().toISOString(),
+          data: raw,
+        };
+        // This copy and all transforms share the upgrade transaction. Failure leaves v1 untouched.
+        await transaction.table('recoveryBackups').add({
+          id: crypto.randomUUID(),
+          createdAt: backup.createdAt,
+          reason: 'migration',
+          json: JSON.stringify(backup),
+        });
+        const migrated = migrateBackup(validateBackup(backup));
+        for (const name of dataTables) {
+          if (name === 'reviewEvents' || name === 'projects' || name === 'knowledgeUnits') continue;
+          await transaction.table(name).bulkPut(migrated[name]);
+        }
+      });
   }
 }
 

@@ -18,6 +18,9 @@ const snapshot: PracticeSnapshot = {
 function session(): StudySession {
   return {
     id: 's',
+    generation: 'test',
+    planVersion: 0,
+    draftVersion: 0,
     projectId: 'p',
     queue: [snapshot],
     index: 0,
