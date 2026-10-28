@@ -1,3 +1,5 @@
+import { candidateQualityProblem } from '../ai/quality';
+import { reviewQueue } from '../ai/review-queue';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../persistence/database';
@@ -83,6 +85,7 @@ export function AiWorkspace({
   const [consent, setConsent] = useState(false),
     [reviewed, setReviewed] = useState(false),
     [complete, setComplete] = useState(false);
+  const [reviewFilter, setReviewFilter] = useState('all');
   const [saved, setSaved] = useState<string[]>([]);
   const abort = useRef<AbortController | null>(null),
     running = useRef(false);
@@ -148,6 +151,7 @@ export function AiWorkspace({
     setConsent(false);
   }
   const available = cards.filter((c) => !c.archivedAt && c.projectId === projectId);
+  const reviewEntries = state ? reviewQueue(state, available) : [];
   const sources: AiSource[] =
     kind === 'document' && document
       ? [
@@ -282,7 +286,9 @@ export function AiWorkspace({
         密钥不保存。草稿含私人资料，只有人工确认后才成为学习题目。
       </p>
       <ModelStatus disabled={Boolean(busy) || hasDraft} config={config} onConfig={changeConfig} />
-      <p role="status">{draft.saving ? '正在保存草稿…' : draft.status}</p>
+      <p role="status" data-testid="ai-draft-status">
+        {draft.saving ? '正在保存草稿…' : draft.status}
+      </p>
       <ErrorNotice message={draft.error} />
       {draft.stale.map((m) => (
         <p className="info-note" key={m}>
@@ -501,6 +507,19 @@ export function AiWorkspace({
                   />
                 </label>
                 <label>
+                  引用方式
+                  <select
+                    value={config.strategy ?? 'standard'}
+                    disabled={hasDraft}
+                    onChange={(e) =>
+                      changeConfig({ strategy: e.target.value as 'standard' | 'anchored' })
+                    }
+                  >
+                    <option value="standard">逐字引用（原有方案）</option>
+                    <option value="anchored">原文片段编号（试验方案，仍需核对）</option>
+                  </select>
+                </label>
+                <label>
                   输出格式
                   <select
                     value={config.jsonMode}
@@ -614,10 +633,11 @@ export function AiWorkspace({
                   selected:
                     candidateEvidence(c).valid &&
                     !duplicate.has(c.id) &&
-                    !promptProblem({
-                      question: c.question,
-                      standardAnswer: candidateAnswer(c, state),
-                    }),
+                    !candidateQualityProblem(
+                      c.question,
+                      candidateAnswer(c, state),
+                      c.evidenceQuote,
+                    ),
                 })),
               });
               setReviewed(false);
@@ -632,17 +652,90 @@ export function AiWorkspace({
               个字符未被候选引用覆盖。引用覆盖不是知识完整性判断，请对照发送范围中的原文检查遗漏。
             </p>
           )}
-          {state.candidates.map((row, index) => (
-            <CandidateEditor
-              key={row.id}
-              row={row}
-              state={state}
-              index={index}
-              busy={Boolean(busy) || !draft.canConfirm}
-              duplicate={duplicate.has(row.id)}
-              edit={(patch) => edit(row.id, patch)}
-            />
-          ))}
+          {state.candidates.length > 0 && (
+            <>
+              <label>
+                审阅范围
+                <select value={reviewFilter} onChange={(e) => setReviewFilter(e.target.value)}>
+                  <option value="all">全部候选（优先显示待核对风险）</option>
+                  <option value="risk">有质量提示</option>
+                  <option value="source">来源或引用不足</option>
+                  <option value="duplicate">疑似重复</option>
+                  <option value="edited">我已修改</option>
+                </select>
+              </label>
+              <button
+                className="button secondary"
+                disabled={busy || !draft.canConfirm}
+                onClick={() => {
+                  const flagged = new Set(
+                    reviewEntries
+                      .filter((c) => !candidateEvidence(c.row).valid || c.comparisons.length)
+                      .map((c) => c.row.id),
+                  );
+                  update({
+                    ...state,
+                    candidates: state.candidates.map((c) =>
+                      flagged.has(c.id) ? { ...c, selected: false } : c,
+                    ),
+                  });
+                  setReviewed(false);
+                  setComplete(false);
+                }}
+              >
+                取消选择来源不足及重复候选
+              </button>
+              <p className="muted">
+                提示由规则检查产生，不能发现所有语义问题；批量选择仍需你核对。修改会自动保存，已确认的条目不再显示。
+              </p>
+            </>
+          )}
+          {Array.from(new Set(reviewEntries.map((entry) => entry.group))).map((group) => {
+            const entries = reviewEntries.filter(
+              (entry) =>
+                entry.group === group &&
+                (reviewFilter === 'all' ||
+                  (reviewFilter === 'risk' && entry.flags.length) ||
+                  (reviewFilter === 'source' && !candidateEvidence(entry.row).valid) ||
+                  (reviewFilter === 'duplicate' && entry.comparisons.length) ||
+                  (reviewFilter === 'edited' && entry.row.userEdited)),
+            );
+            if (!entries.length) return null;
+            const first = entries[0]!.row;
+            return (
+              <section className="question-panel" key={group} aria-label="按来源分组的候选">
+                <h3>
+                  {first.source.document?.filename ?? first.source.question ?? '已有标准答案'} ·
+                  原文段 {first.chunk.start + 1}—{first.chunk.end}
+                </h3>
+                {entries.map(({ row, index, flags, comparisons }) => (
+                  <div key={row.id}>
+                    {flags.length > 0 && <p className="info-note">待核对：{flags.join(' · ')}</p>}
+                    {comparisons.length > 0 && (
+                      <details>
+                        <summary>比较重复题目的答案差异</summary>
+                        <p>当前候选：{candidateAnswer(row, state)}</p>
+                        {comparisons.map((c, i) => (
+                          <p className="preserve-lines" key={i}>
+                            {c.label}：{c.question}
+                            {c.answer}
+                          </p>
+                        ))}
+                      </details>
+                    )}
+                    <CandidateEditor
+                      row={row}
+                      state={state}
+                      index={index}
+                      busy={Boolean(busy) || !draft.canConfirm}
+                      duplicate={duplicate.has(row.id)}
+                      edit={(patch) => edit(row.id, patch)}
+                    />
+                  </div>
+                ))}
+              </section>
+            );
+          })}
           {state.candidates.length > 0 && (
             <>
               <label className="checkbox-label">
@@ -750,7 +843,7 @@ function CandidateEditor({
         ? evidence.match.anchor.start
         : 0,
     );
-  const problem = promptProblem({ question: row.question, standardAnswer: answer });
+  const problem = candidateQualityProblem(row.question, answer, row.evidenceQuote);
   return (
     <details className="ai-candidate" open={index === 0}>
       <summary>
@@ -816,7 +909,17 @@ function CandidateEditor({
           <summary>AI 原始答案建议、解释与质量意见（均未验证）</summary>
           {row.original.map((o, i) => (
             <div key={i}>
+              <p>AI 原始题干：{o.question}</p>
+              <p>AI 原始引用（片段模式可能是编号）：{o.evidenceQuote}</p>
               <p className="preserve-lines">{o.answerSuggestion}</p>
+              <ul>
+                {o.criteria.map((c, j) => (
+                  <li key={j}>
+                    {c.text} · {c.importance === 'required' ? '模型建议必需' : '模型建议可选'} ·{' '}
+                    {c.quote}
+                  </li>
+                ))}
+              </ul>
               {o.qualityNotes.map((n, j) => (
                 <p key={j}>{n}</p>
               ))}

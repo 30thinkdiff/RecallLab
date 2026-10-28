@@ -8,6 +8,10 @@ import { useAction } from './components/actions';
 import { CardForm, ProjectForm } from './features/Forms';
 import { History, Overview, ProjectDetail, Projects } from './features/Workspace';
 import { PendingPrompts } from './features/PendingPrompts';
+const AiEvaluation = lazy(() =>
+  import('./features/AiEvaluation').then((m) => ({ default: m.AiEvaluation })),
+);
+const AiDrafts = lazy(() => import('./features/AiDrafts').then((m) => ({ default: m.AiDrafts })));
 const AiWorkspace = lazy(() =>
   import('./features/AiWorkspace').then((m) => ({ default: m.AiWorkspace })),
 );
@@ -93,6 +97,8 @@ function Workspace() {
     'documents',
     'daily',
     'document',
+    'ai-drafts',
+    'ai-evaluation',
   ].includes(section ?? '')
     ? section
     : 'projects';
@@ -128,6 +134,7 @@ function Workspace() {
             { name: '归档内容', route: 'archive', icon: BookOpen },
             { name: '导入资料', route: 'import', icon: BookOpen },
             { name: '学习资料', route: 'documents', icon: BookOpen },
+            { name: 'AI 整理草稿', route: 'ai-drafts', icon: FlaskConical },
           ].map(({ name, route, icon: Icon }) => (
             <a
               key={route}
@@ -150,7 +157,7 @@ function Workspace() {
           </p>
         </div>
         <div className="sidebar-footer">
-          RECALL. REFLECT. REPEAT.<span>0.5 Alpha · 来源可核对的辅助整理</span>
+          RECALL. REFLECT. REPEAT.<span>0.5.1 · 可恢复的 AI 辅助整理</span>
           <OfflineStatus />
         </div>
       </aside>
@@ -168,6 +175,8 @@ function Workspace() {
                 archive: '归档内容',
                 import: '导入资料',
                 documents: '学习资料',
+                'ai-drafts': 'AI 整理草稿',
+                'ai-evaluation': '模型效果评测',
                 document: '原文资料',
               }[activePage ?? 'projects']
             }
@@ -197,6 +206,14 @@ function Workspace() {
             <Projects data={data} onCreate={createProject} />
           ) : section === 'history' ? (
             <History data={data} />
+          ) : section === 'ai-evaluation' ? (
+            <Suspense fallback={<p>正在读取固定评测…</p>}>
+              <AiEvaluation />
+            </Suspense>
+          ) : section === 'ai-drafts' ? (
+            <Suspense fallback={<p>正在读取草稿…</p>}>
+              <AiDrafts />
+            </Suspense>
           ) : section === 'import' ? (
             <Suspense fallback={<p role="status">正在准备资料导入…</p>}>
               <ImportPage

@@ -1,5 +1,6 @@
 /* global fetch, AbortSignal */
 import http from 'node:http';
+import process from 'node:process';
 import { promises as fs, createReadStream } from 'node:fs';
 import path from 'node:path';
 import { randomUUID, createHash } from 'node:crypto';
@@ -237,7 +238,17 @@ export async function createLocalServer({
               '--no-webui',
               '--log-disable',
             ],
-            { stdio: 'ignore', shell: false },
+            {
+              stdio: 'ignore',
+              shell: false,
+              env: {
+                ...process.env,
+                LD_LIBRARY_PATH: path.dirname(m.binary),
+                ...(process.platform === 'darwin'
+                  ? { DYLD_LIBRARY_PATH: path.dirname(m.binary) }
+                  : {}),
+              },
+            },
           );
           children.set(m.id, child);
           child.once('exit', () => children.delete(m.id));

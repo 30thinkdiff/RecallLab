@@ -28,7 +28,11 @@ it('never starts at startup, requires origin/token/explicit consent and only sto
         temporary: false,
       },
     ],
-    spawnModel: () => {
+    spawnModel: (binary, args, options) => {
+      expect(binary).toBe(path.join(root, 'bin'));
+      expect(args).toContain('--no-webui');
+      expect(options.shell).toBe(false);
+      expect(options.env.LD_LIBRARY_PATH).toBe(root);
       spawned++;
       const child = new EventEmitter();
       child.kill = () => {

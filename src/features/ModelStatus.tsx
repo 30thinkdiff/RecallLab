@@ -86,7 +86,11 @@ export function ModelStatus({
       {state?.status === 'missing-model' && state.models.length > 0 && (
         <label>
           已安装模型
-          <select value="" onChange={(e) => onConfig({ model: e.target.value })}>
+          <select
+            disabled={disabled || busy}
+            value=""
+            onChange={(e) => onConfig({ model: e.target.value })}
+          >
             <option value="">请选择</option>
             {state.models.map((m) => (
               <option key={m.id} value={m.id}>
