@@ -1,0 +1,16 @@
+{
+  "runtimeLibrariesMapped": 32,
+  "allRuntimeLibrariesUseSavedDirectory": true,
+  "modelMappings": 1,
+  "modelUsesProtectedLink": true,
+  "originalPreserved": true,
+  "modelSha256": "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e",
+  "weightsCopied": false,
+  "runtimeCopiedBytes": 54687256,
+  "homeFreeAfter": 2677669888,
+  "availableMemoryMiBAfter": 5668,
+  "swapUsedMiBAfter": 4327,
+  "ownedBySessionLauncher": true,
+  "unused05ModelStopped": true,
+  "backgroundServiceInstalled": false
+}

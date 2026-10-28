@@ -1,3 +1,7 @@
+# V0.5.1 本轮收敛
+
+本机状态/按需启动、v6候选草稿、刷新与浏览器重启恢复、完整来源版本检查、风险分组及全部公开实测结果已实现。PR #12 依赖未合并 #11，不自动合并。详细本轮结果与限制见 [V051_CHECKPOINTS](V051_CHECKPOINTS.md) 和 [真实模型评测](evaluations/V051_MODEL_REPORT.md)，不要用下方历史记录替代本轮最终验收。
+
 # 开发进度
 
 更新：2026-10-28（Asia/Shanghai）。当前开发分支 V0.5 Alpha，独立 [PR #11](https://github.com/30thinkdiff/RecallLab/pull/11)；功能已实现；最终验收结果与独立审查状态以 PR #11 当前 head 的交付报告为准。

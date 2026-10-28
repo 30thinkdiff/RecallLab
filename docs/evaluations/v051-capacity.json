@@ -1,0 +1,34 @@
+{
+  "chromium": {
+    "baselineBytes": 21849142,
+    "provenanceBytes": 46408153,
+    "bytes": 46539822,
+    "prettyBytes": 63260292,
+    "addedProvenanceBytes": 24559011,
+    "draftBytes": 132230,
+    "cards": 2000,
+    "aiCards": 1000,
+    "events": 10000,
+    "draftCount": 20,
+    "originalHistoryAndStatesExact": true,
+    "secretAbsent": true,
+    "restoreAndExportMs": 7923,
+    "draftEpochsChanged": true
+  },
+  "firefox": {
+    "baselineBytes": 21849142,
+    "provenanceBytes": 46407853,
+    "bytes": 46539522,
+    "prettyBytes": 63259992,
+    "addedProvenanceBytes": 24558711,
+    "draftBytes": 132230,
+    "cards": 2000,
+    "aiCards": 1000,
+    "events": 10000,
+    "draftCount": 20,
+    "originalHistoryAndStatesExact": true,
+    "secretAbsent": true,
+    "restoreAndExportMs": 10079,
+    "draftEpochsChanged": true
+  }
+}

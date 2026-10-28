@@ -101,14 +101,21 @@ export function BackupPage() {
       </p>
       <section className="question-panel">
         <h2>导出完整 JSON</h2>
-        <p>请定期下载并妥善保存。JSON 含你的学习资料和原始回答，导出不会上传。</p>
+        <p>
+          请定期下载并妥善保存。JSON 含你的学习资料、原始回答及 AI
+          草稿，导出不会上传，不含接口密钥。当前恢复上限为 50 MB。
+        </p>
         <button
           className="button"
           disabled={action.busy}
           onClick={() =>
             void action.run(async () => {
-              downloadJson(await exportBackup(db));
-              setMessage('已生成备份下载，请检查浏览器下载目录。');
+              const backup = await exportBackup(db);
+              const bytes = new TextEncoder().encode(JSON.stringify(backup)).length;
+              downloadJson(backup);
+              setMessage(
+                `已生成备份 ${(bytes / 1024 ** 2).toFixed(2)} MB，包含 ${backup.data.aiDrafts.length} 份 AI 草稿。${bytes > 50 * 1024 ** 2 ? '注意：超过当前 50 MB 恢复上限，请保留文件并联系维护者，勿清除浏览器数据。' : '请检查浏览器下载目录。'}`,
+              );
             })
           }
         >
@@ -165,7 +172,8 @@ export function BackupPage() {
               {candidate.data.reviewEvents.length} 条事件 · {candidate.data.revisions.length} 个修订
               · {candidate.data.sourceDocuments.length} 份资料 ·{' '}
               {candidate.data.memoryStates.length} 个记忆状态 ·{' '}
-              {candidate.data.schedulingLogs.length} 条调度决策
+              {candidate.data.schedulingLogs.length} 条调度决策 · {candidate.data.aiDrafts.length}{' '}
+              份 AI 草稿
             </p>
             <label className="checkbox-label">
               <input

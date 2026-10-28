@@ -159,7 +159,7 @@ export function ModelStatus({
               <p>
                 可把已下载运行环境保存到持久目录：约 {(local.adoption.bytes / 1024 ** 3).toFixed(2)}{' '}
                 GB；当前可用 {(local.adoption.free / 1024 ** 3).toFixed(2)}{' '}
-                GB。本机复制，不联网下载。
+                GB。本机复制，不联网下载；保存后至少保留 2 GB 可用空间。
               </p>
               <label className="checkbox-label">
                 <input
@@ -172,7 +172,7 @@ export function ModelStatus({
               <button
                 className="button secondary"
                 disabled={
-                  busy || !allowCopy || local.adoption.free < local.adoption.bytes + 256 * 1024 ** 2
+                  busy || !allowCopy || local.adoption.free < local.adoption.bytes + 2 * 1024 ** 3
                 }
                 onClick={() => void command('adopt')}
               >

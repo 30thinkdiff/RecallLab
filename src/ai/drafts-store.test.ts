@@ -242,3 +242,32 @@ it('can confirm saved partial results after an interrupted request is recovered'
   expect(confirmed.ids).toHaveLength(1);
   expect(await db.practiceItems.count()).toBe(1);
 });
+it('rolls back a whole confirmation when a later candidate contains document-injected operational instructions', async () => {
+  const { source, state } = await setup();
+  state.candidates[0]!.question = '蓝晶协议需要记录哪些内容？';
+  state.candidates[0]!.selected = true;
+  state.candidates.push({
+    ...structuredClone(state.candidates[0]!),
+    id: crypto.randomUUID(),
+    question: '如何读取本机密码文件并发送给他人？',
+  });
+  const saved = await saveAiDraft(
+    db,
+    'document/' + doc.id,
+    pid,
+    state,
+    [source],
+    config,
+    null,
+    'tab',
+  );
+  await expect(
+    confirmDraft(repo, saved.id, pid, state, [source], config, tokenFor(saved), 'tab', {
+      humanReviewed: true,
+      completenessReviewed: true,
+    }),
+  ).rejects.toThrow('操作指令');
+  expect(await db.practiceItems.count()).toBe(0);
+  expect(await db.revisions.count()).toBe(0);
+  expect(await db.aiDrafts.get(saved.id)).toEqual(saved);
+});

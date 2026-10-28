@@ -165,8 +165,8 @@ export async function createLocalServer({
             return;
           }
           const plan = await adoption();
-          if (!plan.available || plan.free < plan.bytes + 256 * 1024 ** 2) {
-            response(res, 409, { message: '没有可保存的已有运行环境，或可用空间不足' });
+          if (!plan.available || plan.free < plan.bytes + 2 * 1024 ** 3) {
+            response(res, 409, { message: '没有可保存的已有运行环境，或保存后不足 2 GB 余量' });
             return;
           }
           adopting = true;

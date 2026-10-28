@@ -87,7 +87,8 @@ export async function exportBackup(db: RecallDatabase): Promise<Backup> {
 }
 
 export function parseBackup(text: string) {
-  if (text.length > 50 * 1024 * 1024) throw new Error('备份超过 50 MB，暂不支持通过浏览器恢复');
+  if (new TextEncoder().encode(text).length > 50 * 1024 * 1024)
+    throw new Error('备份超过 50 MB，暂不支持通过浏览器恢复');
   let raw: unknown;
   try {
     raw = JSON.parse(text) as unknown;
