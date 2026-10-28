@@ -1,6 +1,6 @@
 # 开发进度
 
-更新：2026-10-28（Asia/Shanghai）。当前开发分支 V0.5 Alpha，独立草稿 [PR #11](https://github.com/30thinkdiff/RecallLab/pull/11)；完整交付尚在进行。
+更新：2026-10-28（Asia/Shanghai）。当前开发分支 V0.5 Alpha，独立 [PR #11](https://github.com/30thinkdiff/RecallLab/pull/11)；功能已实现；最终验收结果与独立审查状态以 PR #11 当前 head 的交付报告为准。
 
 ## V0.5 Alpha 实际进度
 
@@ -36,3 +36,7 @@ Alpha 152 项单元/组件与全部静态/构建通过；新增 v4→v5 升级�
 用户 .marscode/ 原样保留。体验见 [产品验收说明](PRODUCT_ACCEPTANCE.md)；测试证据见 [矩阵](TESTING.md)。上述为 V0.4.1 历史停止点；用户本轮已明确安排 V0.5 Alpha。Alpha 完成后停止扩展，不进入自动语义评分或智能 Agent。
 
 Alpha 最终采用正式 schema v5：升级前保护 v4 原始备份，升级事务不重写历史，不改表/索引；兼容旧备份并拒绝未知未来版本。实测旧 Dexie 会回退打开较新数据库，版本号不是旧程序写锁，不支持降级编辑；此限制在升级页面与指南明确告知。没有因此改动稳定版 main。
+
+## 交付状态入口
+
+本轮功能停止扩展，工程验收矩阵为 152 单元/组件、67 Chromium、27 Firefox、3 发布版；最终 SHA 与 CI 的实际结果以 [PR #11](https://github.com/30thinkdiff/RecallLab/pull/11) 为准。前述“运行中”记录对应当时检查点，不代表尚有后续功能计划。AI 真实效果与 Mock 分开报告，未确认内容不写库，没有自动语义判分/云同步/模型个体训练。
