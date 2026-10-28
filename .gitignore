@@ -12,3 +12,4 @@ playwright-report/
 .agents/
 .codex/
 .aws/
+.local-ai/

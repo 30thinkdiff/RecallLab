@@ -27,6 +27,7 @@ import {
 } from '../ai/apply';
 import { referenceFor, uncoveredText, type AiSource } from '../ai/evidence';
 import { aiSession } from '../ai/session';
+import { ModelStatus } from './ModelStatus';
 
 const taskNames: Record<AiTask, string> = {
   extract: '整理候选知识与题目',
@@ -442,6 +443,7 @@ export function AiWorkspace({
               </>
             )}
           </fieldset>
+          <ModelStatus config={config} onConfig={changeConfig} />
           <p className="info-note">
             {disclosure || configurationError}{' '}
             仅发送所选原文、所选题目的题干及本次任务与目标；不发送学习记录、其他文件或整个数据库。外部服务的留存规则由该服务决定。

@@ -8,6 +8,7 @@
     "npm": ">=10"
   },
   "scripts": {
+    "local": "npm run build && node scripts/recalllab-local.mjs --open",
     "dev": "vite --host 127.0.0.1 --port 5173 --strictPort",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host 127.0.0.1 --port 4173 --strictPort",
