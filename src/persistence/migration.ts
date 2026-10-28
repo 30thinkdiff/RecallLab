@@ -1,3 +1,4 @@
+import type { AiDraftRecord } from '../ai/drafts-format';
 import type { MemoryState, SchedulingLog } from '../scheduling/types';
 import type { Backup } from './backup-format';
 import { validateBackup } from './backup-format';
@@ -15,6 +16,7 @@ import type {
 import { legacyStateId, revisionId } from '../domain/revisions';
 
 export interface LearningData {
+  aiDrafts: AiDraftRecord[];
   projects: LearningProject[];
   knowledgeUnits: KnowledgeUnit[];
   practiceItems: PracticeItem[];
@@ -37,7 +39,9 @@ export const dataTables = [
   'sourceDocuments',
   'memoryStates',
   'schedulingLogs',
+  'aiDrafts',
 ] as const;
+export const v5Tables = dataTables.slice(0, 10);
 export const legacyTables = dataTables.slice(0, 5);
 export const v2Tables = dataTables.slice(0, 7);
 export const v3Tables = dataTables.slice(0, 8);
@@ -90,6 +94,7 @@ export function migrateBackup(input: Backup): LearningData {
     }
   }
   const data: LearningData = {
+    aiDrafts: [],
     projects: input.data.projects,
     knowledgeUnits: input.data.knowledgeUnits,
     practiceItems: input.data.practiceItems.map((item) => ({

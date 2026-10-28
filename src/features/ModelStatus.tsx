@@ -19,7 +19,9 @@ interface LocalStatus {
 export function ModelStatus({
   config,
   onConfig,
+  disabled = false,
 }: {
+  disabled?: boolean;
   config: ProviderConfig;
   onConfig: (p: Partial<ProviderConfig>) => void;
 }) {
@@ -76,7 +78,7 @@ export function ModelStatus({
       <button
         className="button secondary"
         type="button"
-        disabled={busy}
+        disabled={busy || disabled}
         onClick={() => setRetry((n) => n + 1)}
       >
         重新检测模型
@@ -113,7 +115,7 @@ export function ModelStatus({
               </p>
               <button
                 className="button secondary"
-                disabled={busy}
+                disabled={busy || disabled}
                 onClick={() =>
                   onConfig({ kind: 'compatible', endpoint: m.endpoint, model: m.model, apiKey: '' })
                 }
@@ -123,7 +125,7 @@ export function ModelStatus({
               {!m.running && (
                 <button
                   className="button"
-                  disabled={busy || !m.installed || !allowStart}
+                  disabled={busy || disabled || !m.installed || !allowStart}
                   onClick={() => void command('start', m.id)}
                 >
                   按需启动 {m.name}
@@ -132,7 +134,7 @@ export function ModelStatus({
               {m.owned && (
                 <button
                   className="button secondary"
-                  disabled={busy || !allowStart}
+                  disabled={busy || disabled || !allowStart}
                   onClick={() => void command('stop', m.id)}
                 >
                   停止本次模型

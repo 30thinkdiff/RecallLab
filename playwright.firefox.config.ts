@@ -3,6 +3,7 @@ export default defineConfig({
   testDir: './tests/e2e',
   testMatch: [
     'ai-workspace.spec.ts',
+    'ai-drafts.spec.ts',
     'backup.spec.ts',
     'criteria-check.spec.ts',
     'daily-review.spec.ts',

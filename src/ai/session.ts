@@ -1,10 +1,8 @@
-import type { GenerationState } from './generation';
 import type { ProviderConfig } from './protocol';
-// Deliberately volatile: neither credentials nor unconfirmed/private drafts enter browser storage.
+// Credentials and enablement are session-only. Candidate drafts use versioned IndexedDB separately.
 export const aiSession: {
   enabled: boolean;
   config: ProviderConfig;
-  drafts: Map<string, GenerationState>;
 } = {
   enabled: false,
   config: {
@@ -14,5 +12,4 @@ export const aiSession: {
     apiKey: '',
     jsonMode: 'schema',
   },
-  drafts: new Map(),
 };

@@ -42,10 +42,12 @@ export interface AiRequest {
 }
 export interface AiProvider {
   readonly kind: ProviderKind;
+  readonly strategy?: 'standard' | 'anchored';
   generate(input: AiRequest, signal: AbortSignal): Promise<unknown>;
 }
 export type ProviderKind = 'mock' | 'ollama' | 'compatible';
 export interface ProviderConfig {
+  strategy?: 'standard' | 'anchored';
   kind: ProviderKind;
   endpoint: string;
   model: string;
