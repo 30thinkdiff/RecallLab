@@ -565,6 +565,9 @@ export function ImportPage({
             <a className="text-link" href={`#document/${result.documentId}`}>
               查看资料与来源
             </a>
+            <a className="button secondary" href={`#ai/document/${result.documentId}`}>
+              AI 辅助整理
+            </a>
           </div>
           <button className="text-button" onClick={reset}>
             继续导入其他资料

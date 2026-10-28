@@ -85,17 +85,18 @@ test('M: actual v1 browser database downloads a pre-upgrade backup and preserves
   await page.goto('/#study/s-active');
   await expect(page.getByLabel('你的回答')).toHaveValue('尚未完成的虚构长答案草稿');
   await page.getByRole('link', { name: '备份与恢复', exact: true }).click();
-  await expect(page.locator('.recovery-row')).toHaveCount(3);
+  await expect(page.locator('.recovery-row')).toHaveCount(4);
   await expect(page.locator('.recovery-row').first()).toContainText('升级前');
 });
 
 test('N: backup restore and a real browser restart retain revision links and historical evidence', async ({
   playwright,
+  browserName,
 }, testInfo) => {
   const profile = testInfo.outputPath('profile');
-  let context = await playwright.chromium.launchPersistentContext(profile, {
+  let context = await playwright[browserName].launchPersistentContext(profile, {
     headless: true,
-    channel: 'chromium',
+    ...(browserName === 'chromium' ? { channel: 'chromium' } : {}),
     baseURL: 'http://127.0.0.1:5174',
     timezoneId: 'Asia/Shanghai',
   });
@@ -113,7 +114,7 @@ test('N: backup restore and a real browser restart retain revision links and his
       databaseVersion: number;
       data: { reviewEvents: unknown[]; revisions: unknown[]; sessions: unknown[] };
     };
-    expect(exported.databaseVersion).toBe(4);
+    expect(exported.databaseVersion).toBe(5);
     expect(exported.data.reviewEvents).toHaveLength(4);
     expect(exported.data.revisions).toHaveLength(6);
     await page.getByLabel('选择 JSON 备份').setInputFiles(file);
@@ -121,9 +122,9 @@ test('N: backup restore and a real browser restart retain revision links and his
     await page.getByRole('button', { name: '确认恢复备份', exact: true }).click();
     await expect(page.getByRole('status')).toContainText('恢复成功');
     await context.close();
-    context = await playwright.chromium.launchPersistentContext(profile, {
+    context = await playwright[browserName].launchPersistentContext(profile, {
       headless: true,
-      channel: 'chromium',
+      ...(browserName === 'chromium' ? { channel: 'chromium' } : {}),
       baseURL: 'http://127.0.0.1:5174',
       timezoneId: 'Asia/Shanghai',
     });
@@ -217,4 +218,136 @@ test('a late read of a previously selected backup cannot replace the latest vali
   );
   await expect(page.getByRole('alert')).toHaveCount(0);
   await expect(page.locator('.restore-preview')).toContainText('latest-valid.json');
+});
+
+test('v4 upgrade first downloads a backup, preserves formal scheduling byte-for-byte and rejects a native v4 open request', async ({
+  page,
+}, testInfo) => {
+  await page.goto('/tests/fixtures/blank.html');
+  const before = await page.evaluate(async () => {
+    const d = '/src/persistence/database.ts',
+      r = '/src/persistence/repository.ts',
+      b = '/src/persistence/backup.ts',
+      s = '/src/scheduling/service.ts',
+      v = '/src/domain/revisions.ts';
+    const { db } = await import(d),
+      { repository } = await import(r),
+      { exportBackup } = await import(b),
+      { ScheduleService } = await import(s),
+      { tokenOf } = await import(v);
+    const pid = await repository.saveProject({
+      name: '虚构 v4 学习资料',
+      description: '',
+      learningGoal: '',
+      targetDate: '',
+      dailyTimeBudget: 30,
+    });
+    await repository.saveCard(pid, {
+      question: '蓝晶协议要求什么？',
+      standardAnswer: '核对来源，并保留版本。',
+      hints: '',
+      answerCriteria: '',
+      mnemonics: '',
+      confusionWarnings: '',
+      sourceLabel: '虚构资料',
+    });
+    const sid = await new ScheduleService(db).start(pid);
+    let session = await db.sessions.get(sid);
+    session = await repository.updateDraft(
+      sid,
+      0,
+      { responseMode: 'typed', userResponse: '核对来源，并保留版本。' },
+      tokenOf(session),
+    );
+    session = await repository.updateDraft(sid, 0, {}, tokenOf(session), 'reveal');
+    await repository.submitReview(sid, 0, 'correct', 4, tokenOf(session));
+    const backup = await exportBackup(db),
+      name = db.name;
+    const schema = db.tables.map((t: import('dexie').Table) => ({
+      name: t.name,
+      key: t.schema.primKey.keyPath,
+      indexes: t.schema.indexes.map((i: import('dexie').IndexSpec) => ({
+        name: i.name,
+        key: i.keyPath,
+        unique: i.unique,
+        multi: i.multi,
+      })),
+    }));
+    db.close();
+    await new Promise<void>((resolve, reject) => {
+      const req = indexedDB.deleteDatabase(name);
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
+    });
+    await new Promise<void>((resolve, reject) => {
+      const req = indexedDB.open(name, 40);
+      req.onupgradeneeded = () => {
+        for (const table of schema) {
+          const store = req.result.createObjectStore(table.name, { keyPath: table.key });
+          for (const index of table.indexes)
+            store.createIndex(index.name, index.key, {
+              unique: index.unique,
+              multiEntry: index.multi,
+            });
+        }
+      };
+      req.onerror = () => reject(req.error);
+      req.onsuccess = () => {
+        const native = req.result;
+        const tx = native.transaction(Object.keys(backup.data), 'readwrite');
+        for (const [table, rows] of Object.entries(backup.data))
+          for (const row of rows as { id: string }[]) tx.objectStore(table).add(row);
+        tx.oncomplete = () => {
+          native.close();
+          resolve();
+        };
+        tx.onerror = () => reject(tx.error);
+      };
+    });
+    return backup.data;
+  });
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: '先备份，再升级学习数据' })).toBeVisible();
+  await expect(page.getByRole('button', { name: '已保存备份，升级并继续' })).toBeDisabled();
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: '下载升级前备份' }).click();
+  const path = testInfo.outputPath('fictional-v4-before-upgrade.json');
+  await (await download).saveAs(path);
+  const { readFile } = await import('node:fs/promises');
+  const copy = JSON.parse(await readFile(path, 'utf8'));
+  expect(copy.databaseVersion).toBe(4);
+  expect(copy.data).toEqual(before);
+  await page.getByRole('button', { name: '已保存备份，升级并继续' }).click();
+  await expect(page.getByRole('heading', { name: '先备份，再升级学习数据' })).toHaveCount(0);
+  const result = await page.evaluate(async () => {
+    const d = '/src/persistence/database.ts',
+      b = '/src/persistence/backup.ts';
+    const { db } = await import(d),
+      { exportBackup } = await import(b);
+    const after = await exportBackup(db);
+    const oldWriter = await new Promise<string>((resolve) => {
+      const req = indexedDB.open(db.name, 40);
+      req.onerror = () => resolve(req.error?.name ?? 'unknown');
+      req.onsuccess = () => {
+        req.result.close();
+        resolve('unexpected success');
+      };
+    });
+    return {
+      after,
+      version: db.verno,
+      oldWriter,
+      copies: (await db.recoveryBackups.toArray()).map((c: { json: string }) => JSON.parse(c.json)),
+    };
+  });
+  expect(result.version).toBe(5);
+  expect(result.after.databaseVersion).toBe(5);
+  expect(result.after.data).toEqual(before);
+  expect(result.oldWriter).toBe('VersionError');
+  expect(
+    result.copies.some(
+      (c: { databaseVersion: number; data: unknown }) =>
+        c.databaseVersion === 4 && JSON.stringify(c.data) === JSON.stringify(before),
+    ),
+  ).toBe(true);
 });

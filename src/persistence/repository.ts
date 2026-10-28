@@ -1,3 +1,4 @@
+import { assertAiAnchors, type AiConfirmation, type AiProvenance } from '../ai/provenance';
 import {
   assessmentSchema,
   assessmentResult,
@@ -124,6 +125,7 @@ export class Repository {
     id?: string,
     change?: RevisionInput,
     importedSources?: SourceReference[],
+    aiConfirmation?: AiConfirmation,
   ) {
     const input = cardInputSchema.parse(raw);
     return this.write(async () => {
@@ -146,6 +148,7 @@ export class Repository {
         change.impactOnLearningState !== 'reset'
       )
         throw new Error('实质性更正或知识替换必须重新学习');
+      const learningObjective = input.learningObjective ?? existing?.learningObjective;
       const now = new Date().toISOString();
       const itemId = id ?? crypto.randomUUID();
       const number = (existing?.revision ?? 0) + 1;
@@ -163,7 +166,12 @@ export class Repository {
           existing.answerCriteria.every(
             (criterion, index) => comparable(criterion) === comparable(newCriteria[index] ?? ''),
           );
-        if (!unchangedQuestion || !unchangedAnswer || !unchangedCriteria)
+        if (
+          !unchangedQuestion ||
+          !unchangedAnswer ||
+          !unchangedCriteria ||
+          existing.learningObjective !== learningObjective
+        )
           throw new Error(
             '题干、标准答案或核对要点有内容变化；请使用重新学习的修订类型，不能继承旧成绩',
           );
@@ -189,11 +197,58 @@ export class Repository {
             await this.db.sourceDocuments.get(source.documentId),
             projectId,
           );
+      let aiProvenance: AiProvenance | undefined = existing?.aiProvenance
+        ? { ...structuredClone(existing.aiProvenance), modifiedAfterConfirmation: true }
+        : undefined;
+      if (aiConfirmation) {
+        aiProvenance = {
+          ...structuredClone(aiConfirmation),
+          confirmedRevisionId: revisionId(itemId, number),
+        };
+        assertAiAnchors(aiProvenance);
+        if (
+          aiProvenance.objective !== learningObjective ||
+          aiProvenance.confirmation.question !== input.question ||
+          aiProvenance.confirmation.answer !== input.standardAnswer ||
+          JSON.stringify(aiProvenance.confirmation.criteria) !==
+            JSON.stringify(lines(input.answerCriteria))
+        )
+          throw new Error('AI 确认内容与实际保存字段不一致');
+        if (aiProvenance.sourceKind === 'answer') {
+          if (
+            !existing ||
+            aiProvenance.inputId !== existing.id ||
+            aiProvenance.inputRevisionId !== existing.currentRevisionId ||
+            aiProvenance.inputText !== existing.standardAnswer
+          )
+            throw new ConflictError('AI 依据的标准答案已修订，请保留候选并重新核对');
+          if (
+            aiProvenance.confirmation.criterionMode === 'unchanged' &&
+            JSON.stringify(aiProvenance.confirmation.criteria) !==
+              JSON.stringify(existing.answerCriteria)
+          )
+            throw new Error('不能把修改后的评分要点标成未变化');
+        } else {
+          const doc = await this.db.sourceDocuments.get(aiProvenance.inputId);
+          if (
+            !doc ||
+            doc.projectId !== projectId ||
+            doc.sourceHash !== aiProvenance.documentHash ||
+            doc.extractedContent.slice(
+              aiProvenance.inputStart,
+              aiProvenance.inputStart + aiProvenance.inputText.length,
+            ) !== aiProvenance.inputText
+          )
+            throw new ConflictError('AI 依据的原资料已变化，请重新生成');
+        }
+      }
       const item: PracticeItem = {
         id: itemId,
         projectId,
         knowledgeUnitId,
         question: input.question,
+        ...(learningObjective ? { learningObjective } : {}),
+        ...(aiProvenance ? { aiProvenance } : {}),
         standardAnswer: input.standardAnswer,
         answerCriteria: lines(input.answerCriteria),
         hints: lines(input.hints),
@@ -231,6 +286,8 @@ export class Repository {
         title: item.question,
         knowledgeType: unit?.knowledgeType ?? 'fact',
         canonicalContent: item.standardAnswer,
+        ...(item.learningObjective ? { learningObjective: item.learningObjective } : {}),
+        ...(item.aiProvenance ? { aiProvenance: item.aiProvenance } : {}),
         sourceReferences: item.sourceReferences,
         importance: unit?.importance ?? 1,
         difficulty: unit?.difficulty ?? null,

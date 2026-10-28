@@ -1,0 +1,23 @@
+{
+  "pages": 11,
+  "sections": 6,
+  "deterministicCandidates": 69,
+  "originalPending": 7,
+  "realRewriteCandidates": 6,
+  "rewritesMatchingEvidence": 4,
+  "rewritesPassingDeterministicPromptGuard": 4,
+  "rewriteFailures": 1,
+  "rewriteFailureTypes": ["模型处理超时，已保留此前候选，可缩小范围重试。"],
+  "rubricCandidates": 1,
+  "rubricEvidenceValid": 1,
+  "rubricRequired": 1,
+  "rubricFailures": 0,
+  "rubricFailureTypes": [],
+  "answersNeverWritten": true,
+  "confirmed": 0,
+  "semanticCorrectness": "not established; requires human review",
+  "externalRequests": 0,
+  "localModelRequests": 8,
+  "privacy": "Local-only statistics; no original document, body, screenshot, backup or model output.",
+  "recordType": "Engineering acceptance in a temporary browser; not real user performance."
+}

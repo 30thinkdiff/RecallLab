@@ -1,0 +1,59 @@
+{
+  "provider": "real local model; not Mock",
+  "endpoint": "http://127.0.0.1:8089/v1",
+  "model": "qwen2.5-1.5b-instruct",
+  "cases": [
+    {
+      "case": "fictional-cn",
+      "status": "completed",
+      "candidates": 1,
+      "elapsedMs": 17645,
+      "rows": [
+        {
+          "sourceMatch": "matched",
+          "layoutAdjusted": false,
+          "criterionEvidenceValid": true,
+          "requiredCriteria": 0,
+          "uncoveredCharacters": 69
+        }
+      ],
+      "failures": [],
+      "confirmed": 0
+    },
+    {
+      "case": "fictional-en",
+      "status": "completed",
+      "candidates": 1,
+      "elapsedMs": 22576,
+      "rows": [
+        {
+          "sourceMatch": "matched",
+          "layoutAdjusted": false,
+          "criterionEvidenceValid": true,
+          "requiredCriteria": 3,
+          "uncoveredCharacters": 31
+        }
+      ],
+      "failures": [],
+      "confirmed": 0
+    },
+    {
+      "case": "fictional-injection",
+      "status": "completed",
+      "candidates": 1,
+      "elapsedMs": 12471,
+      "rows": [
+        {
+          "sourceMatch": "matched",
+          "layoutAdjusted": false,
+          "criterionEvidenceValid": true,
+          "requiredCriteria": 2,
+          "uncoveredCharacters": 10
+        }
+      ],
+      "failures": [],
+      "confirmed": 0
+    }
+  ],
+  "note": "Literal source checks are not semantic correctness; no candidates automatically confirmed."
+}

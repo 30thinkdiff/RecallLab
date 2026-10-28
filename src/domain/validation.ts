@@ -1,3 +1,4 @@
+import { objectiveSchema } from '../ai/protocol';
 import { z } from 'zod';
 
 const text = (max: number) => z.string().trim().min(1, '请填写必填内容').max(max, `最多 ${max} 字`);
@@ -21,6 +22,7 @@ export const projectInputSchema = z.object({
 export type ProjectInput = z.infer<typeof projectInputSchema>;
 
 export const cardInputSchema = z.object({
+  learningObjective: objectiveSchema.optional(),
   question: text(5000),
   standardAnswer: text(20000),
   hints: z.string().max(5000),

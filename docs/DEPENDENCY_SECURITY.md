@@ -44,3 +44,11 @@ V0.4 最终本机 `npm audit --json` 与 `npm audit --omit=dev --json` 均为 0�
 2026-10-28 最终锁文件完整/生产 npm audit 均为 0（严重/高/中/低/信息均 0），没有强制升级，也没有引入 AI 或 OCR 云服务。Firefox 是与锁文件 Playwright 配套的开发测试浏览器，不进入产品包。
 
 新增发布版 ServiceWorker 只缓存公共构建壳与同源 PDF/OCR 静态资源，白名单 GET，不缓存用户上传/IndexedDB/恢复备份；没有增加外部 API。缓存额度失败不应阻断已有网络读取；首次未缓存的解析资源不保证离线可用。清除网站数据会删除缓存和学习库，仍需用户下载完整备份。
+
+## V0.5 Alpha
+
+2026-10-28，完整与生产依赖 npm audit 均为 0；没有新增模型 SDK、强制升级或账户依赖。Provider 使用已有 Zod 与原生 fetch，AI 默认关闭，网络请求须主动确认地址/范围；密钥仅内存，不落 IndexedDB、浏览器存储或备份。外部 HTTPS 接口有显式选择，本机验收不发送私有资料到外部。拒绝重定向/工具调用、限制输出/批量/时限，模型只提出待确认数据，不具有题库写权限。
+
+真实效果验收使用临时 CPU llama.cpp v0.7.0（无工具、仅 loopback、仅本机来源 CORS、关闭正文日志）和官方 [Qwen2.5-1.5B-Instruct-GGUF](https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF)（Apache-2.0）。固定 revision 91cad51170dc346986eccefdc2dd33a9da36ead9，Q4_K_M 1117320736 字节；下载 SHA256 校验为 6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e。二进制/权重不进入网页包或仓库，也未执行文档内指令。API 来源匹配不消除语义错误与提示注入对模型建议的影响，人工核对仍必需。
+
+正式 schema v5 原地保护升级与旧备份兼容。旧 Dexie 的兼容重试不能被版本号当作写锁，明确不支持旧版编辑升级后的库；当前版本拒绝未来主版本和保留升级前副本，不能虚称所有旧客户端已被追溯阻止。

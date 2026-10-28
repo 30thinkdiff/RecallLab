@@ -1,0 +1,23 @@
+{
+  "pages": 11,
+  "readablePages": 11,
+  "sections": 6,
+  "candidates": 69,
+  "sectionCounts": [31, 22, 3, 3, 8, 2],
+  "pending": 7,
+  "crossPage": 10,
+  "unassignedCharacters": 12,
+  "nonPendingAnswerLeaks": 0,
+  "normalizedPagesMatchReference": true,
+  "previewPages": 11,
+  "imported": 69,
+  "formalGrade": 1,
+  "originalEventUnchanged": true,
+  "revisionIsolated": true,
+  "sourcePreserved": true,
+  "sourceCount": 1,
+  "restoreExact": true,
+  "externalRequests": 0,
+  "privacy": "Local-only statistics; no original document, body, screenshot, backup or model output.",
+  "recordType": "Engineering acceptance in a temporary browser; not real user performance."
+}

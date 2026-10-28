@@ -2127,3 +2127,53 @@ select:focus {
   padding: 12px 0;
   border-bottom: 1px solid var(--line);
 }
+
+.ai-settings {
+  border: 1px solid var(--border, #d9e1cf);
+  border-radius: 12px;
+  padding: 18px;
+  margin: 18px 0;
+  min-width: 0;
+}
+.ai-settings label,
+.ai-candidate label {
+  display: block;
+  margin: 12px 0;
+}
+.ai-original {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 350px;
+  overflow: auto;
+  padding: 14px;
+  background: #f6f7f2;
+  font: inherit;
+}
+.ai-candidate {
+  border: 1px solid #d9e1cf;
+  border-radius: 12px;
+  padding: 18px;
+  margin: 18px 0;
+  overflow-wrap: anywhere;
+}
+.ai-candidate summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.ai-candidate fieldset {
+  min-width: 0;
+  border: 0;
+  padding: 0;
+}
+.ai-criterion {
+  padding: 12px;
+  background: #f6f7f2;
+  border-radius: 8px;
+  margin: 12px 0;
+}
+.ai-candidate textarea,
+.ai-settings input:not([type='checkbox']),
+.ai-settings select {
+  width: 100%;
+  max-width: 100%;
+}

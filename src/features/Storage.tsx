@@ -48,7 +48,7 @@ export function StorageGate({ children }: { children: ReactNode }) {
           </p>
           <p>
             请先下载完整 JSON
-            并妥善保存。升级将保留原始历史，并在本地保留额外恢复副本；失败时回滚，不清空数据库。
+            并妥善保存。升级将保留原始历史，并在本地保留额外恢复副本；失败时回滚，不清空数据库。升级后请使用当前或更新版本；旧程序可能忽略新增资料信息，不支持降级编辑。
           </p>
           <div className="button-row">
             <button

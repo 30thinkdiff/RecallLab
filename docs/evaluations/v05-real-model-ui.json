@@ -1,0 +1,16 @@
+{
+  "realModelUi": true,
+  "candidateCount": 1,
+  "modelRequests": 1,
+  "externalRequests": 0,
+  "databaseVersion": 5,
+  "confirmed": 1,
+  "model": "qwen2.5-1.5b-instruct",
+  "isMock": false,
+  "editedCandidates": 1,
+  "answerExact": true,
+  "formalGrade": 3,
+  "assessmentSource": "user_checked",
+  "restoreExact": true,
+  "reviewNote": "one public fictional candidate explicitly edited by engineering reviewer; AI rubric not adopted; not a model correctness/efficiency measurement"
+}

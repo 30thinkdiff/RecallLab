@@ -1,3 +1,4 @@
+import { objectiveLabels, type LearningObjective } from '../ai/protocol';
 import { useAction } from '../components/actions';
 import { useState, type FormEvent } from 'react';
 import type { LearningProject, PracticeItem, ChangeType } from '../domain/models';
@@ -144,6 +145,9 @@ export function CardForm({
     confusionWarnings: card?.confusionWarnings ?? '',
     sourceLabel: card?.sourceReferences[0]?.label ?? '',
   });
+  const [learningObjective, setLearningObjective] = useState<LearningObjective | ''>(
+    card?.learningObjective ?? '',
+  );
   const [changeType, setChangeType] =
     useState<Exclude<ChangeType, 'initial' | 'legacy'>>('substantive');
   const [changeSummary, setChangeSummary] = useState('');
@@ -156,7 +160,7 @@ export function CardForm({
     void action.run(async () => {
       await repository.saveCard(
         projectId,
-        values,
+        { ...values, ...(learningObjective ? { learningObjective } : {}) },
         card?.id,
         card
           ? {
@@ -182,6 +186,20 @@ export function CardForm({
             当前修订 {card.revision}。历史不会改写；修改后，正在作答的旧页面需重新载入最新版。
           </p>
         )}
+        <label>
+          学习目标（可选）
+          <select
+            value={learningObjective}
+            onChange={(e) => setLearningObjective(e.target.value as LearningObjective | '')}
+          >
+            <option value="">沿用原有要求</option>
+            {Object.entries(objectiveLabels).map(([v, n]) => (
+              <option key={v} value={v}>
+                {n}
+              </option>
+            ))}
+          </select>
+        </label>
         <label>
           问题 <span>*</span>
           <textarea
