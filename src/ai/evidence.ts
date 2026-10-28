@@ -54,16 +54,55 @@ export function locateQuote(
   quote: string,
   start = 0,
   end = text.length,
-): { status: 'matched'; anchor: EvidenceAnchor } | { status: 'missing' | 'ambiguous' } {
+):
+  | { status: 'matched'; anchor: EvidenceAnchor; layoutAdjusted?: boolean }
+  | { status: 'missing' | 'ambiguous' } {
   const exact = quote.trim();
   if (!exact) return { status: 'missing' };
   const slice = text.slice(start, end),
     offset = slice.indexOf(exact);
-  if (offset < 0) return { status: 'missing' };
-  if (slice.indexOf(exact, offset + 1) >= 0) return { status: 'ambiguous' };
+  if (offset >= 0) {
+    if (slice.indexOf(exact, offset + 1) >= 0) return { status: 'ambiguous' };
+    return {
+      status: 'matched',
+      anchor: { start: start + offset, end: start + offset + exact.length, quote: exact },
+    };
+  }
+  // Only normalize layout whitespace, never punctuation, letters, digits or OCR characters.
+  // Retain a word boundary beside Latin letters/digits ("not able" must not match "notable").
+  const layout = (value: string) => {
+    let normalized = '';
+    const positions: number[] = [];
+    for (let i = 0; i < value.length; i++) {
+      if (/\s/u.test(value[i]!)) {
+        const begin = i;
+        while (i + 1 < value.length && /\s/u.test(value[i + 1]!)) i++;
+        const before = value[begin - 1] ?? '',
+          after = value[i + 1] ?? '';
+        const word = (c: string) => /[\p{L}\p{N}]/u.test(c) && !/\p{Script=Han}/u.test(c);
+        if (word(before) || word(after)) {
+          normalized += ' ';
+          positions.push(begin);
+        }
+      } else {
+        normalized += value[i];
+        positions.push(i);
+      }
+    }
+    return { normalized, positions };
+  };
+  const haystack = layout(slice),
+    needle = layout(exact).normalized;
+  if (!needle) return { status: 'missing' };
+  const index = haystack.normalized.indexOf(needle);
+  if (index < 0) return { status: 'missing' };
+  if (haystack.normalized.indexOf(needle, index + 1) >= 0) return { status: 'ambiguous' };
+  const a = haystack.positions[index]!,
+    b = haystack.positions[index + needle.length - 1]! + 1;
   return {
     status: 'matched',
-    anchor: { start: start + offset, end: start + offset + exact.length, quote: exact },
+    layoutAdjusted: true,
+    anchor: { start: start + a, end: start + b, quote: slice.slice(a, b) },
   };
 }
 export function referenceFor(doc: SourceDocument, anchor: EvidenceAnchor): SourceReference {
@@ -102,7 +141,7 @@ export function uncoveredText(text: string, anchors: EvidenceAnchor[], base = 0)
   }
   if (end < text.length)
     gaps.push({ start: base + end, end: base + text.length, text: text.slice(end) });
-  const meaningful = gaps.filter((g) => g.text.replace(/[\s\p{P}\p{N}]/gu, '').length > 0);
+  const meaningful = gaps.filter((g) => g.text.replace(/[\s\p{P}]/gu, '').length > 0);
   return {
     characters: meaningful.reduce((n, g) => n + g.text.replace(/\s/gu, '').length, 0),
     gaps: meaningful,

@@ -23,6 +23,7 @@ export const aiProvenanceSchema = z.strictObject({
   inputStart: z.number().int().nonnegative(),
   inputText: z.string().min(1).max(20000),
   original: z.strictObject({ items: z.array(suggestedItemSchema).max(50) }),
+  citationMatch: z.enum(['exact', 'layout']).optional(),
   evidence: anchorSchema,
   acceptedCriteria: z
     .array(

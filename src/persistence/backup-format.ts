@@ -466,6 +466,19 @@ export function validateBackup(raw: unknown): Backup {
   for (const unit of data.knowledgeUnits) {
     requireRef('projects', unit.projectId, '知识单元');
     validateSources(unit.sourceReferences, unit.projectId);
+    if (unit.aiProvenance) {
+      assertAiAnchors(unit.aiProvenance);
+      if (
+        !data.revisions.some(
+          (r) =>
+            r.snapshot.knowledgeUnitId === unit.id &&
+            r.snapshot.standardAnswer === unit.canonicalContent &&
+            r.snapshot.question === unit.title &&
+            JSON.stringify(r.snapshot.aiProvenance) === JSON.stringify(unit.aiProvenance),
+        )
+      )
+        throw new Error('知识单元的 AI 来源记录与修订不一致');
+    }
   }
   for (const item of data.practiceItems) {
     if (
@@ -557,6 +570,7 @@ export function validateBackup(raw: unknown): Backup {
     if (
       !trace.modifiedAfterConfirmation &&
       (trace.confirmedRevisionId !== revision.id ||
+        trace.objective !== revision.snapshot.learningObjective ||
         trace.confirmation.question !== revision.snapshot.question ||
         trace.confirmation.answer !== revision.snapshot.standardAnswer ||
         JSON.stringify(trace.confirmation.criteria) !==

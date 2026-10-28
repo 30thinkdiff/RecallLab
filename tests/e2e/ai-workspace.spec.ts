@@ -233,3 +233,75 @@ test('mobile AI preview and editing fit viewport; draft clearing asks before dro
   await page.getByRole('button', { name: '清空草稿并重新选择' }).click();
   await expect(page.locator('.ai-candidate')).toHaveCount(0);
 });
+
+test('cancels a real pending request, retains earlier edited candidates and resumes without writing learning data', async ({
+  page,
+}) => {
+  let count = 0,
+    release: () => void = () => {};
+  await page.route('https://models.example.test/**', async (route) => {
+    count++;
+    if (count === 2) {
+      await new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      await route
+        .fulfill({
+          json: {
+            choices: [{ finish_reason: 'stop', message: { content: JSON.stringify(output()) } }],
+          },
+        })
+        .catch(() => {});
+      return;
+    }
+    const input = JSON.parse(route.request().postDataJSON().messages[1].content);
+    const data =
+      count === 1
+        ? {
+            items: [
+              {
+                ...output().items[0],
+                evidenceQuote: input.document_data.slice(0, 100),
+                criteria: [],
+              },
+            ],
+          }
+        : { items: [] };
+    await route.fulfill({
+      json: { choices: [{ finish_reason: 'stop', message: { content: JSON.stringify(data) } }] },
+    });
+  });
+  await page.goto('/#import');
+  await page.getByLabel('选择学习资料').setInputFiles({
+    name: 'fictional-long-notes.txt',
+    mimeType: 'text/plain',
+    buffer: Buffer.from(
+      Array.from({ length: 250 }, (_, i) => `虚构材料段落 ${i}：来源需要保留，记录需要核对。`).join(
+        '\n',
+      ),
+    ),
+  });
+  await page.getByLabel('我已核对警告，确认要保存的内容').check();
+  await page.getByRole('button', { name: '仅保存资料', exact: true }).click();
+  await page.getByRole('link', { name: 'AI 辅助整理', exact: true }).click();
+  await network(page);
+  await page.getByLabel('我已查看发送内容', { exact: false }).check();
+  await page.getByRole('button', { name: '生成候选', exact: true }).click();
+  await expect.poll(() => count).toBe(2);
+  await page.getByRole('button', { name: '取消生成', exact: true }).click();
+  await expect(page.getByText('已取消，保留已有候选', { exact: false })).toBeVisible();
+  await expect(page.locator('.ai-candidate')).toHaveCount(1);
+  await page.getByLabel('候选题干').fill('取消后保留的手工修改？');
+  release();
+  await page.getByLabel('我已查看发送内容', { exact: false }).check();
+  await page.getByRole('button', { name: '继续未完成段落', exact: true }).click();
+  await expect(page.getByText('生成已结束，仍需人工核对', { exact: false })).toBeVisible();
+  await expect(page.getByLabel('候选题干')).toHaveValue('取消后保留的手工修改？');
+  expect(
+    await page.evaluate(async () => {
+      const p = '/src/persistence/database.ts';
+      const { db } = await import(p);
+      return await db.practiceItems.count();
+    }),
+  ).toBe(0);
+});

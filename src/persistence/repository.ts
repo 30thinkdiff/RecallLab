@@ -207,6 +207,7 @@ export class Repository {
         };
         assertAiAnchors(aiProvenance);
         if (
+          aiProvenance.objective !== learningObjective ||
           aiProvenance.confirmation.question !== input.question ||
           aiProvenance.confirmation.answer !== input.standardAnswer ||
           JSON.stringify(aiProvenance.confirmation.criteria) !==

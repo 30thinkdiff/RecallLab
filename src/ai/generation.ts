@@ -59,7 +59,9 @@ export function candidateEvidence(row: AiCandidate) {
   );
   const notes: string[] = [];
   const anchors: EvidenceAnchor[] = [];
-  for (const c of row.criteria.filter((c) => c.required && row.adoptCriteria))
+  for (const c of row.criteria.filter((c) => c.required && row.adoptCriteria)) {
+    if (!c.text.trim() || !c.quotes.length)
+      notes.push(`要点“${c.text.slice(0, 30)}”缺少内容或原文依据`);
     for (const quote of c.quotes) {
       const found = locateQuote(
         row.source.text,
@@ -72,7 +74,10 @@ export function candidateEvidence(row: AiCandidate) {
       if (found.status !== 'matched') notes.push(`要点“${c.text.slice(0, 30)}”没有唯一的原文依据`);
       else anchors.push(found.anchor);
     }
+  }
   if (match.status === 'matched') {
+    if (match.layoutAdjusted)
+      notes.push('引用的空白排版与原文不同，已按真实位置还原原文；没有改动文字或标点');
     const before = row.source.text[match.anchor.start - 1],
       last = match.anchor.quote.at(-1);
     if ((before && !/[\s。；.!;：:]/u.test(before)) || (last && !/[。；.!;？！?]/u.test(last)))

@@ -1,7 +1,7 @@
 /* global AbortController */
 import process from 'node:process';
 import { URL } from 'node:url';
-import { console } from 'node:console';
+import console from 'node:console';
 // Opt-in, real local model evaluation. Public fictional text only; no keys or raw model output logged.
 import { createServer } from 'vite';
 const endpoint = process.env.RECALLLAB_AI_LOCAL_URL || 'http://127.0.0.1:8088/v1';
@@ -61,6 +61,8 @@ try {
       const evidence = candidateEvidence(row);
       return {
         sourceMatch: evidence.match.status,
+        layoutAdjusted:
+          evidence.match.status === 'matched' && Boolean(evidence.match.layoutAdjusted),
         criterionEvidenceValid: evidence.valid,
         requiredCriteria: row.criteria.filter((c) => c.required).length,
         uncoveredCharacters: uncoveredText(c.text, evidence.anchors).characters,

@@ -12,18 +12,24 @@ export function candidateAnswer(row: AiCandidate, state: GenerationState) {
   return row.source.kind === 'answer'
     ? row.source.text
     : state.objective === 'verbatim'
-      ? row.evidenceQuote.trim()
+      ? (() => {
+          const found = candidateEvidence(row).match;
+          return found.status === 'matched' ? found.anchor.quote : row.evidenceQuote.trim();
+        })()
       : row.answerSuggestion.trim();
 }
 export function duplicateCandidates(rows: AiCandidate[], cards: PracticeItem[]) {
-  const seen = new Set(
-    cards.filter((c) => !c.archivedAt).map((c) => normalizedQuestion(c.question)),
-  );
+  const owners = new Map<string, Set<string>>();
+  for (const card of cards.filter((c) => !c.archivedAt)) {
+    const key = normalizedQuestion(card.question);
+    owners.set(key, new Set([...(owners.get(key) ?? []), card.id]));
+  }
   const duplicates = new Set<string>();
   for (const row of rows) {
     const key = normalizedQuestion(row.question);
-    if (row.source.kind === 'document' && seen.has(key)) duplicates.add(row.id);
-    seen.add(key);
+    const self = row.source.kind === 'answer' ? row.source.id : `candidate:${row.id}`;
+    if ([...(owners.get(key) ?? [])].some((id) => id !== self)) duplicates.add(row.id);
+    owners.set(key, new Set([...(owners.get(key) ?? []), self]));
   }
   return duplicates;
 }
@@ -59,6 +65,16 @@ export async function confirmCandidates(
   if (!selected.length || selected.length > 50) throw new Error('请选择 1—50 条候选');
   return repo.db.transaction('rw', repo.db.tables, async () => {
     const cards = await repo.db.practiceItems.where('projectId').equals(projectId).toArray();
+    if (
+      await repo.db.revisions
+        .filter(
+          (r) =>
+            r.snapshot.aiProvenance?.runId === state.id &&
+            selected.some((c) => c.id === r.snapshot.aiProvenance?.candidateId),
+        )
+        .first()
+    )
+      throw new ConflictError('此候选已确认，请返回题库查看，不能重复提交。');
     const duplicate = duplicateCandidates(selected, cards);
     const metrics = generationMetrics(state, cards, selected.length);
     const ids: string[] = [];
@@ -153,6 +169,7 @@ export async function confirmCandidates(
         inputStart: start,
         inputText,
         original: { items: structuredClone(row.original) },
+        citationMatch: evidence.match.layoutAdjusted ? 'layout' : 'exact',
         evidence: evidence.match.anchor,
         acceptedCriteria,
         confirmation: {

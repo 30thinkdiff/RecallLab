@@ -1,7 +1,7 @@
 {
   "name": "recalllab",
   "private": true,
-  "version": "0.4.1",
+  "version": "0.5.0-alpha.0",
   "type": "module",
   "engines": {
     "node": ">=20.19.0",

@@ -163,8 +163,30 @@ export function AiWorkspace({
   } catch (e) {
     configurationError = e instanceof Error ? e.message : '接口配置无效';
   }
-  const duplicate = state ? duplicateCandidates(state.candidates, available) : new Set<string>();
-  const metrics = state ? generationMetrics(state, available) : null;
+  const duplicate = state
+    ? duplicateCandidates(
+        state.candidates,
+        available.filter((c) => !saved.includes(c.id)),
+      )
+    : new Set<string>();
+  const metrics = state
+    ? generationMetrics(
+        state,
+        available.filter((c) => !saved.includes(c.id)),
+        saved.length,
+      )
+    : null;
+  const unquoted = state?.inputs.map((input) => {
+    const start = input.range?.start ?? 0,
+      end = input.range?.end ?? input.text.length;
+    const anchors = state.candidates
+      .filter((c) => c.source.id === input.id)
+      .flatMap((c) => {
+        const m = candidateEvidence(c).match;
+        return m.status === 'matched' ? [m.anchor] : [];
+      });
+    return uncoveredText(input.text.slice(start, end), anchors, start);
+  });
   async function generate() {
     if (running.current) return;
     await action.run(async () => {
@@ -508,6 +530,12 @@ export function AiWorkspace({
           >
             选择可核对候选
           </button>
+          {unquoted && (
+            <p className="info-note">
+              本批原文尚有 {unquoted.reduce((n, g) => n + g.characters, 0)}{' '}
+              个字符未被候选引用覆盖。引用覆盖不是知识完整性判断，请对照发送范围中的原文检查遗漏。
+            </p>
+          )}
           {state.candidates.map((row, index) => (
             <CandidateEditor
               key={row.id}

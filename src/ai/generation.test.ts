@@ -126,7 +126,7 @@ it('rejects missing criterion anchors, duplicate questions, empty rubrics and le
   row.selected = true;
   row.question = '有效问题？';
   row.criteria[0]!.quotes = [];
-  await expect(confirmCandidates(repo, pid, state, ack)).rejects.toThrow('原文依据');
+  await expect(confirmCandidates(repo, pid, state, ack)).rejects.toThrow('来源不足');
   row.criteria[0]!.quotes = ['编造引用'];
   expect(candidateEvidence(row).valid).toBe(false);
   row.criteria = [];
@@ -274,4 +274,98 @@ it('rejects malicious or invalid output, retains good chunks after faults, cance
     expect(bad.failures).toHaveLength(1);
     expect(bad.candidates).toEqual([]);
   }
+});
+
+it('serializes concurrent confirmations and remembers an older confirmed batch after newer AI edits', async () => {
+  const state = await run();
+  state.candidates[0]!.selected = true;
+  const outcomes = await Promise.allSettled([
+    confirmCandidates(repo, pid, state, ack),
+    confirmCandidates(repo, pid, state, ack),
+  ]);
+  expect(outcomes.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+  expect(await db.practiceItems.count()).toBe(1);
+  const old = (await db.practiceItems.toArray())[0]!;
+  const next = await run(
+    {
+      kind: 'answer',
+      id: old.id,
+      text: old.standardAnswer,
+      question: old.question,
+      expectedRevisionId: old.currentRevisionId,
+    },
+    'quality',
+  );
+  next.candidates[0]!.selected = true;
+  await confirmCandidates(repo, pid, next, ack);
+  state.candidates[0]!.question = '改名后也不能重复提交相同候选？';
+  await expect(confirmCandidates(repo, pid, state, ack)).rejects.toThrow('已确认');
+  expect(await db.practiceItems.count()).toBe(1);
+});
+
+it('rejects stale rubric targets and preserves immutable records when manual answer corrections win', async () => {
+  const initial = await run();
+  initial.candidates[0]!.selected = true;
+  const [id] = await confirmCandidates(repo, pid, initial, ack);
+  const old = (await db.practiceItems.get(id!))!;
+  const state = await run(
+    {
+      kind: 'answer',
+      id: old.id,
+      text: old.standardAnswer,
+      question: old.question,
+      expectedRevisionId: old.currentRevisionId,
+    },
+    'criteria',
+  );
+  state.candidates[0]!.selected = true;
+  await repo.saveCard(
+    pid,
+    {
+      ...old,
+      standardAnswer: '人工更正的有效答案。',
+      answerCriteria: '',
+      hints: '',
+      sourceLabel: '',
+    },
+    old.id,
+    {
+      expectedRevisionId: old.currentRevisionId,
+      changeType: 'substantive',
+      changeSummary: '人工先纠错',
+      impactOnLearningState: 'reset',
+    },
+  );
+  await expect(confirmCandidates(repo, pid, state, ack)).rejects.toThrow('变化');
+  expect((await db.practiceItems.get(old.id))!.standardAnswer).toBe('人工更正的有效答案。');
+  expect((await db.revisions.get(old.currentRevisionId))!.snapshot).toEqual(snapshotOf(old));
+  expect(await db.revisions.count()).toBe(2);
+  await exportBackup(db);
+});
+
+it('recovers layout-only Chinese citations to exact original offsets without changing words, punctuation or Latin word boundaries', () => {
+  const raw = '校验原文。\n再记录版本。';
+  const match = locateQuote(raw, '校验原文。再记录版本。');
+  expect(match.status).toBe('matched');
+  if (match.status !== 'matched') throw Error();
+  expect(match.layoutAdjusted).toBe(true);
+  expect(match.anchor.quote).toBe(raw);
+  expect(raw.slice(match.anchor.start, match.anchor.end)).toBe(raw);
+  expect(locateQuote('not able', 'notable').status).toBe('missing');
+  expect(locateQuote('not\nable', 'not able').status).toBe('matched');
+  expect(locateQuote('核对版本。', '核对版本!').status).toBe('missing');
+  expect(locateQuote('校验\n原文。校验 原文。', '校验原文。').status).toBe('ambiguous');
+});
+
+it('uses the actual source quote for verbatim saves when a model only changes layout whitespace', async () => {
+  const state = await run();
+  const row = state.candidates[0]!;
+  row.selected = true;
+  row.evidenceQuote = text.replaceAll('\n', '');
+  expect(candidateAnswer(row, state)).toBe(text);
+  const [id] = await confirmCandidates(repo, pid, state, ack);
+  expect((await db.practiceItems.get(id!))!.aiProvenance?.citationMatch).toBe('layout');
+  await exportBackup(db);
+  expect(locateQuote('é è', 'éè').status).toBe('missing');
+  expect(uncoveredText('2026', []).characters).toBe(4);
 });
