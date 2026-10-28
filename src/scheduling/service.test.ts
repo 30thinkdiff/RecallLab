@@ -67,6 +67,15 @@ async function submit(
   await repo.submitReview(s.id, 0, performance, 4, tokenOf(s), 'easy');
   return { s, event: (await db.reviewEvents.toArray())[0]! };
 }
+it('does not route a free-learning action into an active FSRS review session', async () => {
+  const scheduledId = await scheduler.start(projectId);
+  const freeId = await repo.startSession(projectId);
+  expect(freeId).not.toBe(scheduledId);
+  expect((await db.sessions.get(scheduledId))?.reviewPlan).toBeDefined();
+  expect((await db.sessions.get(freeId))?.reviewPlan).toBeUndefined();
+  expect(await repo.startSession(projectId)).toBe(freeId);
+  expect(await scheduler.start(projectId)).toBe(scheduledId);
+});
 it('initializes only when explicitly starting review, atomically schedules a real independent success and restores it', async () => {
   expect(await db.memoryStates.count()).toBe(0);
   const { event } = await submit();
