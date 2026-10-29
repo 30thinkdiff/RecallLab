@@ -47,7 +47,10 @@ export function buildReviewEvent(
     subjectiveMastery = assessment.mastery;
   }
   const skipped = assessmentResult === 'skipped';
-  if (!skipped && (!draft.wasAnswerRevealed || subjectiveMastery === null)) {
+  if (
+    !skipped &&
+    (!draft.wasAnswerRevealed || (subjectiveMastery === null && !session.reviewPlan?.compact))
+  ) {
     throw new Error('请先揭晓答案并完成主观评价');
   }
   if (subjectiveMastery !== null && ![0, 1, 2, 3, 4].includes(subjectiveMastery)) {
@@ -62,7 +65,8 @@ export function buildReviewEvent(
     draft.responseMode === 'typed' ? !!draft.userResponse.trim() : draft.attemptedBeforeReveal;
   return {
     id: `${session.id}:${session.index}`,
-    schemaVersion: assessment ? 4 : 2,
+    schemaVersion: session.reviewPlan?.compact ? 5 : assessment ? 4 : 2,
+    ...(draft.timing ? { timing: structuredClone(draft.timing) } : {}),
     ...(assessment
       ? {
           assessmentMode: assessment.mode,

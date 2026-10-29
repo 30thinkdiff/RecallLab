@@ -1,8 +1,10 @@
+import { automaticGoalSchema } from '../learning/evidence';
 import { objectiveSchema } from '../ai/protocol';
 import { z } from 'zod';
 
 const text = (max: number) => z.string().trim().min(1, '请填写必填内容').max(max, `最多 ${max} 字`);
 export const projectInputSchema = z.object({
+  automaticGoal: automaticGoalSchema.optional(),
   name: text(100),
   description: z.string().trim().max(2000),
   learningGoal: z.string().trim().max(1000),

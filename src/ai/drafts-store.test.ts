@@ -88,7 +88,7 @@ it('persists edits across connection restart without credentials or unconfirmed 
   expect(JSON.stringify(row)).not.toContain(config.apiKey);
   expect(loaded.row.config).not.toHaveProperty('apiKey');
   const before = await exportBackup(db);
-  expect(before.databaseVersion).toBe(7);
+  expect(before.databaseVersion).toBe(8);
   await restoreBackup(db, before);
   const after = await loadAiDraft(db, row.id);
   expect(after!.row.epoch).not.toBe(row.epoch);

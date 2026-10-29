@@ -1,4 +1,9 @@
-export function promptProblem(item: { question: string; standardAnswer: string }): string | null {
+export function promptProblem(item: {
+  question: string;
+  standardAnswer: string;
+  learningIssue?: { reason: string };
+}): string | null {
+  if (item.learningIssue) return '题目已标记待核对：' + item.learningIssue.reason;
   const q = item.question.trim(),
     a = item.standardAnswer.trim();
   if (!q || !a) return '问题或标准答案不完整';

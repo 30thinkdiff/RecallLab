@@ -1,3 +1,9 @@
+import {
+  automaticGoalSchema,
+  timingSchema,
+  feedbackSchema,
+  assertLearningEvidence,
+} from '../learning/evidence';
 import { aiDraftSchema, assertDraftRecord, MAX_DRAFT_TOTAL_BYTES } from '../ai/drafts-format';
 import { source, sourceDocumentSchema } from './source-schema';
 export { sourceDocumentSchema } from './source-schema';
@@ -38,6 +44,7 @@ const snapshot = z.object({
   learningStateId: id.optional(),
 });
 const draft = z.object({
+  timing: timingSchema.optional(),
   assessment: assessmentSchema.optional(),
   responseMode: z.enum(['quick', 'typed']),
   userResponse: z.string().max(20000),
@@ -49,6 +56,7 @@ const draft = z.object({
   revealedAt: date.nullable(),
 });
 const project = z.object({
+  automaticGoal: automaticGoalSchema.optional(),
   id,
   name: z.string(),
   description: z.string(),
@@ -86,6 +94,7 @@ const knowledge = z.object({
   updatedAt: date,
 });
 const item = snapshot.omit({ revisionId: true }).extend({
+  learningIssue: z.object({ reason: z.string().max(1000), at: date }).optional(),
   qualityReviewedRevisionId: id.optional(),
   projectId: id,
   practiceType: z.literal('free_recall'),
@@ -97,6 +106,8 @@ const item = snapshot.omit({ revisionId: true }).extend({
   archivedAt: date.optional(),
 });
 const event = z.object({
+  timing: timingSchema.optional(),
+  quickFeedback: feedbackSchema.optional(),
   assessmentMode: z.enum(['simple', 'detailed']).optional(),
   criterionChecks: z
     .array(
@@ -111,7 +122,7 @@ const event = z.object({
   reviewedAt: date.optional(),
   attemptedBeforeReveal: z.boolean().optional(),
   id,
-  schemaVersion: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]),
+  schemaVersion: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5)]),
   scheduling: decisionSchema.optional(),
   projectId: id,
   practiceItemId: id,
@@ -132,7 +143,7 @@ const event = z.object({
   responseDuration: z.number().nonnegative(),
   errorTypes: z.array(z.string()),
   interventionType: z.literal('hint').nullable(),
-  assessmentSource: z.enum(['self_report', 'user_checked', 'none']),
+  assessmentSource: z.enum(['self_report', 'user_checked', 'deterministic', 'none']),
   snapshot,
 });
 const session = z.object({
@@ -189,6 +200,7 @@ export const backupSchema = z.object({
     z.literal(5),
     z.literal(6),
     z.literal(7),
+    z.literal(8),
   ]),
   createdAt: date,
   data: z.object({
@@ -312,6 +324,13 @@ export function validateBackup(raw: unknown): Backup {
         throw new Error('有效记忆状态不能继承不同知识内容的成绩');
     }
   }
+  if (
+    backup.databaseVersion < 8 &&
+    (data.projects.some((p) => p.automaticGoal) ||
+      data.sessions.some((s) => s.reviewPlan?.adaptive || s.draft.timing) ||
+      data.reviewEvents.some((e) => e.timing || e.quickFeedback || e.schemaVersion === 5))
+  )
+    throw new Error('目标/行为证据需要v8或更新的数据格式');
   for (const log of data.schedulingLogs) {
     const event = eventsById.get(log.eventId),
       memory = memories.get(log.learningStateId);
@@ -384,6 +403,7 @@ export function validateBackup(raw: unknown): Backup {
   }
   for (const e of data.reviewEvents) {
     assertCriterionEvidence(e);
+    assertLearningEvidence(e);
     if (e.schemaVersion === 4 && !e.assessmentMode) throw new Error('新版事件缺少核对方式');
   }
   for (const s of data.sessions)
@@ -411,7 +431,9 @@ export function validateBackup(raw: unknown): Backup {
         event.assessmentResult === 'skipped' || event.assessmentResult === 'ungraded'
           ? 'none'
           : event.responseMode === 'typed'
-            ? 'user_checked'
+            ? event.quickFeedback?.checker === 'exact-short-v1'
+              ? 'deterministic'
+              : 'user_checked'
             : 'self_report';
       if (event.assessmentSource !== source) throw new Error('正式复习评价来源不一致');
     }

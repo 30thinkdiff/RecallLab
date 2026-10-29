@@ -60,6 +60,9 @@ export function reviewStatistics(
     distribution[days <= 0 ? 0 : days <= 3 ? 1 : days <= 7 ? 2 : 3]!.count++;
   }
   return {
+    literalSamples: independent.filter(
+      (e) => e.assessmentSource === 'deterministic' && e.assessmentResult === 'correct',
+    ).length,
     manualSamples: manual.length,
     manualCorrect: correct,
     accuracy: manual.length ? correct / manual.length : null,

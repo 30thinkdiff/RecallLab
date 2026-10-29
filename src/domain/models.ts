@@ -1,8 +1,10 @@
+import type { AutomaticGoal, AttemptTiming, QuickFeedback } from '../learning/evidence';
 import type { AiProvenance } from '../ai/provenance';
 import type { LearningObjective } from '../ai/protocol';
 import type { AssessmentDraft, CriterionMark } from './assessment';
 import type { ReviewPlan, ReviewDecision } from '../scheduling/types';
 export interface LearningProject {
+  automaticGoal?: AutomaticGoal;
   priority?: number;
   newCardLimit?: number;
   id: string;
@@ -85,6 +87,7 @@ export interface KnowledgeUnit {
 }
 
 export interface PracticeItem {
+  learningIssue?: { reason: string; at: string };
   learningObjective?: LearningObjective;
   aiProvenance?: AiProvenance;
   qualityReviewedRevisionId?: string;
@@ -172,6 +175,7 @@ export interface SessionToken {
 }
 
 export interface StudyDraft {
+  timing?: AttemptTiming;
   assessment?: AssessmentDraft;
   responseMode: ResponseMode;
   userResponse: string;
@@ -200,6 +204,8 @@ export interface StudySession {
 }
 
 export interface ReviewEvent {
+  timing?: AttemptTiming;
+  quickFeedback?: QuickFeedback;
   assessmentMode?: 'simple' | 'detailed';
   criterionChecks?: {
     index: number;
@@ -211,7 +217,7 @@ export interface ReviewEvent {
   attemptedBeforeReveal?: boolean;
   scheduling?: ReviewDecision;
   id: string;
-  schemaVersion: 1 | 2 | 3 | 4;
+  schemaVersion: 1 | 2 | 3 | 4 | 5;
   projectId: string;
   practiceItemId: string;
   knowledgeUnitId: string;
@@ -229,6 +235,6 @@ export interface ReviewEvent {
   responseDuration: number;
   errorTypes: string[];
   interventionType: 'hint' | null;
-  assessmentSource: 'self_report' | 'user_checked' | 'none';
+  assessmentSource: 'self_report' | 'user_checked' | 'deterministic' | 'none';
   snapshot: PracticeSnapshot;
 }

@@ -81,7 +81,7 @@ it('keeps original source text and old revision evidence when an imported answer
     input.standardAnswer,
   );
   const backup = await exportBackup(db);
-  expect(backup.databaseVersion).toBe(7);
+  expect(backup.databaseVersion).toBe(8);
   await restoreBackup(db, backup);
   expect((await db.sourceDocuments.get(document.id))?.sourceHash).toBe(document.sourceHash);
 });
