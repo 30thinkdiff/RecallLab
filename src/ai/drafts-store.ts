@@ -99,12 +99,14 @@ export async function saveAiDraft(
         throw new Error(
           '草稿超过 4 MB，未自动保存。请保留页面并导出当前草稿，缩小整理批次后重试。',
         );
-      const sizes = await db.aiDrafts.orderBy('bytesStored').keys();
+      // Dexie Collection.keys() returns primary keys, not the indexed byte values.
+      // Sum the stored byte counts, or non-numeric draft IDs would bypass the total cap.
+      const drafts = await db.aiDrafts.toArray();
       const total =
-        sizes.reduce<number>((n, v) => n + Number(v), 0) -
+        drafts.reduce((bytes, draft) => bytes + draft.bytesStored, 0) -
         (old?.bytesStored ?? 0) +
         next.bytesStored;
-      if (total > MAX_DRAFT_TOTAL_BYTES || (!old && sizes.length >= MAX_DRAFTS))
+      if (total > MAX_DRAFT_TOTAL_BYTES || (!old && drafts.length >= MAX_DRAFTS))
         throw new Error(
           '候选草稿达到 12 MB 或 20 份上限，未覆盖原有草稿。请先导出或删除不需要的草稿。',
         );
