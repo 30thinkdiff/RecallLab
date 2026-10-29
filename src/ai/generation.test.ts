@@ -369,3 +369,28 @@ it('uses the actual source quote for verbatim saves when a model only changes la
   expect(locateQuote('é è', 'éè').status).toBe('missing');
   expect(uncoveredText('2026', []).characters).toBe(4);
 });
+
+it('keeps unit-workflow answers source-locked for understanding goals and refuses silently shortened evidence', async () => {
+  const state = await generateCandidates(
+    [source],
+    'extract',
+    'understanding',
+    Object.assign(new MockProvider(), { strategy: 'units' as const }),
+    'mock',
+    new AbortController().signal,
+    () => {},
+  );
+  const row = state.candidates[0]!;
+  row.question = '蓝晶协议要求如何处理资料？';
+  row.answerSuggestion = '是，模型或草稿偷偷改写。';
+  row.selected = true;
+  expect(candidateAnswer(row, state)).toBe(text);
+  row.evidenceQuote = text.split('\n')[0]!;
+  row.adoptCriteria = false;
+  expect(candidateEvidence(row).valid).toBe(true);
+  await expect(confirmCandidates(repo, pid, state, ack)).rejects.toThrow('完整原文');
+  expect(await db.practiceItems.count()).toBe(0);
+  row.evidenceQuote = text;
+  const [id] = await confirmCandidates(repo, pid, state, ack);
+  expect((await db.practiceItems.get(id!))!.standardAnswer).toBe(text);
+});

@@ -12,7 +12,7 @@ import type { AiConfirmation, EvidenceAnchor } from './provenance';
 export function candidateAnswer(row: AiCandidate, state: GenerationState) {
   return row.source.kind === 'answer'
     ? row.source.text
-    : state.objective === 'verbatim'
+    : state.objective === 'verbatim' || state.strategy === 'units'
       ? (() => {
           const found = candidateEvidence(row).match;
           return found.status === 'matched' ? found.anchor.quote : row.evidenceQuote.trim();
@@ -95,6 +95,13 @@ export async function confirmCandidates(
       const evidence = candidateEvidence(row);
       if (!evidence.valid || evidence.match.status !== 'matched')
         throw new Error('来源不足或要点引用无效，请修正后确认。');
+      if (
+        state.strategy === 'units' &&
+        row.unit &&
+        (evidence.match.anchor.start !== row.unit.start ||
+          evidence.match.anchor.end !== row.unit.end)
+      )
+        throw new Error('分知识方案必须保留该单元完整原文；需要改范围时，请另行明确拆分任务。');
       const old =
         row.source.kind === 'answer' ? cards.find((c) => c.id === row.source.id) : undefined;
       if (row.source.kind === 'answer') {
@@ -187,7 +194,7 @@ export async function confirmCandidates(
           completenessReviewed: true,
           answerMode: old
             ? 'unchanged'
-            : state.objective === 'verbatim'
+            : state.objective === 'verbatim' || state.strategy === 'units'
               ? 'verbatim'
               : 'paraphrase',
           criterionMode: row.adoptCriteria ? 'ai-confirmed' : 'unchanged',

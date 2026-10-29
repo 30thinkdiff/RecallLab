@@ -930,6 +930,7 @@ function CandidateEditor({
           来源原文（可修正为实际存在的完整引用）
           <textarea
             value={row.evidenceQuote}
+            readOnly={state.strategy === 'units'}
             rows={4}
             maxLength={12000}
             onChange={(e) => edit({ evidenceQuote: e.target.value })}
