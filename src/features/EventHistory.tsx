@@ -61,11 +61,13 @@ export function EventHistory({
             <div className="history-evidence">
               <span>
                 评价来源：
-                {event.assessmentSource === 'self_report'
-                  ? '自评（未观察到完整作答）'
-                  : event.assessmentSource === 'user_checked'
-                    ? '用户人工核对'
-                    : '未核对'}
+                {event.assessmentSource === 'deterministic'
+                  ? '严格文字一致（非语义验证）'
+                  : event.assessmentSource === 'self_report'
+                    ? '自评（未观察到完整作答）'
+                    : event.assessmentSource === 'user_checked'
+                      ? '用户人工核对'
+                      : '未核对'}
               </span>
               {event.attemptedBeforeReveal !== undefined && (
                 <span>揭晓前曾尝试：{event.attemptedBeforeReveal ? '是' : '否'}</span>
@@ -77,6 +79,14 @@ export function EventHistory({
                 {event.confidenceBeforeReveal === null ? '未填写' : event.confidenceBeforeReveal}
               </span>
               <span>作答用时（含暂停）：{Math.round(event.responseDuration / 1000)} 秒</span>
+              {event.timing && (
+                <span>
+                  本页活跃作答{Math.round(event.timing.activeMs / 1000)}秒 · 后台
+                  {Math.round(event.timing.backgroundMs / 1000)}秒 · 空闲
+                  {Math.round(event.timing.idleMs / 1000)}秒 · 未知
+                  {Math.round(event.timing.unknownMs / 1000)}秒。活跃片段不是全部真实学习时间。
+                </span>
+              )}
               <span>题目修订：{event.snapshot.revision}</span>
               {event.reviewedAt && (
                 <span>

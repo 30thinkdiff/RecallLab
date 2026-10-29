@@ -27,7 +27,9 @@ export function ImportPage({
   const [projectId, setProjectId] = useState(
     initialProjectId && projects.some((project) => project.id === initialProjectId)
       ? initialProjectId
-      : (projects[0]?.id ?? 'new'),
+      : goalFlow
+        ? 'new'
+        : (projects[0]?.id ?? 'new'),
   );
   const [projectName, setProjectName] = useState('');
   const [dirty, setDirty] = useState(false);

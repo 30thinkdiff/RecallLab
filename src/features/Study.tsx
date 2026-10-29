@@ -71,7 +71,7 @@ export function Study({
         <p>
           完成 {completed.length - skipped} 题，跳过 {skipped} 题。学习记录已保存在本地。
         </p>
-        {last && <DecisionFeedback decision={last} />}
+        {last && <DecisionFeedback decision={last} adaptive={session.reviewPlan?.adaptive} />}
         {session.reviewPlan && (
           <a
             className="button"
@@ -98,7 +98,7 @@ export function Study({
   }
   return (
     <>
-      {last && <DecisionFeedback decision={last} />}
+      {last && <DecisionFeedback decision={last} adaptive={session.reviewPlan?.adaptive} />}
       {session.reviewPlan?.compact && !!retained && (
         <p role="status">
           该轮次已保护{retained}份未提交草稿，可在<a href={`#project/${session.projectId}`}>题库</a>
@@ -601,7 +601,13 @@ function StudyQuestion({
   );
 }
 
-function DecisionFeedback({ decision }: { decision: ReviewDecision }) {
+function DecisionFeedback({
+  decision,
+  adaptive = false,
+}: {
+  decision: ReviewDecision;
+  adaptive?: boolean;
+}) {
   return (
     <section className="info-note" aria-label="本次复习结果">
       <p>{reasonLabels[decision.reason]}。</p>
@@ -610,6 +616,11 @@ function DecisionFeedback({ decision }: { decision: ReviewDecision }) {
         {decision.nextDue ? ` · 下次到期：${dateTime(decision.nextDue)}` : ''}
         {decision.retestDue ? ` · 无提示复测：${dateTime(decision.retestDue)}` : ''}
       </p>
+      {adaptive && ['failure', 'partial_failure', 'hinted'].includes(decision.reason) && (
+        <p>
+          刚揭晓后的补救至少等待10分钟再独立复测；FSRS到期不等于立即重复，第三次当天失败后会暂停自动重复。
+        </p>
+      )}
       {decision.grade !== null && (
         <small>间隔按揭晓时保留的回忆证据安排，稍后保存不会额外延长。</small>
       )}

@@ -150,6 +150,19 @@ export function CompactStudy({ session, cards }: { session: StudySession; cards:
         <span>第{session.index + 1}题 · 简洁学习</span>
       </div>
       <h1>先回忆，再看答案。</h1>
+      <p className="muted">
+        本题已记录活跃作答{Math.floor((view.draft.timing?.activeMs ?? 0) / 1000)}
+        秒；当前计划剩余预算约{Math.ceil((session.reviewPlan?.remainingBudgetSeconds ?? 0) / 60)}
+        分钟（含本题，属于估算）。
+      </p>
+      {(view.draft.timing?.activeMs ?? 0) / 1000 +
+        15 +
+        (session.reviewPlan?.entries[item.id]?.reason === 'new' ? 45 : 0) >=
+        (session.reviewPlan?.remainingBudgetSeconds ?? Infinity) && (
+        <p role="status">
+          今天的预算已接近用完，可暂停并保留输入。实际耗时可能超过估计；完成当前题后会按剩余时间重新规划。
+        </p>
+      )}
       <h2>{item.question}</h2>
       <p className="muted">
         {session.reviewPlan?.entries[item.id]?.explanation ?? '系统根据当前目标安排'}。可随时暂停。
@@ -175,7 +188,7 @@ export function CompactStudy({ session, cards }: { session: StudySession; cards:
               disabled={blocked}
               onChange={(e) => {
                 clock.interact(Date.now());
-                controller.edit({ userResponse: e.target.value });
+                controller.edit({ userResponse: e.target.value, responseMode: 'typed' });
               }}
             />
           </label>

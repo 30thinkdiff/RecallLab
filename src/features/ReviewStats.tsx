@@ -88,7 +88,7 @@ export function ReviewStats({
                 </a>{' '}
                 ·{' '}
                 {e
-                  ? `${e.assessmentSource === 'user_checked' ? '人工核对' : e.assessmentSource === 'self_report' ? '用户自报' : '未核对'}：${{ correct: '正确', incorrect: '失败', partially_correct: '部分正确', ungraded: '未核对', skipped: '跳过' }[e.assessmentResult]} · ${dateTime(e.reviewedAt ?? e.timestamp)}`
+                  ? `${e.assessmentSource === 'deterministic' ? '短答案文字一致' : e.assessmentSource === 'user_checked' ? '人工核对' : e.assessmentSource === 'self_report' ? '用户自报' : '未核对'}：${{ correct: '正确', incorrect: '失败', partially_correct: '部分正确', ungraded: '未核对', skipped: '跳过' }[e.assessmentResult]} · ${dateTime(e.reviewedAt ?? e.timestamp)}`
                   : '当前版本尚无独立回忆记录'}
               </p>
             );

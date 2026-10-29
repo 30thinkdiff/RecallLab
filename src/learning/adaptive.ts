@@ -371,6 +371,17 @@ export function forecastGoal(
     ...plan,
     total: cards.filter((c) => c.projectId === project.id && !c.archivedAt).length,
     ready: ready.length,
+    qualityPending: cards.filter(
+      (c) => c.projectId === project.id && !c.archivedAt && promptProblem(c),
+    ).length,
+    outsideScope: cards.filter(
+      (c) =>
+        c.projectId === project.id &&
+        !c.archivedAt &&
+        !promptProblem(c) &&
+        project.automaticGoal?.sectionId &&
+        !c.sourceReferences.some((r) => r.sectionId === project.automaticGoal!.sectionId),
+    ).length,
     covered: predictedCoverage,
     horizon,
     minimumMinutes: Math.ceil(minimum / 60),

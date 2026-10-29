@@ -167,3 +167,26 @@ it('delays a failed independent recall instead of repeating immediately and caps
     ).attention,
   ).toBe(1);
 });
+it('interleaves explicitly identical answer groups without inventing semantic similarity and respects calendar goal days across DST', () => {
+  const a = { ...testCard('a'), standardAnswer: '公开虚构的同一答案内容' },
+    b = { ...testCard('b'), standardAnswer: a.standardAnswer },
+    c = { ...testCard('c'), standardAnswer: '完全不同的虚构内容' };
+  const plan = buildAdaptivePlan(testProject, [a, b, c], [], [], now, tz);
+  expect(plan.selected.map((r) => r.item.id)).toEqual(['a', 'c', 'b']);
+  const p = { ...testProject, targetDate: '2026-11-02' };
+  expect(
+    forecastGoal(p, [a], [], [], new Date('2026-11-01T04:30:00Z'), 'America/New_York').horizon,
+  ).toBe(1);
+  expect(
+    forecastGoal(p, [a], [], [], new Date('2026-11-01T06:30:00Z'), 'America/New_York').horizon,
+  ).toBe(1);
+});
+it('does not treat a quickly resumed partial clock as an uninterrupted personal-duration sample', () => {
+  const start = now.getTime(),
+    c = new AttemptClock(start, now.toISOString());
+  c.interact(start);
+  const saved = c.snapshot(start + 5000);
+  expect(usableTiming(saved)).toBe(true);
+  const resumed = new AttemptClock(start + 5500, now.toISOString(), saved);
+  expect(usableTiming(resumed.snapshot(start + 6000))).toBe(false);
+});

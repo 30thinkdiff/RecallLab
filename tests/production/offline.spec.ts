@@ -62,3 +62,50 @@ test('AI candidate edits survive offline fresh-page reopen and stay unconfirmed'
   await expect(next.getByRole('link', { name: '继续整理', exact: true })).toBeVisible();
   await context.setOffline(false);
 });
+
+test('built goal-driven compact learning survives offline close and reopen without AI', async ({
+  page,
+  context,
+}) => {
+  await page.goto('/#projects');
+  await createProject(page, '公开虚构自动计划离线验收');
+  await addCard(page, 1);
+  await page.getByRole('link', { name: '继续今天学习', exact: true }).click();
+  await page.getByRole('button', { name: '自动安排并开始学习', exact: true }).click();
+  await page.evaluate(async () => {
+    await navigator.serviceWorker.ready;
+  });
+  await page
+    .getByRole('textbox', { name: '你的回答', exact: true })
+    .fill('公开虚构的自动计划离线草稿');
+  await expect
+    .poll(() =>
+      page.evaluate(async () => {
+        return new Promise<string>((resolve, reject) => {
+          const request = indexedDB.open('RecallLab');
+          request.onerror = () => reject(request.error);
+          request.onsuccess = () => {
+            const db = request.result;
+            const tx = db.transaction('sessions');
+            const rows = tx.objectStore('sessions').getAll();
+            rows.onsuccess = () =>
+              resolve(rows.result.find((s) => s.status === 'active')?.draft.userResponse ?? '');
+            tx.oncomplete = () => db.close();
+          };
+        });
+      }),
+    )
+    .toBe('公开虚构的自动计划离线草稿');
+  const url = page.url();
+  await context.setOffline(true);
+  await page.close();
+  const restored = await context.newPage();
+  await restored.goto(url);
+  await expect(restored.getByRole('textbox', { name: '你的回答', exact: true })).toHaveValue(
+    '公开虚构的自动计划离线草稿',
+  );
+  await restored.getByRole('button', { name: '提交回答', exact: true }).click();
+  await restored.getByRole('button', { name: '全部正确，继续', exact: true }).click();
+  await expect(restored.getByRole('heading', { name: '这一轮，完成了。' })).toBeVisible();
+  await expect(restored.getByLabel('本次复习结果')).toContainText('Good');
+});

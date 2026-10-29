@@ -54,6 +54,7 @@ button:disabled {
   position: sticky;
   top: 0;
   height: 100vh;
+  overflow-y: auto;
   background: #f0f2e9;
   border-right: 1px solid var(--line);
   padding: 34px 22px;
@@ -2214,4 +2215,8 @@ select:focus {
   .sidebar nav > details > .nav-item {
     display: inline-flex;
   }
+}
+
+.sidebar > * {
+  flex-shrink: 0;
 }

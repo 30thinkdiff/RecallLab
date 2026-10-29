@@ -333,6 +333,7 @@ export function validateBackup(raw: unknown): Backup {
           s.reviewPlan?.adaptive ||
           s.reviewPlan?.compact ||
           s.reviewPlan?.goalUpdatedAt ||
+          s.reviewPlan?.remainingBudgetSeconds !== undefined ||
           s.draft.timing,
       ) ||
       data.reviewEvents.some((e) => e.timing || e.quickFeedback || e.schemaVersion === 5))

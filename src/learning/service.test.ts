@@ -230,6 +230,11 @@ it.each([false, true])(
       delete s.reviewPlan!.adaptive;
       delete s.reviewPlan!.compact;
       delete s.reviewPlan!.goalUpdatedAt;
+      delete s.reviewPlan!.remainingBudgetSeconds;
+      for (const entry of Object.values(s.reviewPlan!.entries)) {
+        delete entry.explanation;
+        delete entry.estimatedSeconds;
+      }
       delete s.draft.timing;
     }
     for (const e of data.reviewEvents) {
@@ -309,4 +314,27 @@ it('does not bypass required detailed checks with a quick positive result and st
   const finished = (await db.sessions.get(timed.id))!;
   expect(finished.status).toBe('completed');
   expect(finished.index).toBe(finished.queue.length);
+});
+it('adopts a legacy formal session without losing its draft and refreshes newly added cards even when the goal timestamp is unchanged', async () => {
+  const sid = await service.start(pid);
+  let s = (await db.sessions.get(sid))!;
+  expect(s.reviewPlan?.compact).toBeUndefined();
+  s = await repo.updateDraft(
+    sid,
+    0,
+    { userResponse: '旧版正式练习的虚构草稿', responseMode: 'typed' },
+    tokenOf(s),
+  );
+  expect(await service.start(pid, { adaptive: true })).toBe(sid);
+  let resumed = (await db.sessions.get(sid))!;
+  expect(resumed.reviewPlan).toMatchObject({ compact: true, adaptive: true });
+  expect(resumed.draft).toEqual(s.draft);
+  const p = (await db.projects.get(pid))!;
+  const added = await repo.saveCard(pid, raw(99));
+  expect((await db.projects.get(pid))!.updatedAt).toBe(p.updatedAt);
+  await service.start(pid, { adaptive: true });
+  resumed = (await db.sessions.get(sid))!;
+  expect(resumed.queue.some((q) => q.id === added)).toBe(true);
+  expect(resumed.draft.userResponse).toBe(s.draft.userResponse);
+  expect(await db.reviewEvents.count()).toBe(0);
 });

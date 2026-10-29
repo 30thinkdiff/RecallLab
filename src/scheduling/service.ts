@@ -27,14 +27,20 @@ export class ScheduleService {
         .filter((s) => !!s.reviewPlan)
         .first();
       if (active) {
-        if (
-          active.reviewPlan?.adaptive &&
-          (active.reviewPlan.goalUpdatedAt !== project.updatedAt ||
-            new Intl.DateTimeFormat('en-CA', { timeZone: this.timezone }).format(
-              new Date(active.reviewPlan.createdAt),
-            ) !==
-              new Intl.DateTimeFormat('en-CA', { timeZone: this.timezone }).format(this.clock()))
-        ) {
+        const promoted =
+          options.adaptive === true &&
+          !!project.automaticGoal &&
+          !active.reviewPlan?.adaptive &&
+          !active.reviewPlan?.practiceOnly;
+        if (promoted)
+          active.reviewPlan = {
+            ...active.reviewPlan!,
+            adaptive: true,
+            compact: true,
+            mode: 'daily',
+          };
+        if (active.reviewPlan?.adaptive) {
+          // Resume always uses current cards, flags, goals and time; preserve the current draft.
           await rebuildAdaptiveTail(this.db, active, this.clock(), true);
           active.planVersion++;
           active.draftVersion++;
@@ -97,7 +103,18 @@ export class ScheduleService {
         planVersion: 0,
         draftVersion: 0,
         reviewPlan: {
-          ...(adaptive ? { adaptive: true, compact: true, goalUpdatedAt: project.updatedAt } : {}),
+          ...(adaptive
+            ? {
+                adaptive: true,
+                compact: true,
+                goalUpdatedAt: project.updatedAt,
+                remainingBudgetSeconds: Math.max(
+                  0,
+                  project.dailyTimeBudget * 60 -
+                    ('allocatedSeconds' in plan ? plan.allocatedSeconds : 0),
+                ),
+              }
+            : {}),
           mode: options.mode ?? 'daily',
           practiceOnly: options.mode === 'custom' || !!options.extraPractice,
           timezone: this.timezone,
@@ -327,6 +344,7 @@ export async function rebuildAdaptiveTail(
   session.reviewPlan = {
     ...session.reviewPlan,
     entries,
+    remainingBudgetSeconds: Math.max(0, project.dailyTimeBudget * 60 - plan.allocatedSeconds),
     goalUpdatedAt: project.updatedAt,
     createdAt: now.toISOString(),
     budgetMinutes: project.dailyTimeBudget,

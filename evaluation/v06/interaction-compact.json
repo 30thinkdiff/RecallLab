@@ -1,0 +1,13 @@
+{
+  "actor": "Playwright automated script; not human user time",
+  "mode": "compact",
+  "counts": {
+    "click": 2,
+    "fill": 1,
+    "select": 0,
+    "typedCharacters": 18
+  },
+  "operations": 3,
+  "scriptElapsedMs": 142,
+  "scope": "One typed independent answer with aggregate manual feedback; excludes once-only import/goal setup and reading/thinking time"
+}

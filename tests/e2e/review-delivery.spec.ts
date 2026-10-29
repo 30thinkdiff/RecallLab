@@ -35,7 +35,7 @@ test('formal state and raw evidence survive backup restore and a real browser re
     const path = testInfo.outputPath('fictional-fsrs.json');
     await download.saveAs(path);
     const before = JSON.parse(await readFile(path, 'utf8'));
-    expect(before.databaseVersion).toBe(7);
+    expect(before.databaseVersion).toBe(8);
     expect(before.data.memoryStates).toHaveLength(1);
     expect(before.data.schedulingLogs).toHaveLength(1);
     await page.getByLabel('选择 JSON 备份').setInputFiles(path);

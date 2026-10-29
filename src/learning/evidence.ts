@@ -42,6 +42,7 @@ export function usableTiming(timing?: AttemptTiming): boolean {
   const pre = Math.max(0, Date.parse(timing.attemptedAt) - Date.parse(timing.presentedAt));
   const inactive = Math.max(0, timing.backgroundMs + timing.idleMs + timing.unknownMs - pre);
   return (
+    timing.interruptions === 0 &&
     timing.activeMs >= 1000 &&
     timing.activeMs <= 600000 &&
     wall > 0 &&

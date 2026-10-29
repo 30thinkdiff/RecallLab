@@ -13,6 +13,7 @@ export interface PlanEntry {
   canSchedule: boolean;
 }
 export interface ReviewPlan {
+  remainingBudgetSeconds?: number;
   goalUpdatedAt?: string;
   adaptive?: boolean;
   compact?: boolean;

@@ -1,3 +1,4 @@
+import { promptProblem } from '../domain/readiness';
 import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../persistence/database';
@@ -164,14 +165,36 @@ function GoalPanel({
     }
     window.location.assign(`#study/${await scheduleService.start(project.id, { adaptive: true })}`);
   }
+  const latestByState = new Map<string, (typeof data.events)[number]>();
+  for (const e of data.events) {
+    const key = e.snapshot.learningStateId;
+    if (!key || ['skipped', 'ungraded'].includes(e.assessmentResult)) continue;
+    const old = latestByState.get(key);
+    if (!old || (old.reviewedAt ?? old.timestamp) < (e.reviewedAt ?? e.timestamp))
+      latestByState.set(key, e);
+  }
   const nextDue = data.memories
-    .filter(
-      (m) =>
-        data.cards.some((c) => c.learningStateId === m.id) &&
-        Date.parse(m.retestDue ?? m.due) > now.getTime(),
+    .filter((m) =>
+      data.cards.some(
+        (c) =>
+          c.learningStateId === m.id &&
+          !c.archivedAt &&
+          !promptProblem(c) &&
+          (!section || c.sourceReferences.some((r) => r.sectionId === section)),
+      ),
     )
-    .map((m) => m.retestDue ?? m.due)
-    .sort()[0];
+    .map((m) => {
+      const e = latestByState.get(m.id);
+      return Math.max(
+        Date.parse(m.retestDue ?? m.due),
+        e &&
+          (e.hintLevelUsed > 0 || ['incorrect', 'partially_correct'].includes(e.assessmentResult))
+          ? Date.parse(e.reviewedAt ?? e.timestamp) + 600000
+          : 0,
+      );
+    })
+    .filter((t) => t > now.getTime())
+    .sort((a, b) => a - b)[0];
   return (
     <>
       <h1>目标与自动学习方案</h1>
@@ -268,13 +291,18 @@ function GoalPanel({
         <section className="question-panel" aria-label="自动规划建议">
           <h2>系统建议</h2>
           <p>
-            范围内可学习 {plan.ready} 道 · 项目待完善或范围外 {plan.pending} 道 · 已尝试覆盖{' '}
-            {plan.covered} 道（不代表掌握）。
+            范围内可学习 {plan.ready} 道 · 待完善 {plan.qualityPending} 道 · 范围外{' '}
+            {plan.outsideScope} 道 · 已尝试覆盖 {plan.covered} 道（不代表掌握）。
           </p>
+          {plan.pending > 0 && <p>待完善和范围外内容不计入以下工作量，不能视为已覆盖全部资料。</p>}
           <p>
             今天建议 {plan.selected.length} 道，预计 {Math.ceil(plan.estimatedSeconds / 60)}{' '}
             分钟；估算剩余预算 {plan.budgetRemaining} 分钟。到期 {plan.due}，待无提示复测{' '}
             {plan.retest}，未学习 {plan.newCount}。
+          </p>
+          <p>
+            本次引入新题{plan.selected.filter((r) => r.fresh).length}
+            道；新题与复习、补救共享每天预算，后续按实际反馈重排。
           </p>
           <p>
             {plan.selected.filter((r) => r.estimateSource === 'observed').length
@@ -305,6 +333,11 @@ function GoalPanel({
               秒；预算还包括估算的核对/新知识阅读环节。后台、长时间空闲不算真实作答，不用速度判断记住或忘记。
             </p>
           </details>
+          {plan.budgetExhausted && (
+            <p role="status">
+              今日预算已用完，进度与草稿保留，下个学习日会重新安排。也可明确增加今天预算或从高级入口临时练习。
+            </p>
+          )}
           {plan.delayed > 0 && (
             <p>{plan.delayed}道近期失败/提示题等待至少10分钟后无提示复测，刚看完答案不算掌握。</p>
           )}
@@ -313,6 +346,20 @@ function GoalPanel({
           )}
           {plan.unfit > 0 && <p>{plan.unfit}道预计单题耗时超过剩余预算，需要增加时间或拆分。</p>}
           {active && <p>当前题目及草稿保留；完成后按最新目标更新剩余任务。</p>}
+          {active?.reviewPlan?.practiceOnly && (
+            <p>上次是临时练习，继续时不更新长期记忆；完成这轮后再开始正式自动计划。</p>
+          )}
+          {data.cards.some((c) =>
+            c.sourceReferences.some((r) =>
+              data.documents.some(
+                (d) =>
+                  d.id === r.documentId &&
+                  (d.extractionStatus !== 'ready' ||
+                    d.warnings.length > 0 ||
+                    d.pages.some((p) => p.method === 'ocr')),
+              ),
+            ),
+          ) && <p>部分来源含OCR或解析提醒，需要结合原文人工核对，不能自动当作已验证文字。</p>}
           <ErrorNotice message={action.error} />
           <button
             type="button"
@@ -329,8 +376,11 @@ function GoalPanel({
           >
             {active ? '继续上次学习' : '自动安排并开始学习'}
           </button>
-          {!plan.selected.length && nextDue && (
-            <p>下一次可能的复习时间：{dateTime(nextDue)}。到点后重新计算，不强制提前练习。</p>
+          {!plan.selected.length && !plan.budgetExhausted && nextDue && (
+            <p>
+              下一次可能的复习时间：{dateTime(new Date(nextDue).toISOString())}
+              。到点后重新计算，不强制提前练习。
+            </p>
           )}
           <details>
             <summary>查看本次推荐及原因</summary>

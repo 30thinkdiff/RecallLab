@@ -618,7 +618,13 @@ export class Repository {
           quickFeedback: {
             checker: automaticCheck ? 'exact-short-v1' : 'manual-v1',
             literalMatch,
-            overridden: !automaticCheck && literalMatch,
+            overridden:
+              !automaticCheck &&
+              literalMatch &&
+              sourceReady &&
+              event.wasIndependentRecall &&
+              event.hintLevelUsed === 0 &&
+              event.assessmentResult !== 'correct',
             sourceReady,
           },
           ...(automaticCheck ? { assessmentSource: 'deterministic' as const } : {}),

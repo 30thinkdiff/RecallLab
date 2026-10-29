@@ -34,6 +34,7 @@ export const decisionSchema = z.object({
   retestDue: date.optional(),
 });
 export const planSchema = z.object({
+  remainingBudgetSeconds: z.number().finite().nonnegative().max(86400).optional(),
   goalUpdatedAt: date.optional(),
   adaptive: z.boolean().optional(),
   compact: z.boolean().optional(),
