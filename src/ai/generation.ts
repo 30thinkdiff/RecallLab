@@ -265,7 +265,12 @@ export async function generateCandidates(
           source.kind === 'answer'
             ? state.candidates.find((c) => c.source.id === source.id)
             : undefined;
-        if (item.criteria.length + (previous?.criteria.length ?? 0) > 200)
+        if (
+          item.criteria.length + (previous?.criteria.length ?? 0) > 200 ||
+          item.criteria.filter((c) => c.importance === 'required').length +
+            (previous?.criteria.filter((c) => c.required).length ?? 0) >
+            100
+        )
           throw new AiError(
             'invalid-output',
             '本段评分要点过多，请缩小原文范围后分批整理；已有候选保留。',

@@ -1,6 +1,6 @@
 # RecallLab · 记忆实验室
 
-本地优先、AI 可选的主动回忆工具。当前开发分支 **V0.5.2 · 来源锁定的知识单元制卡与容量保护**。依赖未合并的 [PR #12](https://github.com/30thinkdiff/RecallLab/pull/12) → [#11](https://github.com/30thinkdiff/RecallLab/pull/11)，本轮独立PR及实际验证进度见[检查点记录](docs/V052_CHECKPOINTS.md)，不自动合并。
+本地优先、AI 可选的主动回忆工具。当前开发分支 **V0.5.2 · 来源锁定的知识单元制卡与容量保护**。依赖未合并的 [PR #12](https://github.com/30thinkdiff/RecallLab/pull/12) → [#11](https://github.com/30thinkdiff/RecallLab/pull/11)，本轮独立[PR #14](https://github.com/30thinkdiff/RecallLab/pull/14)及实际验证进度见[检查点记录](docs/V052_CHECKPOINTS.md)，不自动合并。
 
 ## 直接体验
 

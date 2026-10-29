@@ -1,0 +1,19 @@
+{
+  "date": "2026-10-29",
+  "actor": "AI engineering scripted acceptance, not an actual learner or independent human judge",
+  "provider": "real existing local 1.5B, no response mocking/proxy",
+  "modelCalls": 2,
+  "externalRequests": 0,
+  "installedModelStartedThroughUi": true,
+  "modelReusedAlreadyRunning": false,
+  "originalQuestions": ["蓝晶资料需要保留哪些信息？", "蓝晶修订需要保留哪些内容？"],
+  "refreshRetainsEdits": true,
+  "engineeringNormalizedQuestions": 2,
+  "confirmedCards": 2,
+  "sourceLocked": true,
+  "formalGrade": 3,
+  "gradeActor": "explicit scripted manual check in isolated test database, not model scoring",
+  "databaseVersion": 7,
+  "immutableEvidenceAndMemoryRestoreExact": true,
+  "apiKeyAbsent": true
+}

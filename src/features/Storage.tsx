@@ -103,8 +103,8 @@ export function BackupPage() {
         <h2>导出完整 JSON</h2>
         <p>
           请定期下载并妥善保存。JSON 含你的学习资料、原始回答及 AI
-          草稿，导出不会上传，不含接口密钥。大型数据自动将重复原文无损去重，不删除证据。支持50
-          MB文件、展开后最多128 MB；旧版程序不能恢复去重格式。
+          草稿，导出不会上传，不含接口密钥。大型数据自动将重复原文无损去重，不删除证据。普通JSON最多128
+          MB；来源去重文件最多50 MB、展开后不超过128 MB。旧版程序不能恢复去重格式。
         </p>
         <button
           className="button"
@@ -115,7 +115,7 @@ export function BackupPage() {
               const artifact = await portableBackup(backup);
               downloadJson(artifact.value);
               setMessage(
-                `已生成${artifact.pooled ? '来源去重备份（需V0.5.2或更新版恢复）' : '兼容备份'} ${(artifact.fileBytes / 1024 ** 2).toFixed(2)} MB，原始数据 ${(artifact.logicalBytes / 1024 ** 2).toFixed(2)} MB，包含 ${backup.data.aiDrafts.length} 份草稿。请妥善保存私人文件。`,
+                `已生成${artifact.pooled ? '来源去重备份（需V0.5.2或更新版恢复）' : '普通JSON备份'} ${(artifact.fileBytes / 1024 ** 2).toFixed(2)} MB，原始数据 ${(artifact.logicalBytes / 1024 ** 2).toFixed(2)} MB，包含 ${backup.data.aiDrafts.length} 份草稿。请妥善保存私人文件。`,
               );
             })
           }

@@ -188,7 +188,7 @@ it('refuses oversized unit plans before changing drafts and keeps oversized rubr
   const dense = {
     kind: 'document' as const,
     id: 'dense',
-    text: '核对分五步：先定位来源，再逐项比对，然后记录差异，再保存原文，最后核对副本。'.repeat(45),
+    text: '核对分五步：先定位来源，再逐项比对，然后记录差异，再保存原文，最后核对副本。'.repeat(25),
   };
   const state = await generateCandidates(
     [dense],
