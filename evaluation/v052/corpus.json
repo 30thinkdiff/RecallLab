@@ -592,9 +592,7 @@
               "sourceQuote": "提交蓝晶记录必须填写日期和来源。例如，可以使用纸质表格，也可以使用电子表格；具体载体不是必需要求。"
             }
           ],
-          "optionalExamples": [
-            "例如，可以使用纸质表格，也可以使用电子表格；具体载体不是必需要求。"
-          ],
+          "optionalExamples": ["例如，可以使用纸质表格，也可以使用电子表格；"],
           "forbiddenClaims": [
             "不得添加原文未给出的条件、结论、数字或必要项",
             "不得把例子一律设为必需；不得取消原文的否定或不确定性"
@@ -893,9 +891,7 @@
               "sourceQuote": "A fictional audit requires three actions: identify the source, compare every required point, and record unresolved issues. Examples may help explain the record but are not mandatory evidence."
             }
           ],
-          "optionalExamples": [
-            "Examples may help explain the record but are not mandatory evidence."
-          ],
+          "optionalExamples": [],
           "forbiddenClaims": [
             "不得添加原文未给出的条件、结论、数字或必要项",
             "不得把例子一律设为必需；不得取消原文的否定或不确定性"

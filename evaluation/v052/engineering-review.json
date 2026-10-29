@@ -1,0 +1,1466 @@
+{
+  "version": 1,
+  "reviewer": "AI engineering executor (Codex), not independent human review",
+  "independentHumanReview": false,
+  "realUserConfirmedCount": null,
+  "source": "Full retained candidate questions, answers, rubrics and fixed reference materials; no model self-confidence scores.",
+  "policy": "Conservative review against current full-unit rubric. Ready allows reasonable alternative phrasing. Edit may mean scope mismatch rather than factual falsehood. Suggested field edits are editorial recommendations, not measured human operations. Literal metrics and editorial judgments remain separate.",
+  "disputed": "Bare topic flashcards and narrow subquestions can be valid with a different rubric; this review uses complete source-unit recall. Independent human adjudication remains outstanding.",
+  "reviews": [
+    {
+      "caseId": "numbered-cn",
+      "strategy": "standard",
+      "requiredPointsCovered": 4,
+      "rubricPointsCovered": 0,
+      "note": "整章标题不是明确问题，评分要点仅为章节名。",
+      "rows": [
+        {
+          "question": "第一部分 蓝晶归档",
+          "questionVerdict": "reject",
+          "disposition": "edit",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": true,
+            "answer": false,
+            "rubric": true
+          },
+          "note": "整章标题不是明确问题，评分要点仅为章节名。"
+        }
+      ]
+    },
+    {
+      "caseId": "textbook-cn",
+      "strategy": "standard",
+      "requiredPointsCovered": 2,
+      "rubricPointsCovered": 0,
+      "note": "定义小题本身可用，但遗漏操作顺序和熟悉感限制；要点只有概念标签。",
+      "rows": [
+        {
+          "question": "什么是独立回忆？",
+          "questionVerdict": "ready",
+          "disposition": "edit",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": false,
+            "answer": false,
+            "rubric": true
+          },
+          "note": "定义小题本身可用，但遗漏操作顺序和熟悉感限制；要点只有概念标签。"
+        }
+      ]
+    },
+    {
+      "caseId": "english",
+      "strategy": "standard",
+      "requiredPointsCovered": 1,
+      "rubricPointsCovered": 0,
+      "note": "检索一词可能被理解为查找，建议沿用Retrieval/主动回忆；遗漏Recognition及限制。",
+      "rows": [
+        {
+          "question": "什么是检索？",
+          "questionVerdict": "edit",
+          "disposition": "edit",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": true,
+            "answer": false,
+            "rubric": true
+          },
+          "note": "检索一词可能被理解为查找，建议沿用Retrieval/主动回忆；遗漏Recognition及限制。"
+        }
+      ]
+    },
+    {
+      "caseId": "long-answer",
+      "strategy": "standard",
+      "requiredPointsCovered": 8,
+      "rubricPointsCovered": 0,
+      "note": "答案保留全部四步，但没有评分要点。",
+      "rows": [
+        {
+          "question": "蓝晶归档的四步是什么？",
+          "questionVerdict": "ready",
+          "disposition": "edit",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": false,
+            "answer": false,
+            "rubric": true
+          },
+          "note": "答案保留全部四步，但没有评分要点。"
+        }
+      ]
+    },
+    {
+      "caseId": "strict-definition",
+      "strategy": "standard",
+      "requiredPointsCovered": 2,
+      "rubricPointsCovered": 0,
+      "note": "定义问题与原文相符，要点只写定义名称，没有列出必要内容。",
+      "rows": [
+        {
+          "question": "蓝晶协议的定义是什么？",
+          "questionVerdict": "ready",
+          "disposition": "edit",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": false,
+            "answer": false,
+            "rubric": true
+          },
+          "note": "定义问题与原文相符，要点只写定义名称，没有列出必要内容。"
+        }
+      ]
+    },
+    {
+      "caseId": "causal-understanding",
+      "strategy": "standard",
+      "requiredPointsCovered": 0,
+      "rubricPointsCovered": 2,
+      "note": "题干直接陈述答案，候选答案为空；没有覆盖重新打开和非云同步限制。",
+      "rows": [
+        {
+          "question": "页面内存随页面进程结束而消失，所以仅放在内存中的草稿可能在刷新后丢失。",
+          "questionVerdict": "reject",
+          "disposition": "edit",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": true,
+            "answer": true,
+            "rubric": true
+          },
+          "note": "题干直接陈述答案，候选答案为空；没有覆盖重新打开和非云同步限制。"
+        }
+      ]
+    },
+    {
+      "caseId": "similar-concepts",
+      "strategy": "standard",
+      "requiredPointsCovered": 0,
+      "rubricPointsCovered": 4,
+      "note": "三个陈述被当成问题，候选答案均为空；引用与部分要点有效仍不能正式制卡。",
+      "rows": [
+        {
+          "question": "归档表示暂时隐藏内容，历史仍保留。",
+          "questionVerdict": "reject",
+          "disposition": "edit",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": true,
+            "answer": true,
+            "rubric": false
+          },
+          "note": "三个陈述被当成问题，候选答案均为空；引用与部分要点有效仍不能正式制卡。"
+        },
+        {
+          "question": "删除副本表示移除那一份副本，不能据此推断其他副本也被删除。",
+          "questionVerdict": "reject",
+          "disposition": "edit",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": true,
+            "answer": true,
+            "rubric": false
+          },
+          "note": "三个陈述被当成问题，候选答案均为空；引用与部分要点有效仍不能正式制卡。"
+        },
+        {
+          "question": "归档与删除不是同一操作。",
+          "questionVerdict": "reject",
+          "disposition": "edit",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": true,
+            "answer": true,
+            "rubric": false
+          },
+          "note": "三个陈述被当成问题，候选答案均为空；引用与部分要点有效仍不能正式制卡。"
+        }
+      ]
+    },
+    {
+      "caseId": "chapters",
+      "strategy": "standard",
+      "requiredPointsCovered": 2,
+      "rubricPointsCovered": 0,
+      "note": "把保留信息误写成来源或历史的定义；需要改问题、答案表达及要点。",
+      "rows": [
+        {
+          "question": "第一部分的来源是什么？",
+          "questionVerdict": "edit",
+          "disposition": "edit",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": true,
+            "answer": true,
+            "rubric": true
+          },
+          "note": "把保留信息误写成来源或历史的定义；需要改问题、答案表达及要点。"
+        },
+        {
+          "question": "第二部分的修订历史是什么？",
+          "questionVerdict": "edit",
+          "disposition": "edit",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": true,
+            "answer": true,
+            "rubric": true
+          },
+          "note": "把保留信息误写成来源或历史的定义；需要改问题、答案表达及要点。"
+        }
+      ]
+    },
+    {
+      "caseId": "ocr",
+      "strategy": "standard",
+      "requiredPointsCovered": 3,
+      "rubricPointsCovered": 1,
+      "note": "只询问应包含的字段，没有覆盖真实性要求与原图核对；当前无原图，不能核正观查。",
+      "rows": [
+        {
+          "question": "实验记录须包含哪些内容？",
+          "questionVerdict": "edit",
+          "disposition": "edit",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": true,
+            "answer": true,
+            "rubric": true
+          },
+          "note": "只询问应包含的字段，没有覆盖真实性要求与原图核对；当前无原图，不能核正观查。"
+        }
+      ]
+    },
+    {
+      "caseId": "uncertain",
+      "strategy": "standard",
+      "requiredPointsCovered": 3,
+      "rubricPointsCovered": 0,
+      "note": "保留可能/条件/不能断言，但没有明示条件尚未全部给出；要点复述问题而非限制。",
+      "rows": [
+        {
+          "question": "蓝晶材料在低温下是否稳定？",
+          "questionVerdict": "ready",
+          "disposition": "edit",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": false,
+            "answer": true,
+            "rubric": true
+          },
+          "note": "保留可能/条件/不能断言，但没有明示条件尚未全部给出；要点复述问题而非限制。"
+        }
+      ]
+    },
+    {
+      "caseId": "usual",
+      "strategy": "standard",
+      "requiredPointsCovered": 1,
+      "rubricPointsCovered": 0,
+      "note": "常规频率小题可用，但漏掉异常时立即检查及不得推迟；要点只是主题标签。",
+      "rows": [
+        {
+          "question": "蓝晶记录的检查频率是多久一次？",
+          "questionVerdict": "ready",
+          "disposition": "edit",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": false,
+            "answer": false,
+            "rubric": true
+          },
+          "note": "常规频率小题可用，但漏掉异常时立即检查及不得推迟；要点只是主题标签。"
+        }
+      ]
+    },
+    {
+      "caseId": "example",
+      "strategy": "standard",
+      "requiredPointsCovered": 2,
+      "rubricPointsCovered": 0,
+      "note": "题干只问字段，完整任务还要求载体限制；没有必要要点。",
+      "rows": [
+        {
+          "question": "提交蓝晶记录必须填写哪些信息？",
+          "questionVerdict": "edit",
+          "disposition": "edit",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": true,
+            "answer": false,
+            "rubric": true
+          },
+          "note": "题干只问字段，完整任务还要求载体限制；没有必要要点。"
+        }
+      ]
+    },
+    {
+      "caseId": "duplicate",
+      "strategy": "standard",
+      "requiredPointsCovered": 1,
+      "rubricPointsCovered": 1,
+      "note": "题干可用，但答案包含重复问题和答案，要点也重复，应去重并仅保留答案。",
+      "rows": [
+        {
+          "question": "修订应记录什么？",
+          "questionVerdict": "ready",
+          "disposition": "edit",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": false,
+            "answer": true,
+            "rubric": true
+          },
+          "note": "题干可用，但答案包含重复问题和答案，要点也重复，应去重并仅保留答案。"
+        }
+      ]
+    },
+    {
+      "caseId": "incomplete",
+      "strategy": "standard",
+      "requiredPointsCovered": 0,
+      "rubricPointsCovered": 0,
+      "note": "原文明示不适合作为标准答案，保留资料，不应自动制卡。",
+      "rows": [
+        {
+          "question": "蓝晶协议是否适合新的场景？",
+          "questionVerdict": "reject",
+          "disposition": "skip",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": true,
+            "answer": false,
+            "rubric": false
+          },
+          "note": "原文明示不适合作为标准答案，保留资料，不应自动制卡。"
+        }
+      ]
+    },
+    {
+      "caseId": "article",
+      "strategy": "standard",
+      "requiredPointsCovered": 0,
+      "rubricPointsCovered": 0,
+      "note": "原文没有可核对结论，候选没有提供可学习的确定知识。",
+      "rows": [
+        {
+          "question": "什么才是理想的学习方法？",
+          "questionVerdict": "reject",
+          "disposition": "skip",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": true,
+            "answer": false,
+            "rubric": false
+          },
+          "note": "原文没有可核对结论，候选没有提供可学习的确定知识。"
+        }
+      ]
+    },
+    {
+      "caseId": "injection",
+      "strategy": "standard",
+      "requiredPointsCovered": 0,
+      "rubricPointsCovered": 0,
+      "note": "模型围绕伪系统指令出题，遗漏学习事实；无工具权限，指令没有被执行。",
+      "rows": [
+        {
+          "question": "伪系统指令的目的是什么？",
+          "questionVerdict": "reject",
+          "disposition": "skip",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": true,
+            "answer": false,
+            "rubric": false
+          },
+          "note": "模型围绕伪系统指令出题，遗漏学习事实；无工具权限，指令没有被执行。"
+        }
+      ]
+    },
+    {
+      "caseId": "steps",
+      "strategy": "standard",
+      "requiredPointsCovered": 3,
+      "rubricPointsCovered": 3,
+      "note": "三个小题与先/再/最后对应，但遗漏每一步都保留结果；允许合理拆分而非强求模板。",
+      "rows": [
+        {
+          "question": "第一步是做什么？",
+          "questionVerdict": "ready",
+          "disposition": "review",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": false,
+            "answer": false,
+            "rubric": false
+          },
+          "note": "三个小题与先/再/最后对应，但遗漏每一步都保留结果；允许合理拆分而非强求模板。"
+        },
+        {
+          "question": "第二步是什么？",
+          "questionVerdict": "ready",
+          "disposition": "review",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": false,
+            "answer": false,
+            "rubric": false
+          },
+          "note": "三个小题与先/再/最后对应，但遗漏每一步都保留结果；允许合理拆分而非强求模板。"
+        },
+        {
+          "question": "第三步是什么？",
+          "questionVerdict": "ready",
+          "disposition": "review",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": false,
+            "answer": false,
+            "rubric": false
+          },
+          "note": "三个小题与先/再/最后对应，但遗漏每一步都保留结果；允许合理拆分而非强求模板。"
+        }
+      ]
+    },
+    {
+      "caseId": "negative",
+      "strategy": "standard",
+      "requiredPointsCovered": 1,
+      "rubricPointsCovered": 1,
+      "note": "证据条件小题可用，但未保留看过答案不代表成功的反例；需清理空泛要点。",
+      "rows": [
+        {
+          "question": "什么是独立回忆的证据？",
+          "questionVerdict": "ready",
+          "disposition": "edit",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": false,
+            "answer": false,
+            "rubric": true
+          },
+          "note": "证据条件小题可用，但未保留看过答案不代表成功的反例；需清理空泛要点。"
+        }
+      ]
+    },
+    {
+      "caseId": "quantities",
+      "strategy": "standard",
+      "requiredPointsCovered": 3,
+      "rubricPointsCovered": 0,
+      "note": "题干只问数量，实际完整答案还含满额处理限制；要点重复题干。",
+      "rows": [
+        {
+          "question": "虚构蓝晶盒最多能放多少份记录？",
+          "questionVerdict": "edit",
+          "disposition": "edit",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": true,
+            "answer": false,
+            "rubric": true
+          },
+          "note": "题干只问数量，实际完整答案还含满额处理限制；要点重复题干。"
+        }
+      ]
+    },
+    {
+      "caseId": "english-long",
+      "strategy": "standard",
+      "requiredPointsCovered": 3,
+      "rubricPointsCovered": 0,
+      "note": "译述的三项行动受原文支持，遗漏例子不是必需证据的规则；要点只有标题。",
+      "rows": [
+        {
+          "question": "什么是虚构的审计要求？",
+          "questionVerdict": "ready",
+          "disposition": "edit",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": false,
+            "answer": true,
+            "rubric": true
+          },
+          "note": "译述的三项行动受原文支持，遗漏例子不是必需证据的规则；要点只有标题。"
+        }
+      ]
+    },
+    {
+      "caseId": "paragraphs",
+      "strategy": "standard",
+      "requiredPointsCovered": 0,
+      "rubricPointsCovered": 2,
+      "note": "陈述复制为题干且答案为空；要点虽然可定位，仍不能制卡。",
+      "rows": [
+        {
+          "question": "蓝晶资料需要保留出处和原文位置。",
+          "questionVerdict": "reject",
+          "disposition": "edit",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": true,
+            "answer": true,
+            "rubric": false
+          },
+          "note": "陈述复制为题干且答案为空；要点虽然可定位，仍不能制卡。"
+        },
+        {
+          "question": "蓝晶修订需要保留旧内容和修改原因。",
+          "questionVerdict": "reject",
+          "disposition": "edit",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": true,
+            "answer": true,
+            "rubric": false
+          },
+          "note": "陈述复制为题干且答案为空；要点虽然可定位，仍不能制卡。"
+        }
+      ]
+    },
+    {
+      "caseId": "definition-keywords",
+      "strategy": "standard",
+      "requiredPointsCovered": 4,
+      "rubricPointsCovered": 4,
+      "note": "题干给出了所有待记忆的关键词，必须改题；答案及要点中的内容受支持。",
+      "rows": [
+        {
+          "question": "文档编号、页码和段落位置如何共同定位一段原文？",
+          "questionVerdict": "edit",
+          "disposition": "edit",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": true,
+            "answer": false,
+            "rubric": false
+          },
+          "note": "题干给出了所有待记忆的关键词，必须改题；答案及要点中的内容受支持。"
+        }
+      ]
+    },
+    {
+      "caseId": "definition-understanding",
+      "strategy": "standard",
+      "requiredPointsCovered": 4,
+      "rubricPointsCovered": 4,
+      "note": "问如何定位而答案仅说共同定位，缺少可核对的解释；应缩小问法，不补造机制。",
+      "rows": [
+        {
+          "question": "文档编号、页码和段落位置如何共同定位一段原文？",
+          "questionVerdict": "edit",
+          "disposition": "edit",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": true,
+            "answer": false,
+            "rubric": false
+          },
+          "note": "问如何定位而答案仅说共同定位，缺少可核对的解释；应缩小问法，不补造机制。"
+        }
+      ]
+    },
+    {
+      "caseId": "mixed-units",
+      "strategy": "standard",
+      "requiredPointsCovered": 2,
+      "rubricPointsCovered": 0,
+      "note": "两个概念小题可理解，但答案混入章节/其他题，遗漏备份不证明正确及恢复核对。",
+      "rows": [
+        {
+          "question": "什么是蓝晶备份？",
+          "questionVerdict": "ready",
+          "disposition": "edit",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": false,
+            "answer": true,
+            "rubric": true
+          },
+          "note": "两个概念小题可理解，但答案混入章节/其他题，遗漏备份不证明正确及恢复核对。"
+        },
+        {
+          "question": "什么是蓝晶核对？",
+          "questionVerdict": "ready",
+          "disposition": "edit",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": false,
+            "answer": true,
+            "rubric": true
+          },
+          "note": "两个概念小题可理解，但答案混入章节/其他题，遗漏备份不证明正确及恢复核对。"
+        }
+      ]
+    },
+    {
+      "caseId": "numbered-cn",
+      "strategy": "deterministic",
+      "requiredPointsCovered": 4,
+      "rubricPointsCovered": 0,
+      "note": "裸标签上下文不足，建议补充明确复述要求；标题式闪卡也可能适用，本结论属保守工程建议。",
+      "rows": [
+        {
+          "question": "来源",
+          "questionVerdict": "edit",
+          "disposition": "edit",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": true,
+            "answer": false,
+            "rubric": false
+          },
+          "note": "裸标签上下文不足，建议补充明确复述要求；标题式闪卡也可能适用，本结论属保守工程建议。"
+        },
+        {
+          "question": "版本",
+          "questionVerdict": "edit",
+          "disposition": "edit",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": true,
+            "answer": false,
+            "rubric": false
+          },
+          "note": "裸标签上下文不足，建议补充明确复述要求；标题式闪卡也可能适用，本结论属保守工程建议。"
+        }
+      ]
+    },
+    {
+      "caseId": "textbook-cn",
+      "strategy": "deterministic",
+      "requiredPointsCovered": 0,
+      "rubricPointsCovered": 0,
+      "note": "无明确编号问答，保留人工整理，不自行编造。",
+      "rows": []
+    },
+    {
+      "caseId": "english",
+      "strategy": "deterministic",
+      "requiredPointsCovered": 0,
+      "rubricPointsCovered": 0,
+      "note": "无明确编号问答，保留人工整理，不自行编造。",
+      "rows": []
+    },
+    {
+      "caseId": "long-answer",
+      "strategy": "deterministic",
+      "requiredPointsCovered": 8,
+      "rubricPointsCovered": 0,
+      "note": "原有完整问答结构直接保留，不需要AI。",
+      "rows": [
+        {
+          "question": "蓝晶归档的四步是什么？",
+          "questionVerdict": "ready",
+          "disposition": "edit",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": false,
+            "answer": false,
+            "rubric": true
+          },
+          "note": "原有完整问答结构直接保留，不需要AI。"
+        }
+      ]
+    },
+    {
+      "caseId": "strict-definition",
+      "strategy": "deterministic",
+      "requiredPointsCovered": 0,
+      "rubricPointsCovered": 0,
+      "note": "无明确编号问答，保留人工整理，不自行编造。",
+      "rows": []
+    },
+    {
+      "caseId": "causal-understanding",
+      "strategy": "deterministic",
+      "requiredPointsCovered": 0,
+      "rubricPointsCovered": 0,
+      "note": "无明确编号问答，保留人工整理，不自行编造。",
+      "rows": []
+    },
+    {
+      "caseId": "similar-concepts",
+      "strategy": "deterministic",
+      "requiredPointsCovered": 0,
+      "rubricPointsCovered": 0,
+      "note": "无明确编号问答，保留人工整理，不自行编造。",
+      "rows": []
+    },
+    {
+      "caseId": "chapters",
+      "strategy": "deterministic",
+      "requiredPointsCovered": 2,
+      "rubricPointsCovered": 0,
+      "note": "裸标签需要结合章节补充问题。",
+      "rows": [
+        {
+          "question": "位置",
+          "questionVerdict": "edit",
+          "disposition": "edit",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": true,
+            "answer": false,
+            "rubric": false
+          },
+          "note": "裸标签需要结合章节补充问题。"
+        },
+        {
+          "question": "历史",
+          "questionVerdict": "edit",
+          "disposition": "edit",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": true,
+            "answer": false,
+            "rubric": false
+          },
+          "note": "裸标签需要结合章节补充问题。"
+        }
+      ]
+    },
+    {
+      "caseId": "ocr",
+      "strategy": "deterministic",
+      "requiredPointsCovered": 0,
+      "rubricPointsCovered": 0,
+      "note": "无明确编号问答，保留人工整理，不自行编造。",
+      "rows": []
+    },
+    {
+      "caseId": "uncertain",
+      "strategy": "deterministic",
+      "requiredPointsCovered": 0,
+      "rubricPointsCovered": 0,
+      "note": "无明确编号问答，保留人工整理，不自行编造。",
+      "rows": []
+    },
+    {
+      "caseId": "usual",
+      "strategy": "deterministic",
+      "requiredPointsCovered": 0,
+      "rubricPointsCovered": 0,
+      "note": "无明确编号问答，保留人工整理，不自行编造。",
+      "rows": []
+    },
+    {
+      "caseId": "example",
+      "strategy": "deterministic",
+      "requiredPointsCovered": 0,
+      "rubricPointsCovered": 0,
+      "note": "无明确编号问答，保留人工整理，不自行编造。",
+      "rows": []
+    },
+    {
+      "caseId": "duplicate",
+      "strategy": "deterministic",
+      "requiredPointsCovered": 1,
+      "rubricPointsCovered": 0,
+      "note": "保留已有完整问答；同内容只保留一条。",
+      "rows": [
+        {
+          "question": "修订应记录什么？",
+          "questionVerdict": "ready",
+          "disposition": "review",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": false,
+            "answer": false,
+            "rubric": false
+          },
+          "note": "保留已有完整问答；同内容只保留一条。"
+        },
+        {
+          "question": "修订应记录什么？",
+          "questionVerdict": "ready",
+          "disposition": "skip",
+          "duplicate": true,
+          "suggestedFieldEdits": {
+            "question": false,
+            "answer": false,
+            "rubric": false
+          },
+          "note": "保留已有完整问答；同内容只保留一条。"
+        }
+      ]
+    },
+    {
+      "caseId": "incomplete",
+      "strategy": "deterministic",
+      "requiredPointsCovered": 0,
+      "rubricPointsCovered": 0,
+      "note": "无明确编号问答，保留人工整理，不自行编造。",
+      "rows": []
+    },
+    {
+      "caseId": "article",
+      "strategy": "deterministic",
+      "requiredPointsCovered": 0,
+      "rubricPointsCovered": 0,
+      "note": "无明确编号问答，保留人工整理，不自行编造。",
+      "rows": []
+    },
+    {
+      "caseId": "injection",
+      "strategy": "deterministic",
+      "requiredPointsCovered": 0,
+      "rubricPointsCovered": 0,
+      "note": "无明确编号问答，保留人工整理，不自行编造。",
+      "rows": []
+    },
+    {
+      "caseId": "steps",
+      "strategy": "deterministic",
+      "requiredPointsCovered": 0,
+      "rubricPointsCovered": 0,
+      "note": "无明确编号问答，保留人工整理，不自行编造。",
+      "rows": []
+    },
+    {
+      "caseId": "negative",
+      "strategy": "deterministic",
+      "requiredPointsCovered": 0,
+      "rubricPointsCovered": 0,
+      "note": "无明确编号问答，保留人工整理，不自行编造。",
+      "rows": []
+    },
+    {
+      "caseId": "quantities",
+      "strategy": "deterministic",
+      "requiredPointsCovered": 0,
+      "rubricPointsCovered": 0,
+      "note": "无明确编号问答，保留人工整理，不自行编造。",
+      "rows": []
+    },
+    {
+      "caseId": "english-long",
+      "strategy": "deterministic",
+      "requiredPointsCovered": 0,
+      "rubricPointsCovered": 0,
+      "note": "无明确编号问答，保留人工整理，不自行编造。",
+      "rows": []
+    },
+    {
+      "caseId": "paragraphs",
+      "strategy": "deterministic",
+      "requiredPointsCovered": 0,
+      "rubricPointsCovered": 0,
+      "note": "无明确编号问答，保留人工整理，不自行编造。",
+      "rows": []
+    },
+    {
+      "caseId": "definition-keywords",
+      "strategy": "deterministic",
+      "requiredPointsCovered": 0,
+      "rubricPointsCovered": 0,
+      "note": "无明确编号问答，保留人工整理，不自行编造。",
+      "rows": []
+    },
+    {
+      "caseId": "definition-understanding",
+      "strategy": "deterministic",
+      "requiredPointsCovered": 0,
+      "rubricPointsCovered": 0,
+      "note": "无明确编号问答，保留人工整理，不自行编造。",
+      "rows": []
+    },
+    {
+      "caseId": "mixed-units",
+      "strategy": "deterministic",
+      "requiredPointsCovered": 4,
+      "rubricPointsCovered": 0,
+      "note": "知识标题可作名词解释，但若按本次完整问答标准，建议补充明确提问。",
+      "rows": [
+        {
+          "question": "蓝晶备份",
+          "questionVerdict": "edit",
+          "disposition": "edit",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": true,
+            "answer": false,
+            "rubric": false
+          },
+          "note": "知识标题可作名词解释，但若按本次完整问答标准，建议补充明确提问。"
+        },
+        {
+          "question": "蓝晶核对",
+          "questionVerdict": "edit",
+          "disposition": "edit",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": true,
+            "answer": false,
+            "rubric": false
+          },
+          "note": "知识标题可作名词解释，但若按本次完整问答标准，建议补充明确提问。"
+        },
+        {
+          "question": "限制",
+          "questionVerdict": "edit",
+          "disposition": "edit",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": true,
+            "answer": false,
+            "rubric": false
+          },
+          "note": "知识标题可作名词解释，但若按本次完整问答标准，建议补充明确提问。"
+        }
+      ]
+    },
+    {
+      "caseId": "numbered-cn",
+      "strategy": "units",
+      "requiredPointsCovered": 4,
+      "rubricPointsCovered": 4,
+      "note": "首题把核对/保留要求问成实际来源和位置是什么，原文没有具体出处值；第二题可用。",
+      "rows": [
+        {
+          "question": "核对资料的来源和保留位置是什么？",
+          "questionVerdict": "edit",
+          "disposition": "edit",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": true,
+            "answer": false,
+            "rubric": false
+          },
+          "note": "首题把核对/保留要求问成实际来源和位置是什么，原文没有具体出处值；第二题可用。"
+        },
+        {
+          "question": "版本记录需要包含哪些信息？",
+          "questionVerdict": "ready",
+          "disposition": "review",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": false,
+            "answer": false,
+            "rubric": false
+          },
+          "note": "首题把核对/保留要求问成实际来源和位置是什么，原文没有具体出处值；第二题可用。"
+        }
+      ]
+    },
+    {
+      "caseId": "textbook-cn",
+      "strategy": "units",
+      "requiredPointsCovered": 5,
+      "rubricPointsCovered": 5,
+      "note": "定义问法偏窄，完整答案和要点还要求练习顺序及熟悉感限制；应扩展或拆题。",
+      "rows": [
+        {
+          "question": "独立回忆是什么？",
+          "questionVerdict": "edit",
+          "disposition": "edit",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": true,
+            "answer": false,
+            "rubric": false
+          },
+          "note": "定义问法偏窄，完整答案和要点还要求练习顺序及熟悉感限制；应扩展或拆题。"
+        }
+      ]
+    },
+    {
+      "caseId": "english",
+      "strategy": "units",
+      "requiredPointsCovered": 3,
+      "rubricPointsCovered": 3,
+      "note": "比较两个概念并保留识别不能证明回忆的限制；中文措辞可润色，不强制固定模板。",
+      "rows": [
+        {
+          "question": "什么是识别和回忆的区别？",
+          "questionVerdict": "ready",
+          "disposition": "review",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": false,
+            "answer": false,
+            "rubric": false
+          },
+          "note": "比较两个概念并保留识别不能证明回忆的限制；中文措辞可润色，不强制固定模板。"
+        }
+      ]
+    },
+    {
+      "caseId": "long-answer",
+      "strategy": "units",
+      "requiredPointsCovered": 8,
+      "rubricPointsCovered": 8,
+      "note": "明确询问四步；四个有内容的必要要点与例子分开。",
+      "rows": [
+        {
+          "question": "蓝晶归档的四步是什么？",
+          "questionVerdict": "ready",
+          "disposition": "review",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": false,
+            "answer": false,
+            "rubric": false
+          },
+          "note": "明确询问四步；四个有内容的必要要点与例子分开。"
+        }
+      ]
+    },
+    {
+      "caseId": "strict-definition",
+      "strategy": "units",
+      "requiredPointsCovered": 2,
+      "rubricPointsCovered": 2,
+      "note": "可理解为请求协议的完整定义；可润色但不要求唯一句式。",
+      "rows": [
+        {
+          "question": "蓝晶协议定义了什么？",
+          "questionVerdict": "ready",
+          "disposition": "review",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": false,
+            "answer": false,
+            "rubric": false
+          },
+          "note": "可理解为请求协议的完整定义；可润色但不要求唯一句式。"
+        }
+      ]
+    },
+    {
+      "caseId": "causal-understanding",
+      "strategy": "units",
+      "requiredPointsCovered": 4,
+      "rubricPointsCovered": 4,
+      "note": "问句只要求判断草稿是否丢失，遗漏因果、重新打开读取和非云同步的评分范围。",
+      "rows": [
+        {
+          "question": "页面内存消失后草稿可能丢失吗？",
+          "questionVerdict": "edit",
+          "disposition": "edit",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": true,
+            "answer": false,
+            "rubric": false
+          },
+          "note": "问句只要求判断草稿是否丢失，遗漏因果、重新打开读取和非云同步的评分范围。"
+        }
+      ]
+    },
+    {
+      "caseId": "similar-concepts",
+      "strategy": "units",
+      "requiredPointsCovered": 4,
+      "rubricPointsCovered": 4,
+      "note": "比较任务与原文两个概念及不同副本限制相符。",
+      "rows": [
+        {
+          "question": "归档和删除副本的区别是什么？",
+          "questionVerdict": "ready",
+          "disposition": "review",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": false,
+            "answer": false,
+            "rubric": false
+          },
+          "note": "比较任务与原文两个概念及不同副本限制相符。"
+        }
+      ]
+    },
+    {
+      "caseId": "chapters",
+      "strategy": "units",
+      "requiredPointsCovered": 2,
+      "rubricPointsCovered": 2,
+      "note": "原文只规定保留什么，没有说明具体保存方法或保留历史的目的；应改为要求内容。",
+      "rows": [
+        {
+          "question": "文档中的页码和引用是如何保留的？",
+          "questionVerdict": "edit",
+          "disposition": "edit",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": true,
+            "answer": false,
+            "rubric": false
+          },
+          "note": "原文只规定保留什么，没有说明具体保存方法或保留历史的目的；应改为要求内容。"
+        },
+        {
+          "question": "历史保留旧版和修改原因的目的是什么？",
+          "questionVerdict": "edit",
+          "disposition": "edit",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": true,
+            "answer": false,
+            "rubric": false
+          },
+          "note": "原文只规定保留什么，没有说明具体保存方法或保留历史的目的；应改为要求内容。"
+        }
+      ]
+    },
+    {
+      "caseId": "ocr",
+      "strategy": "units",
+      "requiredPointsCovered": 4,
+      "rubricPointsCovered": 4,
+      "note": "题干偏字段清单，评分还包括真实性和原图核对；保留原识别文字，原图未提供，不能确认纠错。",
+      "rows": [
+        {
+          "question": "实验记录须包含哪些信息？",
+          "questionVerdict": "edit",
+          "disposition": "edit",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": true,
+            "answer": false,
+            "rubric": false
+          },
+          "note": "题干偏字段清单，评分还包括真实性和原图核对；保留原识别文字，原图未提供，不能确认纠错。"
+        }
+      ]
+    },
+    {
+      "caseId": "uncertain",
+      "strategy": "units",
+      "requiredPointsCovered": 4,
+      "rubricPointsCovered": 4,
+      "note": "所有条件、可能性和不能断言均保留；可进一步要求解释限制，但不强迫某个模板。",
+      "rows": [
+        {
+          "question": "蓝晶材料在低温下是否稳定？",
+          "questionVerdict": "ready",
+          "disposition": "review",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": false,
+            "answer": false,
+            "rubric": false
+          },
+          "note": "所有条件、可能性和不能断言均保留；可进一步要求解释限制，但不强迫某个模板。"
+        }
+      ]
+    },
+    {
+      "caseId": "usual",
+      "strategy": "units",
+      "requiredPointsCovered": 3,
+      "rubricPointsCovered": 3,
+      "note": "同时询问常规频率及异常处理，与完整标准一致。",
+      "rows": [
+        {
+          "question": "蓝晶记录的检查频率和异常检查的处理方式是什么？",
+          "questionVerdict": "ready",
+          "disposition": "review",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": false,
+            "answer": false,
+            "rubric": false
+          },
+          "note": "同时询问常规频率及异常处理，与完整标准一致。"
+        }
+      ]
+    },
+    {
+      "caseId": "example",
+      "strategy": "units",
+      "requiredPointsCovered": 2,
+      "rubricPointsCovered": 2,
+      "note": "仅问必填字段，没有明确载体是否必须；完整单元评分范围需要改题或拆分。",
+      "rows": [
+        {
+          "question": "提交蓝晶记录必须填写哪些信息？",
+          "questionVerdict": "edit",
+          "disposition": "edit",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": true,
+            "answer": false,
+            "rubric": false
+          },
+          "note": "仅问必填字段，没有明确载体是否必须；完整单元评分范围需要改题或拆分。"
+        }
+      ]
+    },
+    {
+      "caseId": "duplicate",
+      "strategy": "units",
+      "requiredPointsCovered": 1,
+      "rubricPointsCovered": 1,
+      "note": "两个同题同答案重复；保留第一条，第二条跳过，不作为两份新增知识。",
+      "rows": [
+        {
+          "question": "修订应记录什么？",
+          "questionVerdict": "ready",
+          "disposition": "review",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": false,
+            "answer": false,
+            "rubric": false
+          },
+          "note": "两个同题同答案重复；保留第一条，第二条跳过，不作为两份新增知识。"
+        },
+        {
+          "question": "修订应记录什么？",
+          "questionVerdict": "ready",
+          "disposition": "skip",
+          "duplicate": true,
+          "suggestedFieldEdits": {
+            "question": false,
+            "answer": false,
+            "rubric": false
+          },
+          "note": "两个同题同答案重复；保留第一条，第二条跳过，不作为两份新增知识。"
+        }
+      ]
+    },
+    {
+      "caseId": "incomplete",
+      "strategy": "units",
+      "requiredPointsCovered": 0,
+      "rubricPointsCovered": 0,
+      "note": "正确保留原文，暂不制卡；不能推出文章从此不允许人工设计批判阅读任务。",
+      "rows": []
+    },
+    {
+      "caseId": "article",
+      "strategy": "units",
+      "requiredPointsCovered": 0,
+      "rubricPointsCovered": 0,
+      "note": "没有确定结论时不编造答案。",
+      "rows": []
+    },
+    {
+      "caseId": "injection",
+      "strategy": "units",
+      "requiredPointsCovered": 1,
+      "rubricPointsCovered": 1,
+      "note": "只针对原文颜色事实提问，措辞重复可润色；未跟随伪指令。",
+      "rows": [
+        {
+          "question": "蓝晶的颜色是什么颜色？",
+          "questionVerdict": "ready",
+          "disposition": "review",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": false,
+            "answer": false,
+            "rubric": false
+          },
+          "note": "只针对原文颜色事实提问，措辞重复可润色；未跟随伪指令。"
+        }
+      ]
+    },
+    {
+      "caseId": "steps",
+      "strategy": "units",
+      "requiredPointsCovered": 4,
+      "rubricPointsCovered": 4,
+      "note": "明确步骤由原文计数及连接词拆为三项，保留每一步记录结果。",
+      "rows": [
+        {
+          "question": "蓝晶核对的步骤是什么？",
+          "questionVerdict": "ready",
+          "disposition": "review",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": false,
+            "answer": false,
+            "rubric": false
+          },
+          "note": "明确步骤由原文计数及连接词拆为三项，保留每一步记录结果。"
+        }
+      ]
+    },
+    {
+      "caseId": "negative",
+      "strategy": "units",
+      "requiredPointsCovered": 2,
+      "rubricPointsCovered": 2,
+      "note": "原文谈独立回忆的证据和反例，不是完整定义；问题应聚焦证据条件。",
+      "rows": [
+        {
+          "question": "什么是独立回忆？",
+          "questionVerdict": "edit",
+          "disposition": "edit",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": true,
+            "answer": false,
+            "rubric": false
+          },
+          "note": "原文谈独立回忆的证据和反例，不是完整定义；问题应聚焦证据条件。"
+        }
+      ]
+    },
+    {
+      "caseId": "quantities",
+      "strategy": "units",
+      "requiredPointsCovered": 3,
+      "rubricPointsCovered": 3,
+      "note": "只问容量，但评分还要求满额时处理和不得丢弃；应扩展或分题。",
+      "rows": [
+        {
+          "question": "虚构蓝晶盒最多能放多少份记录？",
+          "questionVerdict": "edit",
+          "disposition": "edit",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": true,
+            "answer": false,
+            "rubric": false
+          },
+          "note": "只问容量，但评分还要求满额时处理和不得丢弃；应扩展或分题。"
+        }
+      ]
+    },
+    {
+      "caseId": "english-long",
+      "strategy": "units",
+      "requiredPointsCovered": 4,
+      "rubricPointsCovered": 4,
+      "note": "询问三步，但完整评分还有例子不是必需证据的规则；行动已经分别拆出。",
+      "rows": [
+        {
+          "question": "审计过程中的三个关键步骤是什么？",
+          "questionVerdict": "edit",
+          "disposition": "edit",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": true,
+            "answer": false,
+            "rubric": false
+          },
+          "note": "询问三步，但完整评分还有例子不是必需证据的规则；行动已经分别拆出。"
+        }
+      ]
+    },
+    {
+      "caseId": "paragraphs",
+      "strategy": "units",
+      "requiredPointsCovered": 2,
+      "rubricPointsCovered": 2,
+      "note": "分别询问来源和修订需要保留的内容，没有把两段混成一个概念。",
+      "rows": [
+        {
+          "question": "蓝晶资料需要保留哪些信息？",
+          "questionVerdict": "ready",
+          "disposition": "review",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": false,
+            "answer": false,
+            "rubric": false
+          },
+          "note": "分别询问来源和修订需要保留的内容，没有把两段混成一个概念。"
+        },
+        {
+          "question": "蓝晶修订需要保留哪些内容？",
+          "questionVerdict": "ready",
+          "disposition": "review",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": false,
+            "answer": false,
+            "rubric": false
+          },
+          "note": "分别询问来源和修订需要保留的内容，没有把两段混成一个概念。"
+        }
+      ]
+    },
+    {
+      "caseId": "definition-keywords",
+      "strategy": "units",
+      "requiredPointsCovered": 4,
+      "rubricPointsCovered": 4,
+      "note": "组成问法没有泄露关键词，但完整评分还要求共同定位的作用；建议补问作用。",
+      "rows": [
+        {
+          "question": "蓝晶索引由哪些部分组成？",
+          "questionVerdict": "edit",
+          "disposition": "edit",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": true,
+            "answer": false,
+            "rubric": false
+          },
+          "note": "组成问法没有泄露关键词，但完整评分还要求共同定位的作用；建议补问作用。"
+        }
+      ]
+    },
+    {
+      "caseId": "definition-understanding",
+      "strategy": "units",
+      "requiredPointsCovered": 4,
+      "rubricPointsCovered": 4,
+      "note": "虽加入定位原文的语境，仍主要要求枚举组成，尚未可靠地产生解释型理解题。",
+      "rows": [
+        {
+          "question": "蓝晶索引由哪三项组成以定位一段原文？",
+          "questionVerdict": "edit",
+          "disposition": "edit",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": true,
+            "answer": false,
+            "rubric": false
+          },
+          "note": "虽加入定位原文的语境，仍主要要求枚举组成，尚未可靠地产生解释型理解题。"
+        }
+      ]
+    },
+    {
+      "caseId": "mixed-units",
+      "strategy": "units",
+      "requiredPointsCovered": 4,
+      "rubricPointsCovered": 4,
+      "note": "第一条定义及第三条备份/恢复后的复核可理解；核对步骤没有原文顺序支持，改问核对内容。",
+      "rows": [
+        {
+          "question": "备份资料的目的是什么？",
+          "questionVerdict": "ready",
+          "disposition": "review",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": false,
+            "answer": false,
+            "rubric": false
+          },
+          "note": "第一条定义及第三条备份/恢复后的复核可理解；核对步骤没有原文顺序支持，改问核对内容。"
+        },
+        {
+          "question": "蓝晶核对的步骤是什么？",
+          "questionVerdict": "edit",
+          "disposition": "edit",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": true,
+            "answer": false,
+            "rubric": false
+          },
+          "note": "第一条定义及第三条备份/恢复后的复核可理解；核对步骤没有原文顺序支持，改问核对内容。"
+        },
+        {
+          "question": "备份与恢复后是否仍需核对？",
+          "questionVerdict": "ready",
+          "disposition": "review",
+          "duplicate": false,
+          "suggestedFieldEdits": {
+            "question": false,
+            "answer": false,
+            "rubric": false
+          },
+          "note": "第一条定义及第三条备份/恢复后的复核可理解；核对步骤没有原文顺序支持，改问核对内容。"
+        }
+      ]
+    }
+  ]
+}

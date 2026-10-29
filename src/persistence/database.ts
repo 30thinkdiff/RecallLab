@@ -172,14 +172,12 @@ export class RecallDatabase extends Dexie {
           createdAt: new Date().toISOString(),
           data,
         };
-        await transaction
-          .table('recoveryBackups')
-          .add({
-            id: crypto.randomUUID(),
-            createdAt: before.createdAt,
-            reason: 'migration',
-            json: JSON.stringify(before),
-          });
+        await transaction.table('recoveryBackups').add({
+          id: crypto.randomUUID(),
+          createdAt: before.createdAt,
+          reason: 'migration',
+          json: JSON.stringify(before),
+        });
         validateBackup(before);
         // Semantic version for unit planning/review decisions; no historical or scheduling rewrites.
       });

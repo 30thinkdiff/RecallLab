@@ -17,3 +17,13 @@ it('keeps public source-contained references explicit, allows multiple questions
     if (!c.units.length) expect(c.notForCards.length).toBeGreaterThan(0);
   }
 });
+
+it('keeps example annotations separate from required rules about examples', () => {
+  const english = corpus.cases.find((c) => c.id === 'english-long')!;
+  expect(english.units[0]!.optionalExamples).toEqual([]);
+  expect(english.units[0]!.required.some((p) => p.point.includes('not mandatory evidence'))).toBe(
+    true,
+  );
+  const carrier = corpus.cases.find((c) => c.id === 'example')!;
+  expect(carrier.units[0]!.optionalExamples.join('')).not.toContain('具体载体不是必需要求');
+});

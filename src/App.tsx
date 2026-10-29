@@ -157,7 +157,7 @@ function Workspace() {
           </p>
         </div>
         <div className="sidebar-footer">
-          RECALL. REFLECT. REPEAT.<span>0.5.1 · 可恢复的 AI 辅助整理</span>
+          RECALL. REFLECT. REPEAT.<span>0.5.2 · 知识整理与质量核对</span>
           <OfflineStatus />
         </div>
       </aside>

@@ -125,3 +125,50 @@ it('copies only existing fixtures after consent, verifies their checksum and ins
     await fs.rm(root, { recursive: true, force: true });
   }
 });
+
+it('reports a missing model link without starting or downloading a replacement', async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'recalllab-missing-model-'));
+  await fs.mkdir(path.join(root, 'dist'));
+  await fs.writeFile(path.join(root, 'dist', 'index.html'), 'fictional app');
+  await fs.writeFile(path.join(root, 'bin'), 'fictional runtime');
+  await fs.symlink(path.join(root, 'missing-target'), path.join(root, 'model-link'));
+  let started = false;
+  const local = await createLocalServer({
+    root,
+    port: 0,
+    registry: [
+      {
+        id: 'missing',
+        name: 'missing fixture',
+        model: 'fixture',
+        port: 1,
+        binary: path.join(root, 'bin'),
+        filePath: path.join(root, 'model-link'),
+        temporary: false,
+      },
+    ],
+    spawnModel: () => {
+      started = true;
+      throw Error('must not start');
+    },
+  });
+  try {
+    const status = await (await fetch(local.origin + '/local-ai/status')).json();
+    expect(status.models[0]).toMatchObject({ installed: false, running: false, bytes: 0 });
+    const response = await fetch(local.origin + '/local-ai/start', {
+      method: 'POST',
+      headers: {
+        Origin: local.origin,
+        'Content-Type': 'application/json',
+        'X-RecallLab-Token': status.token,
+      },
+      body: JSON.stringify({ id: 'missing', consent: true }),
+    });
+    expect(response.status).toBe(409);
+    expect(started).toBe(false);
+    expect(JSON.stringify(status)).not.toContain(root);
+  } finally {
+    await local.close();
+    await fs.rm(root, { recursive: true, force: true });
+  }
+});

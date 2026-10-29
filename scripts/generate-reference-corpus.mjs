@@ -1,4 +1,5 @@
-import { writeFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
+import process from 'node:process';
 // Author-written fictional/source-contained facts. No independent human reviewer has signed this set.
 const rows = [
   [
@@ -423,7 +424,7 @@ const cases = rows.map(([id, category, goal, text, definitions]) => ({
     quote,
     acceptableQuestions: [q1, q2],
     required: required.map((point) => ({ point, sourceQuote: quote })),
-    optionalExamples: quote.match(/(?:例如|Examples)[^。]+。?/gu) ?? [],
+    optionalExamples: quote.match(/例如[^。；;]+[。；;]?|For example[^.;]+[.;]?/gu) ?? [],
     forbiddenClaims: [
       '不得添加原文未给出的条件、结论、数字或必要项',
       '不得把例子一律设为必需；不得取消原文的否定或不确定性',
@@ -434,8 +435,9 @@ const cases = rows.map(([id, category, goal, text, definitions]) => ({
     : [{ text, reason: '来源没有可核对的定义或结论，暂不直接制卡' }],
   allowedVariants: '问题可合并或合理拆分，必须保持来源范围、条件和必要内容；示例不是唯一正确措辞。',
 }));
-await writeFile(
-  'evaluation/v052/corpus.json',
-  JSON.stringify({ version: 1, license: 'CC0-1.0', independentHumanGold: false, cases }, null, 2) +
-    '\n',
-);
+const corpus = { version: 1, license: 'CC0-1.0', independentHumanGold: false, cases };
+if (process.argv.includes('--check')) {
+  const existing = JSON.parse(await readFile('evaluation/v052/corpus.json', 'utf8'));
+  if (JSON.stringify(existing) !== JSON.stringify(corpus))
+    throw Error('Reference corpus is stale.');
+} else await writeFile('evaluation/v052/corpus.json', JSON.stringify(corpus, null, 2) + '\n');
