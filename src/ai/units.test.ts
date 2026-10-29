@@ -4,6 +4,8 @@ import { guidedItem, planKnowledge, sourceCriteria } from './units';
 import { generateCandidates, candidateEvidence } from './generation';
 import { HttpProvider, messages } from './providers';
 import { candidateQualityProblem } from './quality';
+import { packState, packedStateSchema } from './drafts-format';
+import type { AiProvider } from './protocol';
 it('plans chapters with repeated numbering, preserves conditional prose and avoids unsupported articles', () => {
   const c = corpus.cases.find((c) => c.id === 'mixed-units')!;
   const units = planKnowledge({ kind: 'document', id: 'fiction', text: c.text });
@@ -119,4 +121,86 @@ it('does not mistake valid citations for semantic correctness or complete rubric
   };
   expect(messages(input, 'units')[0]!.content).toContain('解释或比较');
   expect(messages({ ...input, objective: 'keywords' }, 'units')[0]!.content).toContain('关键词');
+});
+it('does not treat an English rule about examples as an optional example', () => {
+  const points = sourceCriteria(
+    'Examples can explain a record but are not mandatory evidence. For example, a paper copy may help.',
+  );
+  expect(points[0]!.importance).toBe('required');
+  expect(points[1]!.importance).toBe('optional');
+});
+
+it('splits explicit counted actions into meaningful source quotes without guessing ambiguous lists', () => {
+  const chinese = sourceCriteria(
+    '核对分三步：先定位来源，再逐项比对，最后记录未确定的问题。每一步都必须保留结果。',
+  );
+  expect(chinese.map((p) => p.text)).toEqual([
+    '先定位来源',
+    '再逐项比对',
+    '最后记录未确定的问题。',
+    '每一步都必须保留结果。',
+  ]);
+  const english = sourceCriteria(
+    'An audit requires three actions: identify the source, compare every required point, and record unresolved issues.',
+  );
+  expect(english).toHaveLength(3);
+  expect(english.every((p) => p.importance === 'required')).toBe(true);
+  expect(
+    sourceCriteria('An audit requires three actions: identify the source, compare the record.'),
+  ).toHaveLength(1);
+});
+
+it('refuses oversized unit plans before changing drafts and keeps oversized rubric failures saveable', async () => {
+  const generate = vi.fn(async () => ({
+    items: [
+      {
+        question: '如何核对？',
+        answerSuggestion: '',
+        evidenceQuote: '',
+        criteria: [],
+        hints: [],
+        mnemonic: '',
+        confusion: '',
+        qualityNotes: [],
+      },
+    ],
+  }));
+  const provider: AiProvider = { kind: 'mock', strategy: 'units', generate };
+  const many = {
+    kind: 'document' as const,
+    id: 'many',
+    text: Array.from({ length: 201 }, (_, i) => `原文片段${i}要求保留记录。`).join('\n\n'),
+  };
+  const progress = vi.fn();
+  await expect(
+    generateCandidates(
+      [many],
+      'extract',
+      'verbatim',
+      provider,
+      'fixture',
+      new AbortController().signal,
+      progress,
+    ),
+  ).rejects.toThrow('分批');
+  expect(progress).not.toHaveBeenCalled();
+  expect(generate).not.toHaveBeenCalled();
+  const dense = {
+    kind: 'document' as const,
+    id: 'dense',
+    text: '核对分五步：先定位来源，再逐项比对，然后记录差异，再保存原文，最后核对副本。'.repeat(45),
+  };
+  const state = await generateCandidates(
+    [dense],
+    'extract',
+    'verbatim',
+    provider,
+    'fixture',
+    new AbortController().signal,
+    progress,
+  );
+  expect(state.status).toBe('partial');
+  expect(state.candidates).toEqual([]);
+  expect(state.failures[0]!.message).toContain('要点过多');
+  expect(packedStateSchema.safeParse(packState(state, [dense])).success).toBe(true);
 });

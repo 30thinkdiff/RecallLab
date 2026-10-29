@@ -8,16 +8,20 @@ export function reviewQueue(state: GenerationState, cards: PracticeItem[]) {
     .map((row, index) => {
       const evidence = candidateEvidence(row),
         flags: string[] = [];
+      const answerKey = normalizedQuestion(candidateAnswer(row, state));
       const peers = state.candidates.filter(
         (other) =>
           other.id !== row.id &&
-          normalizedQuestion(other.question) === normalizedQuestion(row.question),
+          (normalizedQuestion(other.question) === normalizedQuestion(row.question) ||
+            (answerKey.length >= 8 &&
+              normalizedQuestion(candidateAnswer(other, state)) === answerKey)),
       );
       const existing = cards.filter(
         (c) =>
           !c.archivedAt &&
           c.id !== (row.source.kind === 'answer' ? row.source.id : '') &&
-          normalizedQuestion(c.question) === normalizedQuestion(row.question),
+          (normalizedQuestion(c.question) === normalizedQuestion(row.question) ||
+            (answerKey.length >= 8 && normalizedQuestion(c.standardAnswer) === answerKey)),
       );
       if (!evidence.valid) flags.push('来源或要点引用不足');
       if (candidateQualityProblem(row.question, candidateAnswer(row, state), row.evidenceQuote))
@@ -44,7 +48,7 @@ export function reviewQueue(state: GenerationState, cards: PracticeItem[]) {
                 : 50),
         0,
       );
-      const group = `${row.source.id}/${row.chunk.id}`;
+      const group = `${row.source.id}/${row.unit?.chapter ?? row.chunk.id}`;
       return {
         row,
         index,

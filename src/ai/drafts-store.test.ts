@@ -271,3 +271,52 @@ it('rolls back a whole confirmation when a later candidate contains document-inj
   expect(await db.revisions.count()).toBe(0);
   expect(await db.aiDrafts.get(saved.id)).toEqual(saved);
 });
+it('enforces aggregate UTF-8 quota atomically when two tabs race to save individually valid drafts', async () => {
+  const { source, state } = await setup();
+  const text = source.text + '测'.repeat(900000),
+    document = { ...doc, extractedContent: text };
+  await db.sourceDocuments.put(document);
+  const pin = { ...source, text, document };
+  state.inputs = [{ id: doc.id, text }];
+  state.candidates = [];
+  for (let i = 0; i < 3; i++)
+    await saveAiDraft(db, `quota-${i}`, pid, state, [pin], config, null, 'seed');
+  const keys = await db.aiDrafts.orderBy('bytesStored').keys();
+  expect(keys).toHaveLength(3);
+  expect(keys.every((k) => typeof k === 'number')).toBe(true);
+  const raced = await Promise.allSettled(
+    ['tab-a', 'tab-b'].map((writer) =>
+      saveAiDraft(db, writer, pid, state, [pin], config, null, writer),
+    ),
+  );
+  expect(raced.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+  expect(raced.filter((r) => r.status === 'rejected')).toHaveLength(1);
+  expect(await db.aiDrafts.count()).toBe(4);
+  const rows = await db.aiDrafts.toArray();
+  expect(rows.reduce((n, r) => n + r.bytesStored, 0)).toBeLessThanOrEqual(12 * 1024 ** 2);
+  const backup = await exportBackup(db);
+  expect(backup.data.aiDrafts).toHaveLength(4);
+});
+it('a deferred unit cannot be selected for formal saving through a stale selection flag', async () => {
+  const { source, state } = await setup();
+  const row = state.candidates[0]!;
+  row.unit = {
+    key: 'unit',
+    start: 0,
+    end: source.text.length,
+    title: '',
+    chapter: '原文',
+    notForCards: false,
+  };
+  row.selected = true;
+  row.question = '蓝晶协议有哪些要求？';
+  state.deferredUnits = ['unit'];
+  const saved = await saveAiDraft(db, 'deferred', pid, state, [source], config, null, 'tab');
+  await expect(
+    confirmDraft(repo, saved.id, pid, state, [source], config, tokenFor(saved), 'tab', {
+      humanReviewed: true,
+      completenessReviewed: true,
+    }),
+  ).rejects.toThrow('暂不制卡');
+  expect(await db.practiceItems.count()).toBe(0);
+});

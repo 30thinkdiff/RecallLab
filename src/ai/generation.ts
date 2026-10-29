@@ -39,6 +39,7 @@ export interface AiCandidate {
   userEdited?: boolean;
 }
 export interface GenerationState {
+  deferredUnits?: string[];
   strategy?: 'standard' | 'anchored' | 'units';
   confirmed?: { candidateId: string; itemId: string; sourceId: string }[];
   id: string;
@@ -144,6 +145,9 @@ export async function generateCandidates(
   onProgress: (s: GenerationState) => void,
   resume?: GenerationState,
 ): Promise<GenerationState> {
+  for (const source of sources) chunksOf(source); // Keep the existing per-source range and size limits.
+  if (provider.strategy === 'units' && task === 'quality')
+    throw new AiError('configuration', '分知识方案用于制卡与要点整理；质量点评请选择原有方案。');
   const work: { source: AiSource; chunk: TextChunk; unit?: KnowledgeSlice }[] =
     provider.strategy === 'units'
       ? sources.flatMap((source) =>
@@ -158,6 +162,11 @@ export async function generateCandidates(
             ),
         )
       : sources.flatMap((source) => chunksOf(source).map((chunk) => ({ source, chunk })));
+  if (sources.length > 50 || work.length > 200)
+    throw new AiError(
+      'configuration',
+      '本批原文单元过多，请选择部分章节或页面后分批整理；已有草稿未改动。',
+    );
   const state: GenerationState = resume
     ? structuredClone(resume)
     : {
@@ -207,7 +216,8 @@ export async function generateCandidates(
   state.failures = [];
   onProgress(structuredClone(state));
   for (const { source, chunk, unit } of work) {
-    if (state.completed.includes(chunk.id)) continue;
+    if (state.completed.includes(chunk.id) || (unit && state.deferredUnits?.includes(unit.key)))
+      continue;
     if (signal.aborted) {
       state.status = 'cancelled';
       break;
@@ -255,6 +265,11 @@ export async function generateCandidates(
           source.kind === 'answer'
             ? state.candidates.find((c) => c.source.id === source.id)
             : undefined;
+        if (item.criteria.length + (previous?.criteria.length ?? 0) > 200)
+          throw new AiError(
+            'invalid-output',
+            '本段评分要点过多，请缩小原文范围后分批整理；已有候选保留。',
+          );
         if (previous) {
           previous.original.push(structuredClone(original));
           previous.criteria.push(...rowFor(source, chunk, item, task).criteria);
@@ -285,7 +300,13 @@ export async function generateCandidates(
   }
   if (state.status === 'running')
     state.status =
-      state.failures.length || state.completed.length < state.totalChunks ? 'partial' : 'completed';
+      state.failures.length ||
+      work.some(
+        ({ chunk, unit }) =>
+          !state.completed.includes(chunk.id) && !(unit && state.deferredUnits?.includes(unit.key)),
+      )
+        ? 'partial'
+        : 'completed';
   onProgress(structuredClone(state));
   return state;
 }

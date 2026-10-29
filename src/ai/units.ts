@@ -67,16 +67,37 @@ export function planKnowledge(source: AiSource): KnowledgeSlice[] {
   }
   return planned;
 }
+function logicalClauses(text: string): string[] {
+  const clause = text.trim();
+  const chinese = clause.match(/分([二三四五])步[:：]\s*((?:先|首先)[\s\S]*)/u);
+  if (chinese) {
+    const count = '零一二三四五'.indexOf(chinese[1]!);
+    const parts = chinese[2]!.split(/[，,]\s*(?=再|然后|最后)/u);
+    if (parts.length === count && parts.every((p) => p.trim().length >= 3)) return parts;
+  }
+  const english = clause.match(
+    /\brequires?\s+(two|three|four|five)\s+(?:actions|steps)\s*:\s*(.+)/iu,
+  );
+  if (english && /,\s*and\s+/iu.test(english[2]!)) {
+    const count = ['zero', 'one', 'two', 'three', 'four', 'five'].indexOf(
+      english[1]!.toLowerCase(),
+    );
+    const parts = english[2]!.split(/,\s*(?:and\s+)?/iu);
+    if (parts.length === count && parts.every((p) => p.trim().length >= 8)) return parts;
+  }
+  return [text];
+}
 export function sourceCriteria(text: string) {
   return sourceSpans(text)
     .filter((s) => s.text.trim())
+    .flatMap((s) => logicalClauses(s.text).map((text) => ({ text })))
     .map((s) => ({
       text: s.text
         .trim()
         .replace(/^(?:答案\s*[:：]|第[一二三四五六七八九十]+\s*[，、:：.]|\d+\s*[.、．])\s*/u, ''),
       quote: s.text.trim(),
       importance:
-        exampleLike(s.text) || /^\s*(?:例如|比如|For example|Examples)/iu.test(s.text)
+        exampleLike(s.text) || /^\s*(?:例如|比如|For example)/iu.test(s.text)
           ? ('optional' as const)
           : ('required' as const),
     }))

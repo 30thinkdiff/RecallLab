@@ -67,6 +67,7 @@ const row = z.strictObject({
   userEdited: z.boolean().optional(),
 });
 export const packedStateSchema = z.strictObject({
+  deferredUnits: z.array(id).max(200).optional(),
   id,
   inputs: z
     .array(z.strictObject({ id, revisionId: id.optional(), range: range.optional() }))
