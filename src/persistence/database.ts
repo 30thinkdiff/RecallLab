@@ -13,7 +13,7 @@ import type {
   RecoveryBackup,
   SourceDocument,
 } from '../domain/models';
-import { v5Tables, v2Tables, v3Tables, legacyTables, migrateBackup } from './migration';
+import { dataTables, v5Tables, v2Tables, v3Tables, legacyTables, migrateBackup } from './migration';
 import { validateBackup } from './backup-format';
 
 export class RecallDatabase extends Dexie {
@@ -159,6 +159,29 @@ export class RecallDatabase extends Dexie {
         });
         validateBackup(before);
         // Only add empty candidate drafts. Do not rewrite events, confirmed sources, or scheduling.
+      });
+    this.version(7)
+      .stores({})
+      .upgrade(async (transaction) => {
+        const data: Record<string, unknown[]> = {};
+        for (const name of dataTables) data[name] = await transaction.table(name).toArray();
+        const before = {
+          format: 'RecallLabBackup',
+          formatVersion: 1,
+          databaseVersion: 6,
+          createdAt: new Date().toISOString(),
+          data,
+        };
+        await transaction
+          .table('recoveryBackups')
+          .add({
+            id: crypto.randomUUID(),
+            createdAt: before.createdAt,
+            reason: 'migration',
+            json: JSON.stringify(before),
+          });
+        validateBackup(before);
+        // Semantic version for unit planning/review decisions; no historical or scheduling rewrites.
       });
   }
 }

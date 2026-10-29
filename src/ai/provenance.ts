@@ -8,7 +8,7 @@ export const anchorSchema = z.strictObject({
 export type EvidenceAnchor = z.infer<typeof anchorSchema>;
 export const aiProvenanceSchema = z.strictObject({
   version: z.literal(1),
-  inferenceStrategy: z.enum(['standard', 'anchored']).optional(),
+  inferenceStrategy: z.enum(['standard', 'anchored', 'units']).optional(),
   runId: z.string().min(1).max(300),
   candidateId: z.string().min(1).max(300),
   provider: z.enum(['mock', 'ollama', 'compatible']),
