@@ -1,0 +1,162 @@
+[
+  {
+    "task": "long-answer",
+    "input": "第一，检查标题与来源，确认文件可读。第二，保留原文和位置，不用摘要替代证据。第三，记录版本与原因，旧版不得覆盖。第四，保存备份并检查能否恢复。例如，可以把副本放到移动存储设备。",
+    "response": {
+      "choices": [
+        {
+          "finish_reason": "stop",
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "{\"question\":\"蓝晶归档必须完成哪些步骤？\"}"
+          }
+        }
+      ],
+      "created": 1793240920,
+      "model": "qwen2.5-1.5b-instruct",
+      "system_fingerprint": "b0-unknown",
+      "object": "chat.completion",
+      "usage": {
+        "completion_tokens": 14,
+        "prompt_tokens": 267,
+        "total_tokens": 281,
+        "prompt_tokens_details": {
+          "cached_tokens": 194
+        }
+      },
+      "id": "chatcmpl-n1M28LyTeHlQhQ76n0KTFxeb3Ocs6kAa",
+      "timings": {
+        "cache_n": 194,
+        "prompt_n": 73,
+        "prompt_ms": 1054.791,
+        "prompt_per_token_ms": 14.449191780821916,
+        "prompt_per_second": 69.20802320080472,
+        "predicted_n": 14,
+        "predicted_ms": 561.34,
+        "predicted_per_token_ms": 43.18,
+        "predicted_per_second": 23.158869847151458
+      }
+    }
+  },
+  {
+    "task": "paragraphs",
+    "input": "蓝晶资料需要保留出处和原文位置。",
+    "response": {
+      "choices": [
+        {
+          "finish_reason": "stop",
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "{\"question\":\"蓝晶资料需要保留哪些信息？\"}"
+          }
+        }
+      ],
+      "created": 1793240928,
+      "model": "qwen2.5-1.5b-instruct",
+      "system_fingerprint": "b0-unknown",
+      "object": "chat.completion",
+      "usage": {
+        "completion_tokens": 13,
+        "prompt_tokens": 221,
+        "total_tokens": 234,
+        "prompt_tokens_details": {
+          "cached_tokens": 157
+        }
+      },
+      "id": "chatcmpl-hJvg5XPUsHDo1bGL7BP8BKFQYy8ayXvD",
+      "timings": {
+        "cache_n": 157,
+        "prompt_n": 64,
+        "prompt_ms": 891.652,
+        "prompt_per_token_ms": 13.9320625,
+        "prompt_per_second": 71.77688156365936,
+        "predicted_n": 13,
+        "predicted_ms": 517.739,
+        "predicted_per_token_ms": 43.14491666666667,
+        "predicted_per_second": 23.177701505971154
+      }
+    }
+  },
+  {
+    "task": "paragraphs",
+    "input": "蓝晶修订需要保留旧内容和修改原因。",
+    "response": {
+      "choices": [
+        {
+          "finish_reason": "stop",
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "{\"question\":\"蓝晶修订需要保留哪些内容？\"}"
+          }
+        }
+      ],
+      "created": 1793240929,
+      "model": "qwen2.5-1.5b-instruct",
+      "system_fingerprint": "b0-unknown",
+      "object": "chat.completion",
+      "usage": {
+        "completion_tokens": 13,
+        "prompt_tokens": 221,
+        "total_tokens": 234,
+        "prompt_tokens_details": {
+          "cached_tokens": 194
+        }
+      },
+      "id": "chatcmpl-2TpXU7jXKCvcLJqdWqBfmsj5rfbtittS",
+      "timings": {
+        "cache_n": 194,
+        "prompt_n": 27,
+        "prompt_ms": 465.515,
+        "prompt_per_token_ms": 17.241296296296294,
+        "prompt_per_second": 58.00027926060385,
+        "predicted_n": 13,
+        "predicted_ms": 509.312,
+        "predicted_per_token_ms": 42.44266666666667,
+        "predicted_per_second": 23.56119628047248
+      }
+    }
+  },
+  {
+    "task": "textbook-cn",
+    "input": "独立回忆是在不查看资料时主动提取信息。练习时应先尝试回答，再查看标准答案。只觉得文字熟悉，不能证明能够独立回忆。",
+    "response": {
+      "choices": [
+        {
+          "finish_reason": "stop",
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "{\"question\":\"独立回忆是什么？\"}"
+          }
+        }
+      ],
+      "created": 1793240937,
+      "model": "qwen2.5-1.5b-instruct",
+      "system_fingerprint": "b0-unknown",
+      "object": "chat.completion",
+      "usage": {
+        "completion_tokens": 9,
+        "prompt_tokens": 237,
+        "total_tokens": 246,
+        "prompt_tokens_details": {
+          "cached_tokens": 157
+        }
+      },
+      "id": "chatcmpl-T45SARFuTI9Shw2gdqEHoRGuezxKnQfx",
+      "timings": {
+        "cache_n": 157,
+        "prompt_n": 80,
+        "prompt_ms": 1113.603,
+        "prompt_per_token_ms": 13.920037500000001,
+        "prompt_per_second": 71.83888692828593,
+        "predicted_n": 9,
+        "predicted_ms": 350.666,
+        "predicted_per_token_ms": 43.83325,
+        "predicted_per_second": 22.813731585041037
+      }
+    }
+  }
+]
