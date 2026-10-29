@@ -13,10 +13,12 @@ test('measures AI provenance and canonical draft overhead alongside 1000 cards a
       g = '/src/ai/generation.ts',
       p = '/src/ai/providers.ts',
       a = '/src/ai/apply.ts',
-      draft = '/src/ai/drafts-store.ts';
+      draft = '/src/ai/drafts-store.ts',
+      portable = '/src/persistence/portable-backup.ts';
     const { db } = await import(d),
       { repository } = await import(r),
-      { exportBackup, restoreBackup, parseBackup } = await import(b),
+      { exportBackup, restoreBackup } = await import(b),
+      { portableBackup, parsePortableBackup } = await import(portable),
       { generateCandidates } = await import(g),
       { MockProvider } = await import(p),
       { confirmCandidates } = await import(a),
@@ -100,10 +102,27 @@ test('measures AI provenance and canonical draft overhead alongside 1000 cards a
       compact = JSON.stringify(before);
     const bytes = new TextEncoder().encode(compact).length,
       prettyBytes = new TextEncoder().encode(JSON.stringify(before, null, 2)).length;
+    const largeText = '公开虚构的大型原文 Chinese English。'.repeat(180000);
+    await db.sourceDocuments.add({
+      ...doc,
+      id: crypto.randomUUID(),
+      filename: 'public-large-source.txt',
+      extractedContent: largeText,
+      byteLength: new TextEncoder().encode(largeText).length,
+    });
+    const largeBefore = await exportBackup(db),
+      largeLogicalBytes = byteLength(largeBefore),
+      packed = await portableBackup(largeBefore);
     const start = performance.now();
-    await restoreBackup(db, parseBackup(compact));
+    await restoreBackup(db, await parsePortableBackup(JSON.stringify(packed.value)));
     const after = await exportBackup(db);
     return {
+      largeLogicalBytes,
+      portableFileBytes: packed.fileBytes,
+      pooled: packed.pooled,
+      sourcesExact:
+        JSON.stringify(largeBefore.data.sourceDocuments) ===
+        JSON.stringify(after.data.sourceDocuments),
       baselineBytes,
       provenanceBytes,
       bytes,
@@ -142,6 +161,11 @@ test('measures AI provenance and canonical draft overhead alongside 1000 cards a
   expect(measurements.draftEpochsChanged).toBe(true);
   expect(measurements.secretAbsent).toBe(true);
   expect(measurements.bytes).toBeLessThan(50 * 1024 ** 2);
+  expect(measurements.largeLogicalBytes).toBeGreaterThan(50 * 1024 ** 2);
+  expect(measurements.largeLogicalBytes).toBeLessThan(128 * 1024 ** 2);
+  expect(measurements.portableFileBytes).toBeLessThan(50 * 1024 ** 2);
+  expect(measurements.pooled).toBe(true);
+  expect(measurements.sourcesExact).toBe(true);
   await info.attach('ai-capacity-measurements.json', {
     body: JSON.stringify(measurements),
     contentType: 'application/json',
