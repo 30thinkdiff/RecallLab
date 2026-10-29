@@ -1,0 +1,378 @@
+{
+  "version": 1,
+  "at": "2026-10-29T01:55:01.968Z",
+  "corpusSha256": "54a9c29b3d3cf3e2ab153a2fb48cabee562cd456ed8c9a60a33af43cd022b681",
+  "runtime": "llama.cpp CPU, 2 threads, 8192 context, Q4_K_M",
+  "model": "qwen2.5-1.5b-instruct",
+  "weightsSha256": "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e",
+  "temperature": 0,
+  "actor": "automated-script",
+  "independentHumanReview": false,
+  "realUserCosts": null,
+  "runs": [
+    {
+      "caseId": "numbered-cn",
+      "strategy": "units",
+      "elapsedMs": 4285,
+      "completed": true,
+      "plannedUnits": [
+        {
+          "start": 15,
+          "end": 29,
+          "notForCards": false,
+          "chapter": "第一部分 蓝晶归档"
+        },
+        {
+          "start": 35,
+          "end": 49,
+          "notForCards": false,
+          "chapter": "第一部分 蓝晶归档"
+        }
+      ],
+      "failures": [],
+      "rows": [
+        {
+          "question": "核对资料的来源和保留位置是什么？",
+          "answer": "核对资料出处，保留原文位置。",
+          "quote": "核对资料出处，保留原文位置。",
+          "criteria": [
+            {
+              "id": "33da3b9a-3d48-426f-9057-4b2ededc2df9",
+              "text": "核对资料出处，保留原文位置。",
+              "quotes": ["核对资料出处，保留原文位置。"],
+              "required": true
+            }
+          ],
+          "original": [
+            {
+              "question": "核对资料的来源和保留位置是什么？",
+              "answerSuggestion": "",
+              "evidenceQuote": "",
+              "criteria": [],
+              "hints": [],
+              "mnemonic": "",
+              "confusion": "",
+              "qualityNotes": ["模型仅生成题干，其他字段由协议适配留空。"]
+            }
+          ],
+          "sourceMatched": true,
+          "evidenceValid": true,
+          "unit": {
+            "key": "numbered-cn:15:29",
+            "start": 15,
+            "end": 29,
+            "title": "来源",
+            "chapter": "第一部分 蓝晶归档",
+            "notForCards": false
+          },
+          "notes": [
+            "答案及要点来自原文规则拆分（verbatim），模型只建议题干；必要性与语义仍需人工核对。"
+          ]
+        },
+        {
+          "question": "版本记录应包含哪些信息？",
+          "answer": "记录版本编号，保留修改原因。",
+          "quote": "记录版本编号，保留修改原因。",
+          "criteria": [
+            {
+              "id": "a5cf47a0-2dd5-44a7-9105-b7ddb10976c8",
+              "text": "记录版本编号，保留修改原因。",
+              "quotes": ["记录版本编号，保留修改原因。"],
+              "required": true
+            }
+          ],
+          "original": [
+            {
+              "question": "版本记录应包含哪些信息？",
+              "answerSuggestion": "",
+              "evidenceQuote": "",
+              "criteria": [],
+              "hints": [],
+              "mnemonic": "",
+              "confusion": "",
+              "qualityNotes": ["模型仅生成题干，其他字段由协议适配留空。"]
+            }
+          ],
+          "sourceMatched": true,
+          "evidenceValid": true,
+          "unit": {
+            "key": "numbered-cn:35:49",
+            "start": 35,
+            "end": 49,
+            "title": "版本",
+            "chapter": "第一部分 蓝晶归档",
+            "notForCards": false
+          },
+          "notes": [
+            "答案及要点来自原文规则拆分（verbatim），模型只建议题干；必要性与语义仍需人工核对。"
+          ]
+        }
+      ],
+      "program": {
+        "candidates": 2,
+        "sourceMatched": 2,
+        "evidenceAndRubricValid": 2,
+        "questionWarnings": 0,
+        "referencePoints": 4,
+        "answerLiteralCovered": 4,
+        "rubricLiteralCovered": 4,
+        "missingAnswerPoints": [],
+        "missingRubricPoints": [],
+        "exactDuplicates": 0
+      },
+      "engineeringReview": null
+    },
+    {
+      "caseId": "textbook-cn",
+      "strategy": "units",
+      "elapsedMs": 1082,
+      "completed": true,
+      "plannedUnits": [
+        {
+          "start": 0,
+          "end": 56,
+          "notForCards": false,
+          "chapter": "原文"
+        }
+      ],
+      "failures": [],
+      "rows": [
+        {
+          "question": "独立回忆是什么？",
+          "answer": "独立回忆是在不查看资料时主动提取信息。练习时应先尝试回答，再查看标准答案。只觉得文字熟悉，不能证明能够独立回忆。",
+          "quote": "独立回忆是在不查看资料时主动提取信息。练习时应先尝试回答，再查看标准答案。只觉得文字熟悉，不能证明能够独立回忆。",
+          "criteria": [
+            {
+              "id": "d070fc15-3e2a-412e-bfbc-1d3045c599a1",
+              "text": "独立回忆是在不查看资料时主动提取信息。",
+              "quotes": ["独立回忆是在不查看资料时主动提取信息。"],
+              "required": true
+            },
+            {
+              "id": "33110157-5020-4e25-b405-faebfb8cdf62",
+              "text": "练习时应先尝试回答，再查看标准答案。",
+              "quotes": ["练习时应先尝试回答，再查看标准答案。"],
+              "required": true
+            },
+            {
+              "id": "926fde04-7f9d-4d62-9311-aabd9f2fb5b1",
+              "text": "只觉得文字熟悉，不能证明能够独立回忆。",
+              "quotes": ["只觉得文字熟悉，不能证明能够独立回忆。"],
+              "required": true
+            }
+          ],
+          "original": [
+            {
+              "question": "独立回忆是什么？",
+              "answerSuggestion": "",
+              "evidenceQuote": "",
+              "criteria": [],
+              "hints": [],
+              "mnemonic": "",
+              "confusion": "",
+              "qualityNotes": ["模型仅生成题干，其他字段由协议适配留空。"]
+            }
+          ],
+          "sourceMatched": true,
+          "evidenceValid": true,
+          "unit": {
+            "key": "textbook-cn:0:56",
+            "start": 0,
+            "end": 56,
+            "title": "",
+            "chapter": "原文",
+            "notForCards": false
+          },
+          "notes": [
+            "答案及要点来自原文规则拆分（verbatim），模型只建议题干；必要性与语义仍需人工核对。"
+          ]
+        }
+      ],
+      "program": {
+        "candidates": 1,
+        "sourceMatched": 1,
+        "evidenceAndRubricValid": 1,
+        "questionWarnings": 0,
+        "referencePoints": 5,
+        "answerLiteralCovered": 5,
+        "rubricLiteralCovered": 5,
+        "missingAnswerPoints": [],
+        "missingRubricPoints": [],
+        "exactDuplicates": 0
+      },
+      "engineeringReview": null
+    },
+    {
+      "caseId": "english",
+      "strategy": "units",
+      "elapsedMs": 1658,
+      "completed": true,
+      "plannedUnits": [
+        {
+          "start": 0,
+          "end": 176,
+          "notForCards": false,
+          "chapter": "原文"
+        }
+      ],
+      "failures": [],
+      "rows": [
+        {
+          "question": "什么是识别和回忆的区别？",
+          "answer": "Retrieval means recalling information without viewing the source. Recognition means identifying an item when it is shown again. Recognition alone does not prove unaided recall.",
+          "quote": "Retrieval means recalling information without viewing the source. Recognition means identifying an item when it is shown again. Recognition alone does not prove unaided recall.",
+          "criteria": [
+            {
+              "id": "1d7bedd4-62a9-4faa-b460-0e5c48294539",
+              "text": "Retrieval means recalling information without viewing the source.",
+              "quotes": ["Retrieval means recalling information without viewing the source."],
+              "required": true
+            },
+            {
+              "id": "e0b565a1-a0cc-4d1e-af57-8ae87a27ebeb",
+              "text": "Recognition means identifying an item when it is shown again.",
+              "quotes": ["Recognition means identifying an item when it is shown again."],
+              "required": true
+            },
+            {
+              "id": "3dced513-f7e9-4a38-a2be-db1f5428ee1b",
+              "text": "Recognition alone does not prove unaided recall.",
+              "quotes": ["Recognition alone does not prove unaided recall."],
+              "required": true
+            }
+          ],
+          "original": [
+            {
+              "question": "什么是识别和回忆的区别？",
+              "answerSuggestion": "",
+              "evidenceQuote": "",
+              "criteria": [],
+              "hints": [],
+              "mnemonic": "",
+              "confusion": "",
+              "qualityNotes": ["模型仅生成题干，其他字段由协议适配留空。"]
+            }
+          ],
+          "sourceMatched": true,
+          "evidenceValid": true,
+          "unit": {
+            "key": "english:0:176",
+            "start": 0,
+            "end": 176,
+            "title": "",
+            "chapter": "原文",
+            "notForCards": false
+          },
+          "notes": [
+            "答案及要点来自原文规则拆分（understanding），模型只建议题干；必要性与语义仍需人工核对。"
+          ]
+        }
+      ],
+      "program": {
+        "candidates": 1,
+        "sourceMatched": 1,
+        "evidenceAndRubricValid": 1,
+        "questionWarnings": 0,
+        "referencePoints": 3,
+        "answerLiteralCovered": 3,
+        "rubricLiteralCovered": 3,
+        "missingAnswerPoints": [],
+        "missingRubricPoints": [],
+        "exactDuplicates": 0
+      },
+      "engineeringReview": null
+    },
+    {
+      "caseId": "long-answer",
+      "strategy": "units",
+      "elapsedMs": 2196,
+      "completed": true,
+      "plannedUnits": [
+        {
+          "start": 18,
+          "end": 106,
+          "notForCards": false,
+          "chapter": "原文"
+        }
+      ],
+      "failures": [],
+      "rows": [
+        {
+          "question": "蓝晶归档的四步是什么？",
+          "answer": "第一，检查标题与来源，确认文件可读。第二，保留原文和位置，不用摘要替代证据。第三，记录版本与原因，旧版不得覆盖。第四，保存备份并检查能否恢复。例如，可以把副本放到移动存储设备。",
+          "quote": "第一，检查标题与来源，确认文件可读。第二，保留原文和位置，不用摘要替代证据。第三，记录版本与原因，旧版不得覆盖。第四，保存备份并检查能否恢复。例如，可以把副本放到移动存储设备。",
+          "criteria": [
+            {
+              "id": "fd3694b4-7de4-4069-8da4-37e3340f3929",
+              "text": "检查标题与来源，确认文件可读。",
+              "quotes": ["第一，检查标题与来源，确认文件可读。"],
+              "required": true
+            },
+            {
+              "id": "03622cd7-3dff-4129-a2ed-502eae7511ae",
+              "text": "保留原文和位置，不用摘要替代证据。",
+              "quotes": ["第二，保留原文和位置，不用摘要替代证据。"],
+              "required": true
+            },
+            {
+              "id": "42d28c13-fb57-4b0f-a808-1eb81fba6a93",
+              "text": "记录版本与原因，旧版不得覆盖。",
+              "quotes": ["第三，记录版本与原因，旧版不得覆盖。"],
+              "required": true
+            },
+            {
+              "id": "9a9347c5-6918-478f-9e02-dd5263469fdb",
+              "text": "保存备份并检查能否恢复。",
+              "quotes": ["第四，保存备份并检查能否恢复。"],
+              "required": true
+            },
+            {
+              "id": "47792749-9c3a-40d3-aaff-3b0351fa1732",
+              "text": "例如，可以把副本放到移动存储设备。",
+              "quotes": ["例如，可以把副本放到移动存储设备。"],
+              "required": false
+            }
+          ],
+          "original": [
+            {
+              "question": "蓝晶归档的四步是什么？",
+              "answerSuggestion": "",
+              "evidenceQuote": "",
+              "criteria": [],
+              "hints": [],
+              "mnemonic": "",
+              "confusion": "",
+              "qualityNotes": ["模型仅生成题干，其他字段由协议适配留空。"]
+            }
+          ],
+          "sourceMatched": true,
+          "evidenceValid": true,
+          "unit": {
+            "key": "long-answer:18:106",
+            "start": 18,
+            "end": 106,
+            "title": "蓝晶归档的四步是什么？",
+            "chapter": "原文",
+            "notForCards": false
+          },
+          "notes": [
+            "答案及要点来自原文规则拆分（verbatim），模型只建议题干；必要性与语义仍需人工核对。"
+          ]
+        }
+      ],
+      "program": {
+        "candidates": 1,
+        "sourceMatched": 1,
+        "evidenceAndRubricValid": 1,
+        "questionWarnings": 0,
+        "referencePoints": 8,
+        "answerLiteralCovered": 8,
+        "rubricLiteralCovered": 8,
+        "missingAnswerPoints": [],
+        "missingRubricPoints": [],
+        "exactDuplicates": 0
+      },
+      "engineeringReview": null
+    }
+  ]
+}

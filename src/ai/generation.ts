@@ -1,3 +1,5 @@
+import { rubricProblems } from './content-audit';
+import { guidedItem, planKnowledge, type KnowledgeSlice } from './units';
 import { ResolvedOutput } from './inference';
 import {
   AiError,
@@ -17,6 +19,9 @@ export interface CriterionDraft {
   required: boolean;
 }
 export interface AiCandidate {
+  unit?: Omit<KnowledgeSlice, 'text'>;
+  deferred?: boolean;
+  reviewed?: boolean;
   id: string;
   source: AiSource;
   chunk: TextChunk;
@@ -34,7 +39,8 @@ export interface AiCandidate {
   userEdited?: boolean;
 }
 export interface GenerationState {
-  strategy?: 'standard' | 'anchored';
+  deferredUnits?: string[];
+  strategy?: 'standard' | 'anchored' | 'units';
   confirmed?: { candidateId: string; itemId: string; sourceId: string }[];
   id: string;
   inputs: {
@@ -61,7 +67,7 @@ export function candidateEvidence(row: AiCandidate) {
     row.source.kind === 'document' ? row.chunk.start : 0,
     row.source.kind === 'document' ? row.chunk.end : row.source.text.length,
   );
-  const notes: string[] = [];
+  const notes: string[] = [...rubricProblems(row)];
   const anchors: EvidenceAnchor[] = [];
   for (const c of row.criteria.filter((c) => c.required && row.adoptCriteria)) {
     if (!c.text.trim() || !c.quotes.length)
@@ -139,7 +145,28 @@ export async function generateCandidates(
   onProgress: (s: GenerationState) => void,
   resume?: GenerationState,
 ): Promise<GenerationState> {
-  const work = sources.flatMap((source) => chunksOf(source).map((chunk) => ({ source, chunk })));
+  for (const source of sources) chunksOf(source); // Keep the existing per-source range and size limits.
+  if (provider.strategy === 'units' && task === 'quality')
+    throw new AiError('configuration', '分知识方案用于制卡与要点整理；质量点评请选择原有方案。');
+  const work: { source: AiSource; chunk: TextChunk; unit?: KnowledgeSlice }[] =
+    provider.strategy === 'units'
+      ? sources.flatMap((source) =>
+          planKnowledge(source)
+            .filter((u) => !u.notForCards)
+            .flatMap((unit) =>
+              chunksOf({ ...source, range: { start: unit.start, end: unit.end } }).map((chunk) => ({
+                source,
+                chunk,
+                unit,
+              })),
+            ),
+        )
+      : sources.flatMap((source) => chunksOf(source).map((chunk) => ({ source, chunk })));
+  if (sources.length > 50 || work.length > 200)
+    throw new AiError(
+      'configuration',
+      '本批原文单元过多，请选择部分章节或页面后分批整理；已有草稿未改动。',
+    );
   const state: GenerationState = resume
     ? structuredClone(resume)
     : {
@@ -188,8 +215,9 @@ export async function generateCandidates(
   state.status = 'running';
   state.failures = [];
   onProgress(structuredClone(state));
-  for (const { source, chunk } of work) {
-    if (state.completed.includes(chunk.id)) continue;
+  for (const { source, chunk, unit } of work) {
+    if (state.completed.includes(chunk.id) || (unit && state.deferredUnits?.includes(unit.key)))
+      continue;
     if (signal.aborted) {
       state.status = 'cancelled';
       break;
@@ -203,11 +231,11 @@ export async function generateCandidates(
         task === 'extract' ? Math.min(8, MAX_GENERATED_ITEMS - state.candidates.length) : 1;
       const raw = await provider.generate(
         {
-          task,
+          task: unit ? 'rewrite' : task,
           objective,
           chunkId: chunk.id,
           text: chunk.text,
-          question: source.question,
+          question: unit?.title || source.question,
           maxItems:
             task === 'extract' ? Math.min(8, MAX_GENERATED_ITEMS - state.candidates.length) : 1,
         },
@@ -223,13 +251,30 @@ export async function generateCandidates(
         state.status = 'cancelled';
         break;
       }
-      for (const [index, item] of parsed.data.items.entries()) {
-        const original = raw instanceof ResolvedOutput ? raw.wire.items[index]! : item;
+      for (const [index, rawItem] of parsed.data.items.entries()) {
+        const item = unit
+          ? guidedItem(
+              rawItem.question,
+              { ...unit, text: chunk.text, start: chunk.start, end: chunk.end },
+              objective,
+            )
+          : rawItem;
+        const original = raw instanceof ResolvedOutput ? raw.wire.items[index]! : rawItem;
         if (state.candidates.length >= MAX_GENERATED_ITEMS) break;
         const previous =
           source.kind === 'answer'
             ? state.candidates.find((c) => c.source.id === source.id)
             : undefined;
+        if (
+          item.criteria.length + (previous?.criteria.length ?? 0) > 200 ||
+          item.criteria.filter((c) => c.importance === 'required').length +
+            (previous?.criteria.filter((c) => c.required).length ?? 0) >
+            100
+        )
+          throw new AiError(
+            'invalid-output',
+            '本段评分要点过多，请缩小原文范围后分批整理；已有候选保留。',
+          );
         if (previous) {
           previous.original.push(structuredClone(original));
           previous.criteria.push(...rowFor(source, chunk, item, task).criteria);
@@ -237,6 +282,11 @@ export async function generateCandidates(
         } else {
           const row = rowFor(source, chunk, item, task);
           row.original = [structuredClone(original)];
+          if (unit) {
+            const { text, ...meta } = unit;
+            void text;
+            row.unit = meta;
+          }
           state.candidates.push(row);
         }
       }
@@ -255,7 +305,13 @@ export async function generateCandidates(
   }
   if (state.status === 'running')
     state.status =
-      state.failures.length || state.completed.length < state.totalChunks ? 'partial' : 'completed';
+      state.failures.length ||
+      work.some(
+        ({ chunk, unit }) =>
+          !state.completed.includes(chunk.id) && !(unit && state.deferredUnits?.includes(unit.key)),
+      )
+        ? 'partial'
+        : 'completed';
   onProgress(structuredClone(state));
   return state;
 }

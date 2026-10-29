@@ -64,9 +64,16 @@ test('risk filters group source, compare duplicates and preserve edits through t
   await page.getByRole('link', { name: 'AI 整理草稿', exact: true }).click();
   await page.getByRole('link', { name: '查看真实模型评测与限制' }).click();
   await expect(page.getByRole('heading', { name: '本地模型效果评测' })).toBeVisible();
+  await expect(page.getByRole('table', { name: /^程序检查/ })).toBeVisible();
+  await expect(page.getByText(/来源文字存在不等于语义正确/u)).toBeVisible();
+  const incomplete = page.locator('details.question-panel').filter({
+    has: page.getByText('没有清晰答案', { exact: true }),
+  });
+  await incomplete.locator('summary').first().click();
+  await expect(incomplete.locator('.ai-candidate')).toHaveCount(1);
+  await expect(incomplete.locator('.ai-candidate')).toContainText('蓝晶协议是否适合新的场景？');
   await expect(
-    page.getByText('程序检查结果；引用存在不等于答案正确', { exact: true }),
-  ).toBeVisible();
-  await page.getByText('不完整来源', { exact: true }).click();
-  await expect(page.getByText('候选答案：是', { exact: true })).toBeVisible();
+    incomplete.getByText('没有候选，保留原文和人工整理流程。', { exact: true }),
+  ).toHaveCount(2);
+  await expect(incomplete).toContainText('正确保留原文，暂不制卡');
 });

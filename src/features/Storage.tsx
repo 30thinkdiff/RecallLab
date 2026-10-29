@@ -1,10 +1,10 @@
+import { portableBackup, parsePortableBackup } from '../persistence/portable-backup';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { db } from '../persistence/database';
 import {
   downloadJson,
   exportBackup,
   inspectBeforeUpgrade,
-  parseBackup,
   restoreBackup,
 } from '../persistence/backup';
 import type { Backup } from '../persistence/backup-format';
@@ -103,7 +103,8 @@ export function BackupPage() {
         <h2>导出完整 JSON</h2>
         <p>
           请定期下载并妥善保存。JSON 含你的学习资料、原始回答及 AI
-          草稿，导出不会上传，不含接口密钥。当前恢复上限为 50 MB。
+          草稿，导出不会上传，不含接口密钥。大型数据自动将重复原文无损去重，不删除证据。普通JSON最多128
+          MB；来源去重文件最多50 MB、展开后不超过128 MB。旧版程序不能恢复去重格式。
         </p>
         <button
           className="button"
@@ -111,10 +112,10 @@ export function BackupPage() {
           onClick={() =>
             void action.run(async () => {
               const backup = await exportBackup(db);
-              const bytes = new TextEncoder().encode(JSON.stringify(backup)).length;
-              downloadJson(backup);
+              const artifact = await portableBackup(backup);
+              downloadJson(artifact.value);
               setMessage(
-                `已生成备份 ${(bytes / 1024 ** 2).toFixed(2)} MB，包含 ${backup.data.aiDrafts.length} 份 AI 草稿。${bytes > 50 * 1024 ** 2 ? '注意：超过当前 50 MB 恢复上限，请保留文件并联系维护者，勿清除浏览器数据。' : '请检查浏览器下载目录。'}`,
+                `已生成${artifact.pooled ? '来源去重备份（需V0.5.2或更新版恢复）' : '普通JSON备份'} ${(artifact.fileBytes / 1024 ** 2).toFixed(2)} MB，原始数据 ${(artifact.logicalBytes / 1024 ** 2).toFixed(2)} MB，包含 ${backup.data.aiDrafts.length} 份草稿。请妥善保存私人文件。`,
               );
             })
           }
@@ -140,14 +141,15 @@ export function BackupPage() {
               setFileError('');
               setMessage('');
               if (file) {
-                if (file.size > 50 * 1024 * 1024) {
-                  setFileError('备份超过 50 MB');
+                if (file.size > 128 * 1024 * 1024) {
+                  setFileError('备份超过 128 MB');
                   return;
                 }
                 void file
                   .text()
-                  .then((text) => {
-                    if (version === readVersion.current) setCandidate(parseBackup(text));
+                  .then(parsePortableBackup)
+                  .then((backup) => {
+                    if (version === readVersion.current) setCandidate(backup);
                   })
                   .catch((cause: unknown) => {
                     if (version === readVersion.current) setFileError(errorMessage(cause));

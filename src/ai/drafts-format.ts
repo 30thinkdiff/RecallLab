@@ -29,6 +29,18 @@ const sourcePin = z.strictObject({
   range: range.optional(),
 });
 const row = z.strictObject({
+  unit: z
+    .strictObject({
+      key: id,
+      start: z.number().int().nonnegative(),
+      end: z.number().int().positive(),
+      chapter: z.string().max(3000),
+      title: z.string().max(5000),
+      notForCards: z.boolean(),
+    })
+    .optional(),
+  deferred: z.boolean().optional(),
+  reviewed: z.boolean().optional(),
   id,
   sourceId: id,
   chunk: range.extend({ id }),
@@ -55,6 +67,7 @@ const row = z.strictObject({
   userEdited: z.boolean().optional(),
 });
 export const packedStateSchema = z.strictObject({
+  deferredUnits: z.array(id).max(200).optional(),
   id,
   inputs: z
     .array(z.strictObject({ id, revisionId: id.optional(), range: range.optional() }))
@@ -63,7 +76,7 @@ export const packedStateSchema = z.strictObject({
   objective: objectiveSchema,
   provider: z.enum(['mock', 'ollama', 'compatible']),
   model: z.string().min(1).max(200),
-  strategy: z.enum(['standard', 'anchored']).optional(),
+  strategy: z.enum(['standard', 'anchored', 'units']).optional(),
   startedAt: z.iso.datetime(),
   candidates: z.array(row).max(50),
   completed: z.array(id).max(200),
@@ -81,7 +94,7 @@ export const savedConfigSchema = z.strictObject({
   endpoint: z.string().max(2000),
   model: z.string().max(200),
   jsonMode: z.enum(['schema', 'json']),
-  strategy: z.enum(['standard', 'anchored']).optional(),
+  strategy: z.enum(['standard', 'anchored', 'units']).optional(),
 });
 export const aiDraftSchema = z.strictObject({
   id,

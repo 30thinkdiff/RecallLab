@@ -1,0 +1,46 @@
+[
+  {
+    "taskId": "long-answer",
+    "method": "manual",
+    "actor": "automated-script",
+    "realModel": false,
+    "modelReplay": false,
+    "elapsedMs": 332,
+    "modelMs": 0,
+    "counts": {
+      "click": 2,
+      "fill": 3,
+      "check": 0,
+      "select": 0,
+      "file": 0,
+      "typedCharacters": 163
+    },
+    "cards": 1,
+    "referenceNormalization": "All questions forced to a fixed acceptable reference for reproducibility; alternative valid phrasing may not need these edits.",
+    "humanReadingAndJudgementTime": null,
+    "realUserTime": null,
+    "sourceTraceability": "manual cards do not automatically retain document positions"
+  },
+  {
+    "taskId": "paragraphs",
+    "method": "manual",
+    "actor": "automated-script",
+    "realModel": false,
+    "modelReplay": false,
+    "elapsedMs": 543,
+    "modelMs": 0,
+    "counts": {
+      "click": 4,
+      "fill": 6,
+      "check": 0,
+      "select": 0,
+      "file": 0,
+      "typedCharacters": 94
+    },
+    "cards": 2,
+    "referenceNormalization": "All questions forced to a fixed acceptable reference for reproducibility; alternative valid phrasing may not need these edits.",
+    "humanReadingAndJudgementTime": null,
+    "realUserTime": null,
+    "sourceTraceability": "manual cards do not automatically retain document positions"
+  }
+]

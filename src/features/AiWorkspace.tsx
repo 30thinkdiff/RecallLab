@@ -1,3 +1,5 @@
+import { UnitReviewSummary } from './UnitReviewSummary';
+import { contentCoverage } from '../ai/content-audit';
 import { candidateQualityProblem } from '../ai/quality';
 import { reviewQueue } from '../ai/review-queue';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -136,7 +138,14 @@ export function AiWorkspace({
           ? {
               ...c,
               ...patch,
-              userEdited: c.userEdited || Object.keys(patch).some((k) => k !== 'selected'),
+              reviewed: Object.keys(patch).some(
+                (k) => !['selected', 'reviewed', 'deferred'].includes(k),
+              )
+                ? false
+                : (patch.reviewed ?? c.reviewed),
+              userEdited:
+                c.userEdited ||
+                Object.keys(patch).some((k) => !['selected', 'reviewed', 'deferred'].includes(k)),
             }
           : c,
       ),
@@ -374,7 +383,11 @@ export function AiWorkspace({
               >
                 {(kind === 'document' ? ['extract'] : ['rewrite', 'criteria', 'quality']).map(
                   (t) => (
-                    <option key={t} value={t}>
+                    <option
+                      key={t}
+                      value={t}
+                      disabled={t === 'quality' && config.strategy === 'units'}
+                    >
                       {taskNames[t as AiTask]}
                     </option>
                   ),
@@ -512,9 +525,14 @@ export function AiWorkspace({
                     value={config.strategy ?? 'standard'}
                     disabled={hasDraft}
                     onChange={(e) =>
-                      changeConfig({ strategy: e.target.value as 'standard' | 'anchored' })
+                      changeConfig({
+                        strategy: e.target.value as 'standard' | 'anchored' | 'units',
+                      })
                     }
                   >
+                    <option value="units" disabled={task === 'quality'}>
+                      分知识整理（模型建议题干，答案/要点保留原文）
+                    </option>
                     <option value="standard">逐字引用（原有方案）</option>
                     <option value="anchored">原文片段编号（试验方案，仍需核对）</option>
                   </select>
@@ -599,6 +617,13 @@ export function AiWorkspace({
       <ErrorNotice message={action.error} />
       {state && (
         <section aria-label="AI 候选预览">
+          <UnitReviewSummary
+            state={state}
+            sources={draft.pinned.current}
+            cards={available}
+            update={update}
+            disabled={Boolean(busy) || !draft.canConfirm}
+          />
           <h2>候选预览 · {state.provider === 'mock' ? '模拟演示，非真实 AI' : state.model}</h2>
           <p role="status">
             已处理 {state.completed.length}/{state.totalChunks} 段 · {state.candidates.length}{' '}
@@ -631,8 +656,10 @@ export function AiWorkspace({
                 candidates: state.candidates.map((c) => ({
                   ...c,
                   selected:
+                    !c.deferred &&
                     candidateEvidence(c).valid &&
                     !duplicate.has(c.id) &&
+                    !reviewEntries.some((e) => e.row.id === c.id && e.comparisons.length > 0) &&
                     !candidateQualityProblem(
                       c.question,
                       candidateAnswer(c, state),
@@ -662,6 +689,8 @@ export function AiWorkspace({
                   <option value="source">来源或引用不足</option>
                   <option value="duplicate">疑似重复</option>
                   <option value="edited">我已修改</option>
+                  <option value="unreviewed">待核对或已变化</option>
+                  <option value="deferred">暂不制卡</option>
                 </select>
               </label>
               <button
@@ -698,15 +727,21 @@ export function AiWorkspace({
                   (reviewFilter === 'risk' && entry.flags.length) ||
                   (reviewFilter === 'source' && !candidateEvidence(entry.row).valid) ||
                   (reviewFilter === 'duplicate' && entry.comparisons.length) ||
-                  (reviewFilter === 'edited' && entry.row.userEdited)),
+                  (reviewFilter === 'edited' && entry.row.userEdited) ||
+                  (reviewFilter === 'unreviewed' && !entry.row.reviewed && !entry.row.deferred) ||
+                  (reviewFilter === 'deferred' && entry.row.deferred)),
             );
             if (!entries.length) return null;
             const first = entries[0]!.row;
             return (
               <section className="question-panel" key={group} aria-label="按来源分组的候选">
                 <h3>
-                  {first.source.document?.filename ?? first.source.question ?? '已有标准答案'} ·
-                  原文段 {first.chunk.start + 1}—{first.chunk.end}
+                  {first.unit?.chapter ??
+                    first.source.document?.filename ??
+                    first.source.question ??
+                    '已有标准答案'}{' '}
+                  · 原文范围 {Math.min(...entries.map((e) => e.row.chunk.start)) + 1}—
+                  {Math.max(...entries.map((e) => e.row.chunk.end))}
                 </h3>
                 {entries.map(({ row, index, flags, comparisons }) => (
                   <div key={row.id}>
@@ -843,6 +878,7 @@ function CandidateEditor({
         ? evidence.match.anchor.start
         : 0,
     );
+  const coverage = contentCoverage(row);
   const problem = candidateQualityProblem(row.question, answer, row.evidenceQuote);
   return (
     <details className="ai-candidate" open={index === 0}>
@@ -851,9 +887,31 @@ function CandidateEditor({
         {evidence.valid ? '· 引用已定位' : '· 来源不足'}
       </summary>
       <fieldset disabled={busy}>
+        <p>
+          {row.reviewed
+            ? '此版本已由你标记核对；改动内容后仅此条需要重新核对。'
+            : '本条尚未标记核对，或内容已发生变化。'}{' '}
+          {row.deferred ? '暂不制卡，草稿仍保留。' : ''}
+        </p>
+        <div className="button-row">
+          <button
+            className="button secondary"
+            onClick={() => edit({ reviewed: true })}
+            disabled={row.deferred}
+          >
+            已核对此条
+          </button>
+          <button
+            className="button subtle"
+            onClick={() => edit({ deferred: !row.deferred, selected: false })}
+          >
+            {row.deferred ? '恢复此候选核对' : '暂不制卡'}
+          </button>
+        </div>
         <label className="checkbox-label">
           <input
             type="checkbox"
+            disabled={row.deferred}
             checked={row.selected}
             onChange={(e) => edit({ selected: e.target.checked })}
           />
@@ -872,6 +930,7 @@ function CandidateEditor({
           来源原文（可修正为实际存在的完整引用）
           <textarea
             value={row.evidenceQuote}
+            readOnly={state.strategy === 'units'}
             rows={4}
             maxLength={12000}
             onChange={(e) => edit({ evidenceQuote: e.target.value })}
@@ -894,19 +953,30 @@ function CandidateEditor({
         <label>
           {row.source.kind === 'answer'
             ? '已有标准答案（保持不变）'
-            : state.objective === 'verbatim'
-              ? '确认后标准答案（直接使用上述原文）'
-              : 'AI 建议答案（须核对、可编辑）'}
+            : state.strategy === 'units'
+              ? '标准答案（原文，未由模型改写）'
+              : state.objective === 'verbatim'
+                ? '确认后标准答案（直接使用上述原文）'
+                : 'AI 建议答案（须核对、可编辑）'}
           <textarea
             rows={4}
             value={answer}
-            readOnly={row.source.kind === 'answer' || state.objective === 'verbatim'}
+            readOnly={
+              row.source.kind === 'answer' ||
+              state.objective === 'verbatim' ||
+              state.strategy === 'units'
+            }
             maxLength={20000}
             onChange={(e) => edit({ answerSuggestion: e.target.value })}
           />
         </label>
         <details>
           <summary>AI 原始答案建议、解释与质量意见（均未验证）</summary>
+          {state.strategy === 'units' && (
+            <p>
+              本方案模型原始输出只有题干；答案、引用和评分要点由原文规则准备，不是模型生成的事实。
+            </p>
+          )}
           {row.original.map((o, i) => (
             <div key={i}>
               <p>AI 原始题干：{o.question}</p>
@@ -940,6 +1010,9 @@ function CandidateEditor({
         {row.adoptCriteria && (
           <>
             <p className="muted">
+              规则将答案分为 {coverage.clauses} 个需核对的内容片段，其中 {coverage.missing.length}{' '}
+              个尚无必需要点引用覆盖（不是语义完整性评分）。
+              <br />
               {required.length} 个必需要点。尚有 {gap.characters}{' '}
               个原文字符未被必需要点引用覆盖；字符覆盖不等于语义完整。请逐段检查是否遗漏。
             </p>
@@ -1008,6 +1081,8 @@ function CandidateEditor({
                   {i > 0 && (
                     <button
                       className="button subtle"
+                      disabled={row.criteria[i - 1]!.required !== c.required}
+                      title="只合并必需性相同的相邻要点，避免把例子改成必需项"
                       onClick={() => {
                         const a = row.criteria[i - 1]!;
                         edit({
@@ -1019,7 +1094,7 @@ function CandidateEditor({
                                     ...a,
                                     text: `${a.text}；${c.text}`,
                                     quotes: [...new Set([...a.quotes, ...c.quotes])],
-                                    required: a.required || c.required,
+                                    required: a.required,
                                   }
                                 : d,
                             ),

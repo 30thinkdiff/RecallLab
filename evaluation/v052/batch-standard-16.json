@@ -1,0 +1,825 @@
+{
+  "version": 1,
+  "at": "2026-10-29T01:58:50.895Z",
+  "corpusSha256": "54a9c29b3d3cf3e2ab153a2fb48cabee562cd456ed8c9a60a33af43cd022b681",
+  "runtime": "llama.cpp CPU, 2 threads, 8192 context, Q4_K_M",
+  "model": "qwen2.5-1.5b-instruct",
+  "weightsSha256": "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e",
+  "temperature": 0,
+  "actor": "automated-script",
+  "independentHumanReview": false,
+  "realUserCosts": null,
+  "runs": [
+    {
+      "caseId": "steps",
+      "strategy": "standard",
+      "elapsedMs": 30022,
+      "completed": true,
+      "plannedUnits": [
+        {
+          "start": 0,
+          "end": 43,
+          "notForCards": false,
+          "chapter": "原文"
+        }
+      ],
+      "failures": [],
+      "rows": [
+        {
+          "question": "第一步是做什么？",
+          "answer": "第一步是定位来源。",
+          "quote": "蓝晶核对分三步：先定位来源，再逐项比对，最后记录尚未确定的问题。每一步都必须保留结果。",
+          "criteria": [
+            {
+              "id": "5de037db-b17f-466c-bcd0-f4dc7ae1fa83",
+              "text": "第一步是定位来源。",
+              "quotes": [
+                "蓝晶核对分三步：先定位来源，再逐项比对，最后记录尚未确定的问题。每一步都必须保留结果。"
+              ],
+              "required": true
+            }
+          ],
+          "original": [
+            {
+              "question": "第一步是做什么？",
+              "answerSuggestion": "第一步是定位来源。",
+              "evidenceQuote": "蓝晶核对分三步：先定位来源，再逐项比对，最后记录尚未确定的问题。每一步都必须保留结果。",
+              "criteria": [
+                {
+                  "text": "第一步是定位来源。",
+                  "quote": "蓝晶核对分三步：先定位来源，再逐项比对，最后记录尚未确定的问题。每一步都必须保留结果。",
+                  "importance": "required"
+                }
+              ],
+              "hints": ["明确第一步的步骤"],
+              "mnemonic": "第一步是定位来源。",
+              "confusion": "明确第一步的步骤",
+              "qualityNotes": ["确保第一步的步骤被明确"]
+            }
+          ],
+          "sourceMatched": true,
+          "evidenceValid": true,
+          "unit": null,
+          "notes": ["确保第一步的步骤被明确"]
+        },
+        {
+          "question": "第二步是什么？",
+          "answer": "第二步是逐项比对。",
+          "quote": "蓝晶核对分三步：先定位来源，再逐项比对，最后记录尚未确定的问题。每一步都必须保留结果。",
+          "criteria": [
+            {
+              "id": "13cd89c9-e73f-461a-893f-faddc8117bdb",
+              "text": "第二步是逐项比对。",
+              "quotes": [
+                "蓝晶核对分三步：先定位来源，再逐项比对，最后记录尚未确定的问题。每一步都必须保留结果。"
+              ],
+              "required": true
+            }
+          ],
+          "original": [
+            {
+              "question": "第二步是什么？",
+              "answerSuggestion": "第二步是逐项比对。",
+              "evidenceQuote": "蓝晶核对分三步：先定位来源，再逐项比对，最后记录尚未确定的问题。每一步都必须保留结果。",
+              "criteria": [
+                {
+                  "text": "第二步是逐项比对。",
+                  "quote": "蓝晶核对分三步：先定位来源，再逐项比对，最后记录尚未确定的问题。每一步都必须保留结果。",
+                  "importance": "required"
+                }
+              ],
+              "hints": ["明确第二步的步骤"],
+              "mnemonic": "第二步是逐项比对。",
+              "confusion": "明确第二步的步骤",
+              "qualityNotes": ["确保第二步的步骤被明确"]
+            }
+          ],
+          "sourceMatched": true,
+          "evidenceValid": true,
+          "unit": null,
+          "notes": ["确保第二步的步骤被明确"]
+        },
+        {
+          "question": "第三步是什么？",
+          "answer": "第三步是记录尚未确定的问题。",
+          "quote": "蓝晶核对分三步：先定位来源，再逐项比对，最后记录尚未确定的问题。每一步都必须保留结果。",
+          "criteria": [
+            {
+              "id": "65ef2c6f-e630-403a-9da9-928598a498a1",
+              "text": "第三步是记录尚未确定的问题。",
+              "quotes": [
+                "蓝晶核对分三步：先定位来源，再逐项比对，最后记录尚未确定的问题。每一步都必须保留结果。"
+              ],
+              "required": true
+            }
+          ],
+          "original": [
+            {
+              "question": "第三步是什么？",
+              "answerSuggestion": "第三步是记录尚未确定的问题。",
+              "evidenceQuote": "蓝晶核对分三步：先定位来源，再逐项比对，最后记录尚未确定的问题。每一步都必须保留结果。",
+              "criteria": [
+                {
+                  "text": "第三步是记录尚未确定的问题。",
+                  "quote": "蓝晶核对分三步：先定位来源，再逐项比对，最后记录尚未确定的问题。每一步都必须保留结果。",
+                  "importance": "required"
+                }
+              ],
+              "hints": ["明确第三步的步骤"],
+              "mnemonic": "第三步是记录尚未确定的问题。",
+              "confusion": "明确第三步的步骤",
+              "qualityNotes": ["确保第三步的步骤被明确"]
+            }
+          ],
+          "sourceMatched": true,
+          "evidenceValid": true,
+          "unit": null,
+          "notes": ["确保第三步的步骤被明确"]
+        }
+      ],
+      "program": {
+        "candidates": 3,
+        "sourceMatched": 3,
+        "evidenceAndRubricValid": 3,
+        "questionWarnings": 0,
+        "referencePoints": 4,
+        "answerLiteralCovered": 0,
+        "rubricLiteralCovered": 0,
+        "missingAnswerPoints": [
+          "先定位来源",
+          "再逐项比对",
+          "最后记录尚未确定的问题",
+          "每一步都必须保留结果"
+        ],
+        "missingRubricPoints": [
+          "先定位来源",
+          "再逐项比对",
+          "最后记录尚未确定的问题",
+          "每一步都必须保留结果"
+        ],
+        "exactDuplicates": 0
+      },
+      "engineeringReview": null
+    },
+    {
+      "caseId": "negative",
+      "strategy": "standard",
+      "elapsedMs": 15328,
+      "completed": true,
+      "plannedUnits": [
+        {
+          "start": 0,
+          "end": 49,
+          "notForCards": false,
+          "chapter": "原文"
+        }
+      ],
+      "failures": [],
+      "rows": [
+        {
+          "question": "什么是独立回忆的证据？",
+          "answer": "独立回忆的证据是在无提示且未揭晓答案时尝试作答，才能提供独立回忆的证据。",
+          "quote": "只看过标准答案不代表已经独立回忆成功。需要在无提示且未揭晓答案时尝试作答，才能提供独立回忆的证据。",
+          "criteria": [
+            {
+              "id": "2c1f74b2-e399-40af-a6f7-c492dd8d9655",
+              "text": "独立回忆的证据",
+              "quotes": [
+                "只看过标准答案不代表已经独立回忆成功。需要在无提示且未揭晓答案时尝试作答，才能提供独立回忆的证据。"
+              ],
+              "required": true
+            },
+            {
+              "id": "dc79cd11-afe0-4e46-bc4a-85186d21b010",
+              "text": "无提示且未揭晓答案时尝试作答",
+              "quotes": [
+                "只看过标准答案不代表已经独立回忆成功。需要在无提示且未揭晓答案时尝试作答，才能提供独立回忆的证据。"
+              ],
+              "required": true
+            },
+            {
+              "id": "f11abda0-266e-4bfb-8d2d-144e4c2c518b",
+              "text": "提供独立回忆的证据",
+              "quotes": [
+                "只看过标准答案不代表已经独立回忆成功。需要在无提示且未揭晓答案时尝试作答，才能提供独立回忆的证据。"
+              ],
+              "required": true
+            }
+          ],
+          "original": [
+            {
+              "question": "什么是独立回忆的证据？",
+              "answerSuggestion": "独立回忆的证据是在无提示且未揭晓答案时尝试作答，才能提供独立回忆的证据。",
+              "evidenceQuote": "只看过标准答案不代表已经独立回忆成功。需要在无提示且未揭晓答案时尝试作答，才能提供独立回忆的证据。",
+              "criteria": [
+                {
+                  "text": "独立回忆的证据",
+                  "quote": "只看过标准答案不代表已经独立回忆成功。需要在无提示且未揭晓答案时尝试作答，才能提供独立回忆的证据。",
+                  "importance": "required"
+                },
+                {
+                  "text": "无提示且未揭晓答案时尝试作答",
+                  "quote": "只看过标准答案不代表已经独立回忆成功。需要在无提示且未揭晓答案时尝试作答，才能提供独立回忆的证据。",
+                  "importance": "required"
+                },
+                {
+                  "text": "提供独立回忆的证据",
+                  "quote": "只看过标准答案不代表已经独立回忆成功。需要在无提示且未揭晓答案时尝试作答，才能提供独立回忆的证据。",
+                  "importance": "required"
+                }
+              ],
+              "hints": ["无提示且未揭晓答案时尝试作答", "提供独立回忆的证据"],
+              "mnemonic": "独立回忆的证据",
+              "confusion": "无提示且未揭晓答案时尝试作答",
+              "qualityNotes": [
+                "独立回忆的证据是在无提示且未揭晓答案时尝试作答，才能提供独立回忆的证据。"
+              ]
+            }
+          ],
+          "sourceMatched": true,
+          "evidenceValid": true,
+          "unit": null,
+          "notes": ["独立回忆的证据是在无提示且未揭晓答案时尝试作答，才能提供独立回忆的证据。"]
+        }
+      ],
+      "program": {
+        "candidates": 1,
+        "sourceMatched": 1,
+        "evidenceAndRubricValid": 1,
+        "questionWarnings": 0,
+        "referencePoints": 2,
+        "answerLiteralCovered": 1,
+        "rubricLiteralCovered": 1,
+        "missingAnswerPoints": ["不代表已经独立回忆成功"],
+        "missingRubricPoints": ["不代表已经独立回忆成功"],
+        "exactDuplicates": 0
+      },
+      "engineeringReview": null
+    },
+    {
+      "caseId": "quantities",
+      "strategy": "standard",
+      "elapsedMs": 11762,
+      "completed": true,
+      "plannedUnits": [
+        {
+          "start": 0,
+          "end": 38,
+          "notForCards": false,
+          "chapter": "原文"
+        }
+      ],
+      "failures": [],
+      "rows": [
+        {
+          "question": "虚构蓝晶盒最多能放多少份记录？",
+          "answer": "虚构蓝晶盒最多放三份记录；达到上限时必须先整理已有记录，不得自动丢弃旧记录。",
+          "quote": "虚构蓝晶盒最多放三份记录；达到上限时必须先整理已有记录，不得自动丢弃旧记录。",
+          "criteria": [
+            {
+              "id": "5ca74d58-744c-4823-85ba-37026949fa32",
+              "text": "虚构蓝晶盒最多能放多少份记录？",
+              "quotes": [
+                "虚构蓝晶盒最多放三份记录；达到上限时必须先整理已有记录，不得自动丢弃旧记录。"
+              ],
+              "required": true
+            }
+          ],
+          "original": [
+            {
+              "question": "虚构蓝晶盒最多能放多少份记录？",
+              "answerSuggestion": "虚构蓝晶盒最多能放三份记录。",
+              "evidenceQuote": "虚构蓝晶盒最多放三份记录；达到上限时必须先整理已有记录，不得自动丢弃旧记录。",
+              "criteria": [
+                {
+                  "text": "虚构蓝晶盒最多能放多少份记录？",
+                  "quote": "虚构蓝晶盒最多放三份记录；达到上限时必须先整理已有记录，不得自动丢弃旧记录。",
+                  "importance": "required"
+                }
+              ],
+              "hints": ["无"],
+              "mnemonic": "无",
+              "confusion": "无",
+              "qualityNotes": [
+                "直接从原文中提取了关键信息，符合要求。",
+                "没有额外的建议或解释。",
+                "没有重复答案或截断原文。"
+              ]
+            }
+          ],
+          "sourceMatched": true,
+          "evidenceValid": true,
+          "unit": null,
+          "notes": [
+            "直接从原文中提取了关键信息，符合要求。",
+            "没有额外的建议或解释。",
+            "没有重复答案或截断原文。"
+          ]
+        }
+      ],
+      "program": {
+        "candidates": 1,
+        "sourceMatched": 1,
+        "evidenceAndRubricValid": 1,
+        "questionWarnings": 0,
+        "referencePoints": 3,
+        "answerLiteralCovered": 3,
+        "rubricLiteralCovered": 0,
+        "missingAnswerPoints": [],
+        "missingRubricPoints": ["最多放三份记录", "必须先整理已有记录", "不得自动丢弃旧记录"],
+        "exactDuplicates": 0
+      },
+      "engineeringReview": null
+    },
+    {
+      "caseId": "english-long",
+      "strategy": "standard",
+      "elapsedMs": 12645,
+      "completed": true,
+      "plannedUnits": [
+        {
+          "start": 0,
+          "end": 191,
+          "notForCards": false,
+          "chapter": "原文"
+        }
+      ],
+      "failures": [],
+      "rows": [
+        {
+          "question": "什么是虚构的审计要求？",
+          "answer": "虚构的审计要求包括三个步骤：识别来源、比较每个必需的点并记录未解决的问题。",
+          "quote": "A fictional audit requires three actions: identify the source, compare every required point, and record unresolved issues. Examples may help explain the record but are not mandatory evidence.",
+          "criteria": [
+            {
+              "id": "e5f176b3-5a8f-474b-9280-1635e2fa1b26",
+              "text": "虚构的审计要求",
+              "quotes": [
+                "A fictional audit requires three actions: identify the source, compare every required point, and record unresolved issues. Examples may help explain the record but are not mandatory evidence."
+              ],
+              "required": true
+            }
+          ],
+          "original": [
+            {
+              "question": "什么是虚构的审计要求？",
+              "answerSuggestion": "虚构的审计要求包括三个步骤：识别来源、比较每个必需的点并记录未解决的问题。",
+              "evidenceQuote": "A fictional audit requires three actions: identify the source, compare every required point, and record unresolved issues. Examples may help explain the record but are not mandatory evidence.",
+              "criteria": [
+                {
+                  "text": "虚构的审计要求",
+                  "quote": "A fictional audit requires three actions: identify the source, compare every required point, and record unresolved issues. Examples may help explain the record but are not mandatory evidence.",
+                  "importance": "required"
+                }
+              ],
+              "hints": ["examples", "record", "unresolved issues"],
+              "mnemonic": "虚构审计要求",
+              "confusion": "无",
+              "qualityNotes": ["明确", "完整", "直接支持本条的完整原文段落", "无"]
+            }
+          ],
+          "sourceMatched": true,
+          "evidenceValid": true,
+          "unit": null,
+          "notes": ["明确", "完整", "直接支持本条的完整原文段落", "无"]
+        }
+      ],
+      "program": {
+        "candidates": 1,
+        "sourceMatched": 1,
+        "evidenceAndRubricValid": 1,
+        "questionWarnings": 1,
+        "referencePoints": 4,
+        "answerLiteralCovered": 0,
+        "rubricLiteralCovered": 0,
+        "missingAnswerPoints": [
+          "identify the source",
+          "compare every required point",
+          "record unresolved issues",
+          "not mandatory evidence"
+        ],
+        "missingRubricPoints": [
+          "identify the source",
+          "compare every required point",
+          "record unresolved issues",
+          "not mandatory evidence"
+        ],
+        "exactDuplicates": 0
+      },
+      "engineeringReview": null
+    },
+    {
+      "caseId": "paragraphs",
+      "strategy": "standard",
+      "elapsedMs": 19905,
+      "completed": true,
+      "plannedUnits": [
+        {
+          "start": 0,
+          "end": 16,
+          "notForCards": false,
+          "chapter": "原文"
+        },
+        {
+          "start": 18,
+          "end": 35,
+          "notForCards": false,
+          "chapter": "原文"
+        }
+      ],
+      "failures": [],
+      "rows": [
+        {
+          "question": "蓝晶资料需要保留出处和原文位置。",
+          "answer": "",
+          "quote": "蓝晶资料需要保留出处和原文位置。",
+          "criteria": [
+            {
+              "id": "5f619b9c-ddfb-4dd7-bce9-4fb91ca03c11",
+              "text": "蓝晶资料需要保留出处和原文位置。",
+              "quotes": ["蓝晶资料需要保留出处和原文位置。"],
+              "required": true
+            }
+          ],
+          "original": [
+            {
+              "question": "蓝晶资料需要保留出处和原文位置。",
+              "answerSuggestion": "",
+              "evidenceQuote": "蓝晶资料需要保留出处和原文位置。",
+              "criteria": [
+                {
+                  "text": "蓝晶资料需要保留出处和原文位置。",
+                  "quote": "蓝晶资料需要保留出处和原文位置。",
+                  "importance": "required"
+                }
+              ],
+              "hints": ["保留出处和原文位置"],
+              "mnemonic": "保留出处和原文位置",
+              "confusion": "无",
+              "qualityNotes": ["确保资料来源和原文位置的保留"]
+            }
+          ],
+          "sourceMatched": true,
+          "evidenceValid": true,
+          "unit": null,
+          "notes": ["确保资料来源和原文位置的保留"]
+        },
+        {
+          "question": "蓝晶修订需要保留旧内容和修改原因。",
+          "answer": "",
+          "quote": "蓝晶修订需要保留旧内容和修改原因。",
+          "criteria": [
+            {
+              "id": "de7dc918-6d53-4482-a2de-e0f0004096a9",
+              "text": "蓝晶修订需要保留旧内容和修改原因。",
+              "quotes": ["蓝晶修订需要保留旧内容和修改原因。"],
+              "required": true
+            }
+          ],
+          "original": [
+            {
+              "question": "蓝晶修订需要保留旧内容和修改原因。",
+              "answerSuggestion": "",
+              "evidenceQuote": "蓝晶修订需要保留旧内容和修改原因。",
+              "criteria": [
+                {
+                  "text": "蓝晶修订需要保留旧内容和修改原因。",
+                  "quote": "蓝晶修订需要保留旧内容和修改原因。",
+                  "importance": "required"
+                }
+              ],
+              "hints": ["保留旧内容和修改原因"],
+              "mnemonic": "保留旧内容和修改原因",
+              "confusion": "无",
+              "qualityNotes": ["确保保留旧内容和修改原因"]
+            }
+          ],
+          "sourceMatched": true,
+          "evidenceValid": true,
+          "unit": null,
+          "notes": ["确保保留旧内容和修改原因"]
+        }
+      ],
+      "program": {
+        "candidates": 2,
+        "sourceMatched": 2,
+        "evidenceAndRubricValid": 2,
+        "questionWarnings": 2,
+        "referencePoints": 2,
+        "answerLiteralCovered": 0,
+        "rubricLiteralCovered": 2,
+        "missingAnswerPoints": ["保留出处和原文位置", "保留旧内容和修改原因"],
+        "missingRubricPoints": [],
+        "exactDuplicates": 0
+      },
+      "engineeringReview": null
+    },
+    {
+      "caseId": "definition-keywords",
+      "strategy": "standard",
+      "elapsedMs": 24221,
+      "completed": true,
+      "plannedUnits": [
+        {
+          "start": 0,
+          "end": 31,
+          "notForCards": false,
+          "chapter": "原文"
+        }
+      ],
+      "failures": [],
+      "rows": [
+        {
+          "question": "文档编号、页码和段落位置如何共同定位一段原文？",
+          "answer": "文档编号、页码和段落位置共同定位一段原文。",
+          "quote": "蓝晶索引由文档编号、页码和段落位置组成；三项共同定位一段原文。",
+          "criteria": [
+            {
+              "id": "d19f5453-6667-489e-917f-a4d7a8e3ae3e",
+              "text": "文档编号、页码和段落位置",
+              "quotes": ["蓝晶索引由文档编号、页码和段落位置组成；三项共同定位一段原文。"],
+              "required": true
+            },
+            {
+              "id": "1354c579-bf73-437f-bb61-c436636c916a",
+              "text": "共同定位一段原文",
+              "quotes": ["蓝晶索引由文档编号、页码和段落位置组成；三项共同定位一段原文。"],
+              "required": true
+            }
+          ],
+          "original": [
+            {
+              "question": "文档编号、页码和段落位置如何共同定位一段原文？",
+              "answerSuggestion": "文档编号、页码和段落位置共同定位一段原文。",
+              "evidenceQuote": "蓝晶索引由文档编号、页码和段落位置组成；三项共同定位一段原文。",
+              "criteria": [
+                {
+                  "text": "文档编号、页码和段落位置",
+                  "quote": "蓝晶索引由文档编号、页码和段落位置组成；三项共同定位一段原文。",
+                  "importance": "required"
+                },
+                {
+                  "text": "共同定位一段原文",
+                  "quote": "蓝晶索引由文档编号、页码和段落位置组成；三项共同定位一段原文。",
+                  "importance": "required"
+                }
+              ],
+              "hints": ["文档编号、页码和段落位置共同定位一段原文", "共同定位一段原文"],
+              "mnemonic": "文档编号、页码和段落位置共同定位原文",
+              "confusion": "文档编号、页码和段落位置共同定位原文",
+              "qualityNotes": ["文档编号、页码和段落位置共同定位一段原文", "共同定位一段原文"]
+            }
+          ],
+          "sourceMatched": true,
+          "evidenceValid": true,
+          "unit": null,
+          "notes": ["文档编号、页码和段落位置共同定位一段原文", "共同定位一段原文"]
+        }
+      ],
+      "program": {
+        "candidates": 1,
+        "sourceMatched": 1,
+        "evidenceAndRubricValid": 1,
+        "questionWarnings": 0,
+        "referencePoints": 4,
+        "answerLiteralCovered": 3,
+        "rubricLiteralCovered": 3,
+        "missingAnswerPoints": ["三项共同定位"],
+        "missingRubricPoints": ["三项共同定位"],
+        "exactDuplicates": 0
+      },
+      "engineeringReview": null
+    },
+    {
+      "caseId": "definition-understanding",
+      "strategy": "standard",
+      "elapsedMs": 15290,
+      "completed": true,
+      "plannedUnits": [
+        {
+          "start": 0,
+          "end": 31,
+          "notForCards": false,
+          "chapter": "原文"
+        }
+      ],
+      "failures": [],
+      "rows": [
+        {
+          "question": "文档编号、页码和段落位置如何共同定位一段原文？",
+          "answer": "文档编号、页码和段落位置共同定位一段原文。",
+          "quote": "蓝晶索引由文档编号、页码和段落位置组成；三项共同定位一段原文。",
+          "criteria": [
+            {
+              "id": "4f1fee7a-b235-4d1d-9b6b-dcdc918cfd21",
+              "text": "文档编号、页码和段落位置",
+              "quotes": ["蓝晶索引由文档编号、页码和段落位置组成；三项共同定位一段原文。"],
+              "required": true
+            },
+            {
+              "id": "81eb093a-6215-48c2-ab59-d952f50632d8",
+              "text": "共同定位一段原文",
+              "quotes": ["蓝晶索引由文档编号、页码和段落位置组成；三项共同定位一段原文。"],
+              "required": true
+            }
+          ],
+          "original": [
+            {
+              "question": "文档编号、页码和段落位置如何共同定位一段原文？",
+              "answerSuggestion": "文档编号、页码和段落位置共同定位一段原文。",
+              "evidenceQuote": "蓝晶索引由文档编号、页码和段落位置组成；三项共同定位一段原文。",
+              "criteria": [
+                {
+                  "text": "文档编号、页码和段落位置",
+                  "quote": "蓝晶索引由文档编号、页码和段落位置组成；三项共同定位一段原文。",
+                  "importance": "required"
+                },
+                {
+                  "text": "共同定位一段原文",
+                  "quote": "蓝晶索引由文档编号、页码和段落位置组成；三项共同定位一段原文。",
+                  "importance": "required"
+                }
+              ],
+              "hints": ["文档编号、页码和段落位置共同定位一段原文"],
+              "mnemonic": "文档编号、页码和段落位置共同定位原文",
+              "confusion": "文档编号、页码和段落位置共同定位原文",
+              "qualityNotes": ["文档编号、页码和段落位置共同定位一段原文", "三项共同定位一段原文"]
+            }
+          ],
+          "sourceMatched": true,
+          "evidenceValid": true,
+          "unit": null,
+          "notes": ["文档编号、页码和段落位置共同定位一段原文", "三项共同定位一段原文"]
+        }
+      ],
+      "program": {
+        "candidates": 1,
+        "sourceMatched": 1,
+        "evidenceAndRubricValid": 1,
+        "questionWarnings": 0,
+        "referencePoints": 4,
+        "answerLiteralCovered": 3,
+        "rubricLiteralCovered": 3,
+        "missingAnswerPoints": ["三项共同定位"],
+        "missingRubricPoints": ["三项共同定位"],
+        "exactDuplicates": 0
+      },
+      "engineeringReview": null
+    },
+    {
+      "caseId": "mixed-units",
+      "strategy": "standard",
+      "elapsedMs": 25781,
+      "completed": true,
+      "plannedUnits": [
+        {
+          "start": 15,
+          "end": 27,
+          "notForCards": false,
+          "chapter": "第一部分 定义"
+        },
+        {
+          "start": 35,
+          "end": 45,
+          "notForCards": false,
+          "chapter": "第一部分 定义"
+        },
+        {
+          "start": 61,
+          "end": 81,
+          "notForCards": false,
+          "chapter": "第二部分 注意事项"
+        }
+      ],
+      "failures": [],
+      "rows": [
+        {
+          "question": "什么是蓝晶备份？",
+          "answer": "第一部分 定义\n1．蓝晶备份：保存当前资料的完整副本。",
+          "quote": "第一部分 定义\n1．蓝晶备份：保存当前资料的完整副本。",
+          "criteria": [
+            {
+              "id": "d0594ec3-c5bf-4f38-881a-566f85338844",
+              "text": "蓝晶备份",
+              "quotes": ["第一部分 定义\n1．蓝晶备份：保存当前资料的完整副本。"],
+              "required": true
+            }
+          ],
+          "original": [
+            {
+              "question": "什么是蓝晶备份？",
+              "answerSuggestion": "蓝晶备份是指保存当前资料的完整副本。",
+              "evidenceQuote": "第一部分 定义\n1．蓝晶备份：保存当前资料的完整副本。",
+              "criteria": [
+                {
+                  "text": "蓝晶备份",
+                  "quote": "第一部分 定义\n1．蓝晶备份：保存当前资料的完整副本。",
+                  "importance": "required"
+                }
+              ],
+              "hints": [],
+              "mnemonic": "蓝晶备份",
+              "confusion": "备份不等于内容已经正确，恢复后仍需核对。",
+              "qualityNotes": [
+                "明确定义了蓝晶备份的含义。",
+                "直接引用了原文中的关键信息。",
+                "没有添加额外解释或建议。",
+                "符合任务要求。",
+                "没有超出原文范围。",
+                "没有重复内容。",
+                "没有混淆或误导性信息。",
+                "没有建议性内容。"
+              ]
+            }
+          ],
+          "sourceMatched": true,
+          "evidenceValid": true,
+          "unit": null,
+          "notes": [
+            "明确定义了蓝晶备份的含义。",
+            "直接引用了原文中的关键信息。",
+            "没有添加额外解释或建议。",
+            "符合任务要求。",
+            "没有超出原文范围。",
+            "没有重复内容。",
+            "没有混淆或误导性信息。",
+            "没有建议性内容。"
+          ]
+        },
+        {
+          "question": "什么是蓝晶核对？",
+          "answer": "第一部分 定义\n1．蓝晶备份：保存当前资料的完整副本。\n2．蓝晶核对：逐项检查内容和来源。",
+          "quote": "第一部分 定义\n1．蓝晶备份：保存当前资料的完整副本。\n2．蓝晶核对：逐项检查内容和来源。",
+          "criteria": [
+            {
+              "id": "e3630294-3bda-4afe-acb3-444f790a7811",
+              "text": "蓝晶核对",
+              "quotes": [
+                "第一部分 定义\n1．蓝晶备份：保存当前资料的完整副本。\n2．蓝晶核对：逐项检查内容和来源。"
+              ],
+              "required": true
+            }
+          ],
+          "original": [
+            {
+              "question": "什么是蓝晶核对？",
+              "answerSuggestion": "蓝晶核对是指逐项检查内容和来源。",
+              "evidenceQuote": "第一部分 定义\n1．蓝晶备份：保存当前资料的完整副本。\n2．蓝晶核对：逐项检查内容和来源。",
+              "criteria": [
+                {
+                  "text": "蓝晶核对",
+                  "quote": "第一部分 定义\n1．蓝晶备份：保存当前资料的完整副本。\n2．蓝晶核对：逐项检查内容和来源。",
+                  "importance": "required"
+                }
+              ],
+              "hints": [],
+              "mnemonic": "蓝晶核对",
+              "confusion": "备份不等于内容已经正确，恢复后仍需核对。",
+              "qualityNotes": [
+                "明确定义了蓝晶核对的含义。",
+                "直接引用了原文中的关键信息。",
+                "没有添加额外解释或建议。",
+                "符合任务要求。",
+                "没有超出原文范围。",
+                "没有重复内容。",
+                "没有混淆或误导性信息。",
+                "没有建议性内容。"
+              ]
+            }
+          ],
+          "sourceMatched": true,
+          "evidenceValid": true,
+          "unit": null,
+          "notes": [
+            "明确定义了蓝晶核对的含义。",
+            "直接引用了原文中的关键信息。",
+            "没有添加额外解释或建议。",
+            "符合任务要求。",
+            "没有超出原文范围。",
+            "没有重复内容。",
+            "没有混淆或误导性信息。",
+            "没有建议性内容。"
+          ]
+        }
+      ],
+      "program": {
+        "candidates": 2,
+        "sourceMatched": 2,
+        "evidenceAndRubricValid": 2,
+        "questionWarnings": 0,
+        "referencePoints": 4,
+        "answerLiteralCovered": 2,
+        "rubricLiteralCovered": 0,
+        "missingAnswerPoints": ["备份不等于内容已经正确", "恢复后仍需核对"],
+        "missingRubricPoints": [
+          "保存当前资料的完整副本",
+          "逐项检查内容和来源",
+          "备份不等于内容已经正确",
+          "恢复后仍需核对"
+        ],
+        "exactDuplicates": 0
+      },
+      "engineeringReview": null
+    }
+  ]
+}

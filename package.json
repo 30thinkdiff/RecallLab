@@ -1,14 +1,14 @@
 {
   "name": "recalllab",
   "private": true,
-  "version": "0.5.1-alpha.0",
+  "version": "0.5.2-alpha.0",
   "type": "module",
   "engines": {
     "node": ">=20.19.0",
     "npm": ">=10"
   },
   "scripts": {
-    "local": "npm run build && node scripts/recalllab-local.mjs --open",
+    "local": "bash ./打开RecallLab.sh",
     "dev": "vite --host 127.0.0.1 --port 5173 --strictPort",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host 127.0.0.1 --port 4173 --strictPort",
@@ -22,7 +22,7 @@
     "check": "npm run fixtures:check && npm run typecheck && npm run lint && npm run format:check && npm test && npm run build",
     "test:serve": "vite --mode test --host 127.0.0.1 --port 5174 --strictPort",
     "fixtures": "node scripts/generate-fixtures.mjs && node scripts/generate-import-fixtures.mjs && node scripts/generate-pdf-fixtures.mjs && node scripts/generate-chinese-pdf-fixtures.mjs && node scripts/generate-scan-fixtures.mjs",
-    "fixtures:check": "node scripts/generate-fixtures.mjs --check && node scripts/generate-import-fixtures.mjs --check && node scripts/generate-pdf-fixtures.mjs --check && node scripts/generate-chinese-pdf-fixtures.mjs --check && node scripts/generate-scan-fixtures.mjs --check",
+    "fixtures:check": "node scripts/generate-fixtures.mjs --check && node scripts/generate-import-fixtures.mjs --check && node scripts/generate-pdf-fixtures.mjs --check && node scripts/generate-chinese-pdf-fixtures.mjs --check && node scripts/generate-scan-fixtures.mjs --check && node scripts/generate-reference-corpus.mjs --check && node scripts/summarize-ai-v052.mjs --check",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:debug": "playwright test --debug",
     "test:report": "playwright show-report",

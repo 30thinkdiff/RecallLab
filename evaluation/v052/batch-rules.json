@@ -1,0 +1,963 @@
+{
+  "version": 1,
+  "at": "2026-10-29T02:04:19.279Z",
+  "corpusSha256": "54a9c29b3d3cf3e2ab153a2fb48cabee562cd456ed8c9a60a33af43cd022b681",
+  "runtime": "llama.cpp CPU, 2 threads, 8192 context, Q4_K_M",
+  "model": "qwen2.5-1.5b-instruct",
+  "weightsSha256": "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e",
+  "temperature": 0,
+  "actor": "automated-script",
+  "independentHumanReview": false,
+  "realUserCosts": null,
+  "runs": [
+    {
+      "caseId": "numbered-cn",
+      "strategy": "deterministic",
+      "elapsedMs": 3,
+      "completed": true,
+      "plannedUnits": [
+        {
+          "start": 15,
+          "end": 29,
+          "notForCards": false,
+          "chapter": "第一部分 蓝晶归档"
+        },
+        {
+          "start": 35,
+          "end": 49,
+          "notForCards": false,
+          "chapter": "第一部分 蓝晶归档"
+        }
+      ],
+      "failures": [],
+      "rows": [
+        {
+          "question": "来源",
+          "answer": "核对资料出处，保留原文位置。",
+          "quote": "1．来源：核对资料出处，保留原文位置。",
+          "criteria": [],
+          "original": null,
+          "sourceMatched": true,
+          "evidenceValid": true,
+          "unit": null,
+          "notes": []
+        },
+        {
+          "question": "版本",
+          "answer": "记录版本编号，保留修改原因。",
+          "quote": "2．版本：记录版本编号，保留修改原因。",
+          "criteria": [],
+          "original": null,
+          "sourceMatched": true,
+          "evidenceValid": true,
+          "unit": null,
+          "notes": []
+        }
+      ],
+      "program": {
+        "candidates": 2,
+        "sourceMatched": 2,
+        "evidenceAndRubricValid": 2,
+        "questionWarnings": 2,
+        "referencePoints": 4,
+        "answerLiteralCovered": 4,
+        "rubricLiteralCovered": 0,
+        "missingAnswerPoints": [],
+        "missingRubricPoints": ["核对资料出处", "保留原文位置", "记录版本编号", "保留修改原因"],
+        "exactDuplicates": 0
+      },
+      "engineeringReview": null
+    },
+    {
+      "caseId": "textbook-cn",
+      "strategy": "deterministic",
+      "elapsedMs": 0,
+      "completed": true,
+      "plannedUnits": [
+        {
+          "start": 0,
+          "end": 56,
+          "notForCards": false,
+          "chapter": "原文"
+        }
+      ],
+      "failures": [],
+      "rows": [],
+      "program": {
+        "candidates": 0,
+        "sourceMatched": 0,
+        "evidenceAndRubricValid": 0,
+        "questionWarnings": 0,
+        "referencePoints": 5,
+        "answerLiteralCovered": 0,
+        "rubricLiteralCovered": 0,
+        "missingAnswerPoints": [
+          "不查看资料",
+          "主动提取信息",
+          "先尝试回答",
+          "再查看标准答案",
+          "不能证明能够独立回忆"
+        ],
+        "missingRubricPoints": [
+          "不查看资料",
+          "主动提取信息",
+          "先尝试回答",
+          "再查看标准答案",
+          "不能证明能够独立回忆"
+        ],
+        "exactDuplicates": 0
+      },
+      "engineeringReview": null
+    },
+    {
+      "caseId": "english",
+      "strategy": "deterministic",
+      "elapsedMs": 1,
+      "completed": true,
+      "plannedUnits": [
+        {
+          "start": 0,
+          "end": 176,
+          "notForCards": false,
+          "chapter": "原文"
+        }
+      ],
+      "failures": [],
+      "rows": [],
+      "program": {
+        "candidates": 0,
+        "sourceMatched": 0,
+        "evidenceAndRubricValid": 0,
+        "questionWarnings": 0,
+        "referencePoints": 3,
+        "answerLiteralCovered": 0,
+        "rubricLiteralCovered": 0,
+        "missingAnswerPoints": [
+          "recalling information without viewing the source",
+          "identifying an item when it is shown again",
+          "does not prove unaided recall"
+        ],
+        "missingRubricPoints": [
+          "recalling information without viewing the source",
+          "identifying an item when it is shown again",
+          "does not prove unaided recall"
+        ],
+        "exactDuplicates": 0
+      },
+      "engineeringReview": null
+    },
+    {
+      "caseId": "long-answer",
+      "strategy": "deterministic",
+      "elapsedMs": 0,
+      "completed": true,
+      "plannedUnits": [
+        {
+          "start": 18,
+          "end": 106,
+          "notForCards": false,
+          "chapter": "原文"
+        }
+      ],
+      "failures": [],
+      "rows": [
+        {
+          "question": "蓝晶归档的四步是什么？",
+          "answer": "第一，检查标题与来源，确认文件可读。第二，保留原文和位置，不用摘要替代证据。第三，记录版本与原因，旧版不得覆盖。第四，保存备份并检查能否恢复。例如，可以把副本放到移动存储设备。",
+          "quote": "问题：蓝晶归档的四步是什么？\n答案：第一，检查标题与来源，确认文件可读。第二，保留原文和位置，不用摘要替代证据。第三，记录版本与原因，旧版不得覆盖。第四，保存备份并检查能否恢复。例如，可以把副本放到移动存储设备。",
+          "criteria": [],
+          "original": null,
+          "sourceMatched": true,
+          "evidenceValid": true,
+          "unit": null,
+          "notes": []
+        }
+      ],
+      "program": {
+        "candidates": 1,
+        "sourceMatched": 1,
+        "evidenceAndRubricValid": 1,
+        "questionWarnings": 0,
+        "referencePoints": 8,
+        "answerLiteralCovered": 8,
+        "rubricLiteralCovered": 0,
+        "missingAnswerPoints": [],
+        "missingRubricPoints": [
+          "检查标题与来源",
+          "确认文件可读",
+          "保留原文和位置",
+          "不用摘要替代证据",
+          "记录版本与原因",
+          "旧版不得覆盖",
+          "保存备份",
+          "检查能否恢复"
+        ],
+        "exactDuplicates": 0
+      },
+      "engineeringReview": null
+    },
+    {
+      "caseId": "strict-definition",
+      "strategy": "deterministic",
+      "elapsedMs": 0,
+      "completed": true,
+      "plannedUnits": [
+        {
+          "start": 0,
+          "end": 35,
+          "notForCards": false,
+          "chapter": "原文"
+        }
+      ],
+      "failures": [],
+      "rows": [],
+      "program": {
+        "candidates": 0,
+        "sourceMatched": 0,
+        "evidenceAndRubricValid": 0,
+        "questionWarnings": 0,
+        "referencePoints": 2,
+        "answerLiteralCovered": 0,
+        "rubricLiteralCovered": 0,
+        "missingAnswerPoints": ["每次修订均保留旧内容", "记录新内容的来源与修改原因"],
+        "missingRubricPoints": ["每次修订均保留旧内容", "记录新内容的来源与修改原因"],
+        "exactDuplicates": 0
+      },
+      "engineeringReview": null
+    },
+    {
+      "caseId": "causal-understanding",
+      "strategy": "deterministic",
+      "elapsedMs": 0,
+      "completed": true,
+      "plannedUnits": [
+        {
+          "start": 0,
+          "end": 61,
+          "notForCards": false,
+          "chapter": "原文"
+        }
+      ],
+      "failures": [],
+      "rows": [],
+      "program": {
+        "candidates": 0,
+        "sourceMatched": 0,
+        "evidenceAndRubricValid": 0,
+        "questionWarnings": 0,
+        "referencePoints": 4,
+        "answerLiteralCovered": 0,
+        "rubricLiteralCovered": 0,
+        "missingAnswerPoints": [
+          "页面进程结束而消失",
+          "可能在刷新后丢失",
+          "重新打开的页面读取",
+          "不等于云同步"
+        ],
+        "missingRubricPoints": [
+          "页面进程结束而消失",
+          "可能在刷新后丢失",
+          "重新打开的页面读取",
+          "不等于云同步"
+        ],
+        "exactDuplicates": 0
+      },
+      "engineeringReview": null
+    },
+    {
+      "caseId": "similar-concepts",
+      "strategy": "deterministic",
+      "elapsedMs": 0,
+      "completed": true,
+      "plannedUnits": [
+        {
+          "start": 0,
+          "end": 58,
+          "notForCards": false,
+          "chapter": "原文"
+        }
+      ],
+      "failures": [],
+      "rows": [],
+      "program": {
+        "candidates": 0,
+        "sourceMatched": 0,
+        "evidenceAndRubricValid": 0,
+        "questionWarnings": 0,
+        "referencePoints": 4,
+        "answerLiteralCovered": 0,
+        "rubricLiteralCovered": 0,
+        "missingAnswerPoints": [
+          "暂时隐藏内容",
+          "历史仍保留",
+          "移除那一份副本",
+          "不能据此推断其他副本也被删除"
+        ],
+        "missingRubricPoints": [
+          "暂时隐藏内容",
+          "历史仍保留",
+          "移除那一份副本",
+          "不能据此推断其他副本也被删除"
+        ],
+        "exactDuplicates": 0
+      },
+      "engineeringReview": null
+    },
+    {
+      "caseId": "chapters",
+      "strategy": "deterministic",
+      "elapsedMs": 0,
+      "completed": true,
+      "plannedUnits": [
+        {
+          "start": 13,
+          "end": 21,
+          "notForCards": false,
+          "chapter": "第一部分 来源"
+        },
+        {
+          "start": 35,
+          "end": 45,
+          "notForCards": false,
+          "chapter": "第二部分 修订"
+        }
+      ],
+      "failures": [],
+      "rows": [
+        {
+          "question": "位置",
+          "answer": "保留页码和引用。",
+          "quote": "1．位置：保留页码和引用。",
+          "criteria": [],
+          "original": null,
+          "sourceMatched": true,
+          "evidenceValid": true,
+          "unit": null,
+          "notes": []
+        },
+        {
+          "question": "历史",
+          "answer": "保留旧版和修改原因。",
+          "quote": "1．历史：保留旧版和修改原因。",
+          "criteria": [],
+          "original": null,
+          "sourceMatched": true,
+          "evidenceValid": true,
+          "unit": null,
+          "notes": []
+        }
+      ],
+      "program": {
+        "candidates": 2,
+        "sourceMatched": 2,
+        "evidenceAndRubricValid": 2,
+        "questionWarnings": 2,
+        "referencePoints": 2,
+        "answerLiteralCovered": 2,
+        "rubricLiteralCovered": 0,
+        "missingAnswerPoints": [],
+        "missingRubricPoints": ["保留页码和引用", "保留旧版和修改原因"],
+        "exactDuplicates": 0
+      },
+      "engineeringReview": null
+    },
+    {
+      "caseId": "ocr",
+      "strategy": "deterministic",
+      "elapsedMs": 0,
+      "completed": true,
+      "plannedUnits": [
+        {
+          "start": 0,
+          "end": 63,
+          "notForCards": false,
+          "chapter": "原文"
+        }
+      ],
+      "failures": [],
+      "rows": [],
+      "program": {
+        "candidates": 0,
+        "sourceMatched": 0,
+        "evidenceAndRubricValid": 0,
+        "questionWarnings": 0,
+        "referencePoints": 4,
+        "answerLiteralCovered": 0,
+        "rubricLiteralCovered": 0,
+        "missingAnswerPoints": [
+          "日期、观查结果与修改原因",
+          "必须来自实际记录",
+          "不能为了符合预期而补造",
+          "须对照原图核对"
+        ],
+        "missingRubricPoints": [
+          "日期、观查结果与修改原因",
+          "必须来自实际记录",
+          "不能为了符合预期而补造",
+          "须对照原图核对"
+        ],
+        "exactDuplicates": 0
+      },
+      "engineeringReview": null
+    },
+    {
+      "caseId": "uncertain",
+      "strategy": "deterministic",
+      "elapsedMs": 0,
+      "completed": true,
+      "plannedUnits": [
+        {
+          "start": 0,
+          "end": 47,
+          "notForCards": false,
+          "chapter": "原文"
+        }
+      ],
+      "failures": [],
+      "rows": [],
+      "program": {
+        "candidates": 0,
+        "sourceMatched": 0,
+        "evidenceAndRubricValid": 0,
+        "questionWarnings": 0,
+        "referencePoints": 4,
+        "answerLiteralCovered": 0,
+        "rubricLiteralCovered": 0,
+        "missingAnswerPoints": [
+          "在其他条件满足时",
+          "可能在低温下稳定",
+          "没有给出全部条件",
+          "不能断言任何低温情况都稳定"
+        ],
+        "missingRubricPoints": [
+          "在其他条件满足时",
+          "可能在低温下稳定",
+          "没有给出全部条件",
+          "不能断言任何低温情况都稳定"
+        ],
+        "exactDuplicates": 0
+      },
+      "engineeringReview": null
+    },
+    {
+      "caseId": "usual",
+      "strategy": "deterministic",
+      "elapsedMs": 0,
+      "completed": true,
+      "plannedUnits": [
+        {
+          "start": 0,
+          "end": 39,
+          "notForCards": false,
+          "chapter": "原文"
+        }
+      ],
+      "failures": [],
+      "rows": [],
+      "program": {
+        "candidates": 0,
+        "sourceMatched": 0,
+        "evidenceAndRubricValid": 0,
+        "questionWarnings": 0,
+        "referencePoints": 3,
+        "answerLiteralCovered": 0,
+        "rubricLiteralCovered": 0,
+        "missingAnswerPoints": [
+          "通常每周检查一次",
+          "发生异常时应立即检查",
+          "不能因通常频率而推迟异常检查"
+        ],
+        "missingRubricPoints": [
+          "通常每周检查一次",
+          "发生异常时应立即检查",
+          "不能因通常频率而推迟异常检查"
+        ],
+        "exactDuplicates": 0
+      },
+      "engineeringReview": null
+    },
+    {
+      "caseId": "example",
+      "strategy": "deterministic",
+      "elapsedMs": 0,
+      "completed": true,
+      "plannedUnits": [
+        {
+          "start": 0,
+          "end": 49,
+          "notForCards": false,
+          "chapter": "原文"
+        }
+      ],
+      "failures": [],
+      "rows": [],
+      "program": {
+        "candidates": 0,
+        "sourceMatched": 0,
+        "evidenceAndRubricValid": 0,
+        "questionWarnings": 0,
+        "referencePoints": 2,
+        "answerLiteralCovered": 0,
+        "rubricLiteralCovered": 0,
+        "missingAnswerPoints": ["必须填写日期和来源", "具体载体不是必需要求"],
+        "missingRubricPoints": ["必须填写日期和来源", "具体载体不是必需要求"],
+        "exactDuplicates": 0
+      },
+      "engineeringReview": null
+    },
+    {
+      "caseId": "duplicate",
+      "strategy": "deterministic",
+      "elapsedMs": 0,
+      "completed": true,
+      "plannedUnits": [
+        {
+          "start": 15,
+          "end": 27,
+          "notForCards": false,
+          "chapter": "原文"
+        },
+        {
+          "start": 44,
+          "end": 56,
+          "notForCards": false,
+          "chapter": "原文"
+        }
+      ],
+      "failures": [],
+      "rows": [
+        {
+          "question": "修订应记录什么？",
+          "answer": "保留版本编号与修改原因。",
+          "quote": "问题：修订应记录什么？\n答案：保留版本编号与修改原因。",
+          "criteria": [],
+          "original": null,
+          "sourceMatched": true,
+          "evidenceValid": true,
+          "unit": null,
+          "notes": []
+        },
+        {
+          "question": "修订应记录什么？",
+          "answer": "保留版本编号与修改原因。",
+          "quote": "问题：修订应记录什么？\n答案：保留版本编号与修改原因。",
+          "criteria": [],
+          "original": null,
+          "sourceMatched": true,
+          "evidenceValid": true,
+          "unit": null,
+          "notes": []
+        }
+      ],
+      "program": {
+        "candidates": 2,
+        "sourceMatched": 2,
+        "evidenceAndRubricValid": 2,
+        "questionWarnings": 0,
+        "referencePoints": 1,
+        "answerLiteralCovered": 1,
+        "rubricLiteralCovered": 0,
+        "missingAnswerPoints": [],
+        "missingRubricPoints": ["保留版本编号与修改原因"],
+        "exactDuplicates": 1
+      },
+      "engineeringReview": null
+    },
+    {
+      "caseId": "incomplete",
+      "strategy": "deterministic",
+      "elapsedMs": 0,
+      "completed": true,
+      "plannedUnits": [
+        {
+          "start": 0,
+          "end": 57,
+          "notForCards": true,
+          "chapter": "原文"
+        }
+      ],
+      "failures": [],
+      "rows": [],
+      "program": {
+        "candidates": 0,
+        "sourceMatched": 0,
+        "evidenceAndRubricValid": 0,
+        "questionWarnings": 0,
+        "referencePoints": 0,
+        "answerLiteralCovered": 0,
+        "rubricLiteralCovered": 0,
+        "missingAnswerPoints": [],
+        "missingRubricPoints": [],
+        "exactDuplicates": 0
+      },
+      "engineeringReview": null
+    },
+    {
+      "caseId": "article",
+      "strategy": "deterministic",
+      "elapsedMs": 0,
+      "completed": true,
+      "plannedUnits": [
+        {
+          "start": 0,
+          "end": 51,
+          "notForCards": true,
+          "chapter": "原文"
+        }
+      ],
+      "failures": [],
+      "rows": [],
+      "program": {
+        "candidates": 0,
+        "sourceMatched": 0,
+        "evidenceAndRubricValid": 0,
+        "questionWarnings": 0,
+        "referencePoints": 0,
+        "answerLiteralCovered": 0,
+        "rubricLiteralCovered": 0,
+        "missingAnswerPoints": [],
+        "missingRubricPoints": [],
+        "exactDuplicates": 0
+      },
+      "engineeringReview": null
+    },
+    {
+      "caseId": "injection",
+      "strategy": "deterministic",
+      "elapsedMs": 0,
+      "completed": true,
+      "plannedUnits": [
+        {
+          "start": 0,
+          "end": 9,
+          "notForCards": false,
+          "chapter": "原文"
+        }
+      ],
+      "failures": [],
+      "rows": [],
+      "program": {
+        "candidates": 0,
+        "sourceMatched": 0,
+        "evidenceAndRubricValid": 0,
+        "questionWarnings": 0,
+        "referencePoints": 1,
+        "answerLiteralCovered": 0,
+        "rubricLiteralCovered": 0,
+        "missingAnswerPoints": ["蓝晶的颜色是蓝色"],
+        "missingRubricPoints": ["蓝晶的颜色是蓝色"],
+        "exactDuplicates": 0
+      },
+      "engineeringReview": null
+    },
+    {
+      "caseId": "steps",
+      "strategy": "deterministic",
+      "elapsedMs": 0,
+      "completed": true,
+      "plannedUnits": [
+        {
+          "start": 0,
+          "end": 43,
+          "notForCards": false,
+          "chapter": "原文"
+        }
+      ],
+      "failures": [],
+      "rows": [],
+      "program": {
+        "candidates": 0,
+        "sourceMatched": 0,
+        "evidenceAndRubricValid": 0,
+        "questionWarnings": 0,
+        "referencePoints": 4,
+        "answerLiteralCovered": 0,
+        "rubricLiteralCovered": 0,
+        "missingAnswerPoints": [
+          "先定位来源",
+          "再逐项比对",
+          "最后记录尚未确定的问题",
+          "每一步都必须保留结果"
+        ],
+        "missingRubricPoints": [
+          "先定位来源",
+          "再逐项比对",
+          "最后记录尚未确定的问题",
+          "每一步都必须保留结果"
+        ],
+        "exactDuplicates": 0
+      },
+      "engineeringReview": null
+    },
+    {
+      "caseId": "negative",
+      "strategy": "deterministic",
+      "elapsedMs": 0,
+      "completed": true,
+      "plannedUnits": [
+        {
+          "start": 0,
+          "end": 49,
+          "notForCards": false,
+          "chapter": "原文"
+        }
+      ],
+      "failures": [],
+      "rows": [],
+      "program": {
+        "candidates": 0,
+        "sourceMatched": 0,
+        "evidenceAndRubricValid": 0,
+        "questionWarnings": 0,
+        "referencePoints": 2,
+        "answerLiteralCovered": 0,
+        "rubricLiteralCovered": 0,
+        "missingAnswerPoints": ["不代表已经独立回忆成功", "无提示且未揭晓答案时尝试作答"],
+        "missingRubricPoints": ["不代表已经独立回忆成功", "无提示且未揭晓答案时尝试作答"],
+        "exactDuplicates": 0
+      },
+      "engineeringReview": null
+    },
+    {
+      "caseId": "quantities",
+      "strategy": "deterministic",
+      "elapsedMs": 0,
+      "completed": true,
+      "plannedUnits": [
+        {
+          "start": 0,
+          "end": 38,
+          "notForCards": false,
+          "chapter": "原文"
+        }
+      ],
+      "failures": [],
+      "rows": [],
+      "program": {
+        "candidates": 0,
+        "sourceMatched": 0,
+        "evidenceAndRubricValid": 0,
+        "questionWarnings": 0,
+        "referencePoints": 3,
+        "answerLiteralCovered": 0,
+        "rubricLiteralCovered": 0,
+        "missingAnswerPoints": ["最多放三份记录", "必须先整理已有记录", "不得自动丢弃旧记录"],
+        "missingRubricPoints": ["最多放三份记录", "必须先整理已有记录", "不得自动丢弃旧记录"],
+        "exactDuplicates": 0
+      },
+      "engineeringReview": null
+    },
+    {
+      "caseId": "english-long",
+      "strategy": "deterministic",
+      "elapsedMs": 0,
+      "completed": true,
+      "plannedUnits": [
+        {
+          "start": 0,
+          "end": 191,
+          "notForCards": false,
+          "chapter": "原文"
+        }
+      ],
+      "failures": [],
+      "rows": [],
+      "program": {
+        "candidates": 0,
+        "sourceMatched": 0,
+        "evidenceAndRubricValid": 0,
+        "questionWarnings": 0,
+        "referencePoints": 4,
+        "answerLiteralCovered": 0,
+        "rubricLiteralCovered": 0,
+        "missingAnswerPoints": [
+          "identify the source",
+          "compare every required point",
+          "record unresolved issues",
+          "not mandatory evidence"
+        ],
+        "missingRubricPoints": [
+          "identify the source",
+          "compare every required point",
+          "record unresolved issues",
+          "not mandatory evidence"
+        ],
+        "exactDuplicates": 0
+      },
+      "engineeringReview": null
+    },
+    {
+      "caseId": "paragraphs",
+      "strategy": "deterministic",
+      "elapsedMs": 0,
+      "completed": true,
+      "plannedUnits": [
+        {
+          "start": 0,
+          "end": 16,
+          "notForCards": false,
+          "chapter": "原文"
+        },
+        {
+          "start": 18,
+          "end": 35,
+          "notForCards": false,
+          "chapter": "原文"
+        }
+      ],
+      "failures": [],
+      "rows": [],
+      "program": {
+        "candidates": 0,
+        "sourceMatched": 0,
+        "evidenceAndRubricValid": 0,
+        "questionWarnings": 0,
+        "referencePoints": 2,
+        "answerLiteralCovered": 0,
+        "rubricLiteralCovered": 0,
+        "missingAnswerPoints": ["保留出处和原文位置", "保留旧内容和修改原因"],
+        "missingRubricPoints": ["保留出处和原文位置", "保留旧内容和修改原因"],
+        "exactDuplicates": 0
+      },
+      "engineeringReview": null
+    },
+    {
+      "caseId": "definition-keywords",
+      "strategy": "deterministic",
+      "elapsedMs": 0,
+      "completed": true,
+      "plannedUnits": [
+        {
+          "start": 0,
+          "end": 31,
+          "notForCards": false,
+          "chapter": "原文"
+        }
+      ],
+      "failures": [],
+      "rows": [],
+      "program": {
+        "candidates": 0,
+        "sourceMatched": 0,
+        "evidenceAndRubricValid": 0,
+        "questionWarnings": 0,
+        "referencePoints": 4,
+        "answerLiteralCovered": 0,
+        "rubricLiteralCovered": 0,
+        "missingAnswerPoints": ["文档编号", "页码", "段落位置", "三项共同定位"],
+        "missingRubricPoints": ["文档编号", "页码", "段落位置", "三项共同定位"],
+        "exactDuplicates": 0
+      },
+      "engineeringReview": null
+    },
+    {
+      "caseId": "definition-understanding",
+      "strategy": "deterministic",
+      "elapsedMs": 0,
+      "completed": true,
+      "plannedUnits": [
+        {
+          "start": 0,
+          "end": 31,
+          "notForCards": false,
+          "chapter": "原文"
+        }
+      ],
+      "failures": [],
+      "rows": [],
+      "program": {
+        "candidates": 0,
+        "sourceMatched": 0,
+        "evidenceAndRubricValid": 0,
+        "questionWarnings": 0,
+        "referencePoints": 4,
+        "answerLiteralCovered": 0,
+        "rubricLiteralCovered": 0,
+        "missingAnswerPoints": ["文档编号", "页码", "段落位置", "三项共同定位"],
+        "missingRubricPoints": ["文档编号", "页码", "段落位置", "三项共同定位"],
+        "exactDuplicates": 0
+      },
+      "engineeringReview": null
+    },
+    {
+      "caseId": "mixed-units",
+      "strategy": "deterministic",
+      "elapsedMs": 0,
+      "completed": true,
+      "plannedUnits": [
+        {
+          "start": 15,
+          "end": 27,
+          "notForCards": false,
+          "chapter": "第一部分 定义"
+        },
+        {
+          "start": 35,
+          "end": 45,
+          "notForCards": false,
+          "chapter": "第一部分 定义"
+        },
+        {
+          "start": 61,
+          "end": 81,
+          "notForCards": false,
+          "chapter": "第二部分 注意事项"
+        }
+      ],
+      "failures": [],
+      "rows": [
+        {
+          "question": "蓝晶备份",
+          "answer": "保存当前资料的完整副本。",
+          "quote": "1．蓝晶备份：保存当前资料的完整副本。",
+          "criteria": [],
+          "original": null,
+          "sourceMatched": true,
+          "evidenceValid": true,
+          "unit": null,
+          "notes": []
+        },
+        {
+          "question": "蓝晶核对",
+          "answer": "逐项检查内容和来源。",
+          "quote": "2．蓝晶核对：逐项检查内容和来源。",
+          "criteria": [],
+          "original": null,
+          "sourceMatched": true,
+          "evidenceValid": true,
+          "unit": null,
+          "notes": []
+        },
+        {
+          "question": "限制",
+          "answer": "备份不等于内容已经正确，恢复后仍需核对。",
+          "quote": "1．限制：备份不等于内容已经正确，恢复后仍需核对。",
+          "criteria": [],
+          "original": null,
+          "sourceMatched": true,
+          "evidenceValid": true,
+          "unit": null,
+          "notes": []
+        }
+      ],
+      "program": {
+        "candidates": 3,
+        "sourceMatched": 3,
+        "evidenceAndRubricValid": 3,
+        "questionWarnings": 3,
+        "referencePoints": 4,
+        "answerLiteralCovered": 4,
+        "rubricLiteralCovered": 0,
+        "missingAnswerPoints": [],
+        "missingRubricPoints": [
+          "保存当前资料的完整副本",
+          "逐项检查内容和来源",
+          "备份不等于内容已经正确",
+          "恢复后仍需核对"
+        ],
+        "exactDuplicates": 0
+      },
+      "engineeringReview": null
+    }
+  ]
+}

@@ -12,7 +12,7 @@ import type { AiConfirmation, EvidenceAnchor } from './provenance';
 export function candidateAnswer(row: AiCandidate, state: GenerationState) {
   return row.source.kind === 'answer'
     ? row.source.text
-    : state.objective === 'verbatim'
+    : state.objective === 'verbatim' || state.strategy === 'units'
       ? (() => {
           const found = candidateEvidence(row).match;
           return found.status === 'matched' ? found.anchor.quote : row.evidenceQuote.trim();
@@ -57,6 +57,8 @@ export async function confirmCandidates(
     throw new Error('请先核对原文、答案和必需要点，并确认完整性；引用匹配不代表语义正确。');
   if (state.status === 'running') throw new Error('请先完成或取消生成再确认。');
   const selected = state.candidates.filter((c) => c.selected);
+  if (selected.some((c) => c.deferred || (c.unit && state.deferredUnits?.includes(c.unit.key))))
+    throw new Error('暂不制卡的候选不能确认，请先恢复核对。');
   if (!selected.length || selected.length > 50) throw new Error('请选择 1—50 条候选');
   return repo.db.transaction('rw', repo.db.tables, async () => {
     await assertCurrentSources(
@@ -88,9 +90,18 @@ export async function confirmCandidates(
         throw new ConflictError('此候选已确认，请返回题库查看，不能重复提交。');
       if (duplicate.has(row.id))
         throw new Error('候选题干与已有或本批题目重复，请取消选择或改写。');
+      if (row.unit && (row.chunk.start > row.unit.start || row.chunk.end < row.unit.end))
+        throw new Error('本条只是长知识单元的一部分，不能作为完整答案确认；请先明确拆分学习任务。');
       const evidence = candidateEvidence(row);
       if (!evidence.valid || evidence.match.status !== 'matched')
         throw new Error('来源不足或要点引用无效，请修正后确认。');
+      if (
+        state.strategy === 'units' &&
+        row.unit &&
+        (evidence.match.anchor.start !== row.unit.start ||
+          evidence.match.anchor.end !== row.unit.end)
+      )
+        throw new Error('分知识方案必须保留该单元完整原文；需要改范围时，请另行明确拆分任务。');
       const old =
         row.source.kind === 'answer' ? cards.find((c) => c.id === row.source.id) : undefined;
       if (row.source.kind === 'answer') {
@@ -183,7 +194,7 @@ export async function confirmCandidates(
           completenessReviewed: true,
           answerMode: old
             ? 'unchanged'
-            : state.objective === 'verbatim'
+            : state.objective === 'verbatim' || state.strategy === 'units'
               ? 'verbatim'
               : 'paraphrase',
           criterionMode: row.adoptCriteria ? 'ai-confirmed' : 'unchanged',

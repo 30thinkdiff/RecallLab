@@ -30,3 +30,12 @@ it('blocks copying an answer opening and operational instructions even when the 
     ),
   ).toBeNull();
 });
+it('rejects short complete answers copied into a question and loss of uncertainty', () => {
+  expect(
+    candidateQualityProblem('蓝晶的颜色是蓝色。', '蓝晶的颜色是蓝色。', '蓝晶的颜色是蓝色。'),
+  ).toBeTruthy();
+  expect(candidateQualityProblem('蓝色晶是什么？', '蓝色晶', '蓝色晶')).toContain('完整标准答案');
+  expect(candidateQualityProblem('材料是否稳定？', '一定稳定', '在这些条件下可能稳定。')).toContain(
+    '不确定性',
+  );
+});

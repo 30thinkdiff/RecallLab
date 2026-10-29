@@ -32,6 +32,7 @@ export const modelOutputSchema = z.strictObject({
   items: z.array(suggestedItemSchema).max(MAX_CHUNK_ITEMS),
 });
 export type SuggestedItem = z.infer<typeof suggestedItemSchema>;
+export const questionOutputSchema = z.strictObject({ question: z.string().min(1).max(3000) });
 export interface AiRequest {
   task: AiTask;
   objective: LearningObjective;
@@ -42,12 +43,12 @@ export interface AiRequest {
 }
 export interface AiProvider {
   readonly kind: ProviderKind;
-  readonly strategy?: 'standard' | 'anchored';
+  readonly strategy?: 'standard' | 'anchored' | 'units';
   generate(input: AiRequest, signal: AbortSignal): Promise<unknown>;
 }
 export type ProviderKind = 'mock' | 'ollama' | 'compatible';
 export interface ProviderConfig {
-  strategy?: 'standard' | 'anchored';
+  strategy?: 'standard' | 'anchored' | 'units';
   kind: ProviderKind;
   endpoint: string;
   model: string;

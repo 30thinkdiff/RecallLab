@@ -1,0 +1,122 @@
+[
+  {
+    "task": "long-answer",
+    "input": "第一，检查标题与来源，确认文件可读。第二，保留原文和位置，不用摘要替代证据。第三，记录版本与原因，旧版不得覆盖。第四，保存备份并检查能否恢复。例如，可以把副本放到移动存储设备。",
+    "response": {
+      "choices": [
+        {
+          "finish_reason": "stop",
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "{\"question\":\"蓝晶归档必须完成哪些步骤？\"}"
+          }
+        }
+      ],
+      "created": 1793239464,
+      "model": "qwen2.5-1.5b-instruct",
+      "system_fingerprint": "b0-unknown",
+      "object": "chat.completion",
+      "usage": {
+        "completion_tokens": 14,
+        "prompt_tokens": 267,
+        "total_tokens": 281,
+        "prompt_tokens_details": {
+          "cached_tokens": 194
+        }
+      },
+      "id": "chatcmpl-49VncaxKdIMBIdRvwmC0EerhrrcvZ2WB",
+      "timings": {
+        "cache_n": 194,
+        "prompt_n": 73,
+        "prompt_ms": 1126.954,
+        "prompt_per_token_ms": 15.43772602739726,
+        "prompt_per_second": 64.77637951504676,
+        "predicted_n": 14,
+        "predicted_ms": 621.811,
+        "predicted_per_token_ms": 47.83161538461539,
+        "predicted_per_second": 20.906674214512126
+      }
+    }
+  },
+  {
+    "task": "paragraphs",
+    "input": "蓝晶资料需要保留出处和原文位置。",
+    "response": {
+      "choices": [
+        {
+          "finish_reason": "stop",
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "{\"question\":\"蓝晶资料需要保留哪些信息？\"}"
+          }
+        }
+      ],
+      "created": 1793239472,
+      "model": "qwen2.5-1.5b-instruct",
+      "system_fingerprint": "b0-unknown",
+      "object": "chat.completion",
+      "usage": {
+        "completion_tokens": 13,
+        "prompt_tokens": 223,
+        "total_tokens": 236,
+        "prompt_tokens_details": {
+          "cached_tokens": 196
+        }
+      },
+      "id": "chatcmpl-nMp07EkoXrl4jYHImC4ALvafksDWcwz7",
+      "timings": {
+        "cache_n": 196,
+        "prompt_n": 27,
+        "prompt_ms": 486.17,
+        "prompt_per_token_ms": 18.0062962962963,
+        "prompt_per_second": 55.53612933747454,
+        "predicted_n": 13,
+        "predicted_ms": 599.218,
+        "predicted_per_token_ms": 49.93483333333333,
+        "predicted_per_second": 20.026100684558877
+      }
+    }
+  },
+  {
+    "task": "paragraphs",
+    "input": "蓝晶修订需要保留旧内容和修改原因。",
+    "response": {
+      "choices": [
+        {
+          "finish_reason": "stop",
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "{\"question\":\"蓝晶修订需要保留哪些内容？\"}"
+          }
+        }
+      ],
+      "created": 1793239473,
+      "model": "qwen2.5-1.5b-instruct",
+      "system_fingerprint": "b0-unknown",
+      "object": "chat.completion",
+      "usage": {
+        "completion_tokens": 13,
+        "prompt_tokens": 223,
+        "total_tokens": 236,
+        "prompt_tokens_details": {
+          "cached_tokens": 196
+        }
+      },
+      "id": "chatcmpl-p6gM4LAbewlxUvXn1A39KNczmKLLYS5c",
+      "timings": {
+        "cache_n": 196,
+        "prompt_n": 27,
+        "prompt_ms": 495.773,
+        "prompt_per_token_ms": 18.361962962962963,
+        "prompt_per_second": 54.46040829169801,
+        "predicted_n": 13,
+        "predicted_ms": 630.424,
+        "predicted_per_token_ms": 52.535333333333334,
+        "predicted_per_second": 19.034808319480224
+      }
+    }
+  }
+]

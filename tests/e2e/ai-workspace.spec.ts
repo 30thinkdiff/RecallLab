@@ -82,7 +82,10 @@ test('AI off stays local; mock candidates require confirmation, preserve edits a
     const { db } = await import(d);
     const { exportBackup, restoreBackup } = await import(b);
     const before = await exportBackup(db);
-    await restoreBackup(db, before);
+    const portable = '/src/persistence/portable-backup.ts';
+    const { packBackup, parsePortableBackup } = await import(portable);
+    const packed = await packBackup(before);
+    await restoreBackup(db, await parsePortableBackup(JSON.stringify(packed.value)));
     const after = await exportBackup(db);
     return { before: before.data, after: after.data };
   });
@@ -91,6 +94,8 @@ test('AI off stays local; mock candidates require confirmation, preserve edits a
   expect(data.before.practiceItems[0].aiProvenance.metrics.edited).toBe(1);
   expect(data.before.reviewEvents[0].scheduling.grade).toBe(3);
   expect(data.after.practiceItems).toEqual(data.before.practiceItems);
+  expect(data.after.reviewEvents).toEqual(data.before.reviewEvents);
+  expect(data.after.revisions).toEqual(data.before.revisions);
   expect(data.after.schedulingLogs).toEqual(data.before.schedulingLogs);
   expect(requests).toBe(0);
 });
