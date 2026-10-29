@@ -211,6 +211,51 @@ it('stores one copy of the source regardless of candidate count and rejects over
   ).rejects.toThrow('4 MB');
   expect(await db.aiDrafts.count()).toBe(0);
 });
+it('enforces the aggregate 12 MB cap across distinct nonnumeric draft IDs', async () => {
+  const template = (await setup()).state;
+  for (let i = 0; i < 4; i++) {
+    const sourceDoc: SourceDocument = {
+      ...doc,
+      id: crypto.randomUUID(),
+      filename: `fictional-${i}.txt`,
+      extractedContent: `source-${i}: ` + 'a'.repeat(3_200_000),
+    };
+    await db.sourceDocuments.put(sourceDoc);
+    const source = {
+      kind: 'document' as const,
+      id: sourceDoc.id,
+      text: sourceDoc.extractedContent,
+      document: sourceDoc,
+    };
+    const state = {
+      ...structuredClone(template),
+      id: crypto.randomUUID(),
+      inputs: [{ id: source.id, text: source.text }],
+      candidates: [],
+      completed: [],
+      failures: [],
+      totalChunks: 0,
+      status: 'idle' as const,
+    };
+    const operation = saveAiDraft(
+      db,
+      `document/${source.id}`,
+      pid,
+      state,
+      [source],
+      config,
+      null,
+      'tab-a',
+    );
+    if (i < 3) await operation;
+    else await expect(operation).rejects.toThrow('12 MB');
+  }
+  const remaining = await db.aiDrafts.toArray();
+  expect(remaining).toHaveLength(3);
+  expect(remaining.reduce((sum, row) => sum + row.bytesStored, 0)).toBeLessThanOrEqual(
+    12 * 1024 ** 2,
+  );
+});
 it('can confirm saved partial results after an interrupted request is recovered', async () => {
   const { source, state } = await setup();
   state.status = 'running';
