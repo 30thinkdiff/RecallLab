@@ -84,5 +84,5 @@ test('unit-first drafting retains source chapters, per-candidate review marks an
       version: db.verno,
     };
   });
-  expect(integrity).toEqual({ cards: 0, drafts: 1, version: 7 });
+  expect(integrity).toEqual({ cards: 0, drafts: 1, version: 8 });
 });

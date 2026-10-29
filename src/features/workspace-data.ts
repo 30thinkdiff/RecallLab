@@ -3,7 +3,14 @@ import { db } from '../persistence/database';
 export function useWorkspaceData(route: string) {
   const [section, id] = route.split('/');
   const projects = useLiveQuery(() => db.projects.toArray(), []);
-  const cards = useLiveQuery(() => db.practiceItems.toArray(), []);
+  const cards = useLiveQuery(async () => {
+    if (['home', 'learn', 'goals'].includes(section ?? '')) return [];
+    if (section === 'study' && id) {
+      const session = await db.sessions.get(id);
+      return session ? db.practiceItems.where('projectId').equals(session.projectId).toArray() : [];
+    }
+    return db.practiceItems.toArray();
+  }, [section, id]);
   const sessions = useLiveQuery(async () => {
     if (section === 'study' && id) {
       const s = await db.sessions.get(id);
@@ -11,12 +18,12 @@ export function useWorkspaceData(route: string) {
     }
     if (section === 'project' && id)
       return db.sessions.where('[projectId+status]').equals([id, 'active']).toArray();
-    if (section === 'home' || section === 'projects')
+    if (['home', 'overview', 'goals', 'learn', 'projects'].includes(section ?? ''))
       return db.sessions.where('status').equals('active').toArray();
     return [];
   }, [section, id]);
   const events = useLiveQuery(() => {
-    if (section === 'home' || section === 'history') return db.reviewEvents.toArray();
+    if (section === 'overview' || section === 'history') return db.reviewEvents.toArray();
     if (section === 'study' && id) return db.reviewEvents.where('sessionId').equals(id).toArray();
     if (section === 'project' && id) return db.reviewEvents.where('projectId').equals(id).toArray();
     if (section === 'item' && id)
@@ -24,7 +31,7 @@ export function useWorkspaceData(route: string) {
     return [];
   }, [section, id]);
   const revisions = useLiveQuery(() => {
-    if (section === 'home' || section === 'history') return db.revisions.toArray();
+    if (section === 'overview' || section === 'history') return db.revisions.toArray();
     if (section === 'item' && id) return db.revisions.where('practiceItemId').equals(id).toArray();
     if (section === 'project' && id)
       return db.revisions

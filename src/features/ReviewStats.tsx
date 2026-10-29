@@ -53,7 +53,7 @@ export function ReviewStats({
       </p>
       <p>
         口头独立回忆自报：{stats.reportedCorrect} 次正确 / {stats.reported}{' '}
-        次已核对自报。系统自动验证：0 次（当前没有自动评分）。
+        次已核对自报。短答案文字一致核对：{stats.literalSamples} 次（不是语义正确率）。
       </p>
       <p className="muted">
         正确率仅使用当前有效知识版本、保留输入作答且无提示的人工核对。工作量保留实际发生的旧版练习；提示后成功不作为独立成功。数据不足不显示个人记忆概率，也没有训练个人最优参数。

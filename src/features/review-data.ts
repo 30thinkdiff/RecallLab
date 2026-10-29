@@ -15,55 +15,69 @@ export function useReviewData(projectId?: string, selectedOnly = false) {
     )[0];
   const scope = selectedOnly ? preferred?.id : projectId;
   const cards = useLiveQuery(
-    () =>
-      scope
-        ? db.practiceItems.where('projectId').equals(scope).toArray()
-        : db.practiceItems.toArray(),
+    async () =>
+      selectedOnly && !scope
+        ? []
+        : scope
+          ? db.practiceItems.where('projectId').equals(scope).toArray()
+          : db.practiceItems.toArray(),
     [scope],
   );
   const memories = useLiveQuery(
-    () =>
-      scope
-        ? db.memoryStates.where('projectId').equals(scope).toArray()
-        : db.memoryStates.toArray(),
+    async () =>
+      selectedOnly && !scope
+        ? []
+        : scope
+          ? db.memoryStates.where('projectId').equals(scope).toArray()
+          : db.memoryStates.toArray(),
     [scope],
   );
   const events = useLiveQuery(
-    () =>
-      scope
-        ? db.reviewEvents.where('projectId').equals(scope).toArray()
-        : db.reviewEvents.toArray(),
+    async () =>
+      selectedOnly && !scope
+        ? []
+        : scope
+          ? db.reviewEvents.where('projectId').equals(scope).toArray()
+          : db.reviewEvents.toArray(),
     [scope],
   );
   const sessions = useLiveQuery(
-    () =>
-      scope
-        ? db.sessions.where('[projectId+status]').equals([scope, 'active']).toArray()
-        : db.sessions.where('status').equals('active').toArray(),
+    async () =>
+      selectedOnly && !scope
+        ? []
+        : scope
+          ? db.sessions.where('[projectId+status]').equals([scope, 'active']).toArray()
+          : db.sessions.where('status').equals('active').toArray(),
     [scope],
   );
   const documents = useLiveQuery(
-    () =>
-      scope
-        ? db.sourceDocuments.where('projectId').equals(scope).toArray()
-        : db.sourceDocuments.toArray(),
+    async () =>
+      selectedOnly && !scope
+        ? []
+        : scope
+          ? db.sourceDocuments.where('projectId').equals(scope).toArray()
+          : db.sourceDocuments.toArray(),
     [scope],
   );
   const revisions = useLiveQuery(
-    () =>
-      scope
-        ? db.revisions
-            .where('practiceItemId')
-            .anyOf((cards ?? []).map((c) => c.id))
-            .toArray()
-        : db.revisions.toArray(),
+    async () =>
+      selectedOnly && !scope
+        ? []
+        : scope
+          ? db.revisions
+              .where('practiceItemId')
+              .anyOf((cards ?? []).map((c) => c.id))
+              .toArray()
+          : db.revisions.toArray(),
     [scope, cards],
   );
   const logs = useLiveQuery(
-    () =>
-      scope
-        ? db.schedulingLogs.where('projectId').equals(scope).toArray()
-        : db.schedulingLogs.toArray(),
+    async () =>
+      selectedOnly && !scope
+        ? []
+        : scope
+          ? db.schedulingLogs.where('projectId').equals(scope).toArray()
+          : db.schedulingLogs.toArray(),
     [scope],
   );
   if (!projects || !cards || !memories || !events || !sessions || !documents || !revisions || !logs)

@@ -295,7 +295,7 @@ it('keeps drafts across a local day and DST change, replenishes due tasks and re
 });
 it('does not bypass required detailed checks with a quick positive result and stops adding work after recorded budget is exhausted', async () => {
   const a = await answer();
-  let s = await repo.updateAssessment(
+  const s = await repo.updateAssessment(
     a.s.id,
     a.index,
     { mode: 'detailed', marks: ['omitted'], mastery: 4, performance: 'correct' },

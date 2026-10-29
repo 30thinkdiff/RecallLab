@@ -8,6 +8,12 @@ import { useAction } from './components/actions';
 import { CardForm, ProjectForm } from './features/Forms';
 import { History, Overview, ProjectDetail, Projects } from './features/Workspace';
 import { PendingPrompts } from './features/PendingPrompts';
+const LearningHome = lazy(() =>
+  import('./features/GoalLearning').then((m) => ({ default: m.LearningHome })),
+);
+const GoalLearning = lazy(() =>
+  import('./features/GoalLearning').then((m) => ({ default: m.GoalLearning })),
+);
 const AiEvaluation = lazy(() =>
   import('./features/AiEvaluation').then((m) => ({ default: m.AiEvaluation })),
 );
@@ -90,6 +96,10 @@ function Workspace() {
   const createProject = () => setModal({ type: 'project' });
   const activePage = [
     'home',
+    'overview',
+    'learn',
+    'goals',
+    'import-task',
     'history',
     'backup',
     'archive',
@@ -126,26 +136,44 @@ function Workspace() {
         <div className="nav-label">学习工作台</div>
         <nav aria-label="主导航">
           {[
-            { name: '学习概览', route: 'home', icon: LayoutDashboard },
-            { name: '今日复习', route: 'daily', icon: Clock3 },
+            { name: '创建学习任务', route: 'import-task', icon: BookOpen },
+            { name: '继续今天学习', route: 'goals', icon: Clock3 },
+            { name: '学习进展', route: 'home', icon: LayoutDashboard },
             { name: '学习项目', route: 'projects', icon: BookOpen },
-            { name: '学习记录', route: 'history', icon: Clock3 },
-            { name: '备份与恢复', route: 'backup', icon: ShieldCheck },
-            { name: '归档内容', route: 'archive', icon: BookOpen },
-            { name: '导入资料', route: 'import', icon: BookOpen },
-            { name: '学习资料', route: 'documents', icon: BookOpen },
-            { name: 'AI 整理草稿', route: 'ai-drafts', icon: FlaskConical },
           ].map(({ name, route, icon: Icon }) => (
-            <a
-              key={route}
-              href={`#${route}`}
-              className={activePage === route ? 'nav-item active' : 'nav-item'}
-              aria-current={activePage === route ? 'page' : undefined}
-            >
+            <a key={route} href={`#${route}`} className="nav-item">
               <Icon size={19} />
               {name}
             </a>
           ))}
+          <details
+            open={
+              !['home', 'learn', 'goals', 'import-task'].includes(section ?? 'home') &&
+              !(section === 'study' && session?.reviewPlan?.compact)
+            }
+          >
+            <summary>高级功能与完整记录</summary>
+            {[
+              { name: '学习概览', route: 'overview', icon: LayoutDashboard },
+              { name: '今日复习', route: 'daily', icon: Clock3 },
+              { name: '学习记录', route: 'history', icon: Clock3 },
+              { name: '备份与恢复', route: 'backup', icon: ShieldCheck },
+              { name: '归档内容', route: 'archive', icon: BookOpen },
+              { name: '导入资料', route: 'import', icon: BookOpen },
+              { name: '学习资料', route: 'documents', icon: BookOpen },
+              { name: 'AI 整理草稿', route: 'ai-drafts', icon: FlaskConical },
+            ].map(({ name, route, icon: Icon }) => (
+              <a
+                key={route}
+                href={`#${route}`}
+                className={activePage === route ? 'nav-item active' : 'nav-item'}
+                aria-current={activePage === route ? 'page' : undefined}
+              >
+                <Icon size={19} />
+                {name}
+              </a>
+            ))}
+          </details>
         </nav>
         <div className="sidebar-note">
           <ShieldCheck size={18} />
@@ -157,7 +185,7 @@ function Workspace() {
           </p>
         </div>
         <div className="sidebar-footer">
-          RECALL. REFLECT. REPEAT.<span>0.5.2 · 知识整理与质量核对</span>
+          RECALL. REFLECT. REPEAT.<span>0.6 · 目标驱动学习</span>
           <OfflineStatus />
         </div>
       </aside>
@@ -167,7 +195,11 @@ function Workspace() {
             个人学习空间 <span className="topbar-separator">/</span>{' '}
             {
               {
-                home: '学习概览',
+                home: '学习进展',
+                overview: '完整学习概览',
+                learn: '目标与计划',
+                goals: '继续学习',
+                'import-task': '创建学习任务',
                 daily: '今日复习',
                 history: '学习记录',
                 projects: '学习项目',
@@ -190,7 +222,27 @@ function Workspace() {
           {!rawData ? (
             <p role="status">正在读取本地学习数据…</p>
           ) : section === 'home' ? (
+            <Suspense fallback={<p>正在读取学习进展…</p>}>
+              <LearningHome
+                projects={data.projects}
+                sessions={data.sessions}
+                onCreate={createProject}
+              />
+            </Suspense>
+          ) : section === 'overview' ? (
             <Overview data={data} onCreate={createProject} />
+          ) : section === 'learn' || section === 'goals' ? (
+            <Suspense fallback={<p>正在规划…</p>}>
+              <GoalLearning
+                key={id ?? 'goals'}
+                projectId={
+                  id ??
+                  (section === 'goals'
+                    ? data.sessions.find((s) => s.reviewPlan?.adaptive)?.projectId
+                    : undefined)
+                }
+              />
+            </Suspense>
           ) : section === 'daily' ? (
             <Suspense fallback={<p role="status">正在准备今日复习…</p>}>
               <DailyReview
@@ -214,13 +266,14 @@ function Workspace() {
             <Suspense fallback={<p>正在读取草稿…</p>}>
               <AiDrafts />
             </Suspense>
-          ) : section === 'import' ? (
+          ) : section === 'import' || section === 'import-task' ? (
             <Suspense fallback={<p role="status">正在准备资料导入…</p>}>
               <ImportPage
                 key={id ?? 'import'}
                 projects={data.projects}
                 cards={data.allCards}
                 initialProjectId={id}
+                goalFlow={section === 'import-task'}
               />
             </Suspense>
           ) : section === 'ai' && id && aiId ? (

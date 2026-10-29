@@ -327,7 +327,14 @@ export function validateBackup(raw: unknown): Backup {
   if (
     backup.databaseVersion < 8 &&
     (data.projects.some((p) => p.automaticGoal) ||
-      data.sessions.some((s) => s.reviewPlan?.adaptive || s.draft.timing) ||
+      data.practiceItems.some((p) => p.learningIssue) ||
+      data.sessions.some(
+        (s) =>
+          s.reviewPlan?.adaptive ||
+          s.reviewPlan?.compact ||
+          s.reviewPlan?.goalUpdatedAt ||
+          s.draft.timing,
+      ) ||
       data.reviewEvents.some((e) => e.timing || e.quickFeedback || e.schemaVersion === 5))
   )
     throw new Error('目标/行为证据需要v8或更新的数据格式');

@@ -351,7 +351,7 @@ test('v4 upgrade first downloads a backup, preserves formal scheduling byte-for-
       ),
     };
   });
-  expect(result.version).toBe(7);
+  expect(result.version).toBe(8);
   expect(result.after.databaseVersion).toBe(7);
   expect(result.after.data).toEqual(before);
   expect(result.oldWriter).toBe('VersionError');
