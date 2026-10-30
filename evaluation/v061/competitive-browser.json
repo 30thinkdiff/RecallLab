@@ -1,0 +1,87 @@
+{
+  "date": "2026-10-30",
+  "actor": "Isolated Chromium automation, not a human participant",
+  "privacy": "No accounts, payment, user materials or model calls",
+  "products": [
+    {
+      "product": "Anki",
+      "status": 200,
+      "title": "",
+      "page": "https://ankiweb.net/about",
+      "entryPages": [],
+      "errorType": null,
+      "scope": "Anonymous public entry only; no authenticated upload, exam planning, model output or efficacy verified"
+    },
+    {
+      "product": "RemNote",
+      "status": 200,
+      "title": "Study Faster with AI Flashcards, Quizzes & Summaries",
+      "page": "https://www.remnote.com/",
+      "entryPages": [],
+      "errorType": "TimeoutError",
+      "scope": "Anonymous public entry only; no authenticated upload, exam planning, model output or efficacy verified"
+    },
+    {
+      "product": "Quizlet",
+      "status": 403,
+      "title": "Just a moment...",
+      "page": "https://quizlet.com/study-guides/upload",
+      "entryPages": [],
+      "errorType": null,
+      "scope": "Anonymous public entry only; no authenticated upload, exam planning, model output or efficacy verified"
+    },
+    {
+      "product": "Knowt",
+      "status": 200,
+      "title": "#1 Free Quizlet Alternative with AI Study Tools | Knowt",
+      "page": "https://knowt.com/",
+      "entryPages": [],
+      "errorType": null,
+      "scope": "Anonymous public entry only; no authenticated upload, exam planning, model output or efficacy verified"
+    },
+    {
+      "product": "StudyFetch",
+      "status": 200,
+      "title": "StudyFetch | The Top AI Learning Platform",
+      "page": "https://www.studyfetch.com/",
+      "entryPages": ["https://www.studyfetch.com/auth/signup"],
+      "errorType": null,
+      "scope": "Anonymous public entry only; no authenticated upload, exam planning, model output or efficacy verified"
+    },
+    {
+      "product": "Gizmo",
+      "status": 200,
+      "title": "Gizmo - Get addicted to learning",
+      "page": "https://gizmo.ai/",
+      "entryPages": ["https://app.gizmo.ai/onboarding"],
+      "errorType": null,
+      "scope": "Anonymous public entry only; no authenticated upload, exam planning, model output or efficacy verified"
+    },
+    {
+      "product": "Brainscape",
+      "status": 200,
+      "title": "Brainscape: The Best Flashcards App | Make Flashcards Online",
+      "page": "https://www.brainscape.com/",
+      "entryPages": ["https://www.brainscape.com/log-in"],
+      "errorType": null,
+      "scope": "Anonymous public entry only; no authenticated upload, exam planning, model output or efficacy verified"
+    },
+    {
+      "product": "Mochi",
+      "status": 200,
+      "title": "Mochi",
+      "page": "https://app.mochi.cards/",
+      "entryPages": ["https://app.mochi.cards/"],
+      "errorType": null,
+      "scope": "Anonymous public entry only; no authenticated upload, exam planning, model output or efficacy verified"
+    }
+  ],
+  "mochiExtra": {
+    "actions": ["Get started", "Start from scratch", "Sign up later"],
+    "observed": [
+      "Anonymous offline workspace with Basic Flashcards, New Card and Import",
+      "Visible warning: data not backed up and may be lost"
+    ],
+    "notVerified": ["Import of 69 cards", "Exam plan", "Full learning or edit-history behavior"]
+  }
+}
