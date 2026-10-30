@@ -133,7 +133,7 @@ test('creates a manual question without uploading a file and keeps edit controls
   await page.getByLabel('项目名称').fill('临时记忆任务');
   await page.getByRole('button', { name: '保存项目' }).click();
   await expect(page.getByRole('heading', { name: '临时记忆任务' })).toBeVisible();
-  await page.getByRole('button', { name: '添加问答题' }).click();
+  await page.getByRole('button', { name: '添加问答题', exact: true }).first().click();
   await page.getByLabel('问题', { exact: false }).fill('临时知识是什么？');
   await page.getByLabel('标准答案').fill('用户手动补充的临时答案');
   await page.getByRole('button', { name: '保存题目' }).click();
