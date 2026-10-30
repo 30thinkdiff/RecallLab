@@ -1,0 +1,172 @@
+{
+  "version": 1,
+  "date": "2026-10-30",
+  "actor": "Playwright, not a real learner",
+  "conditions": "Same public fictional 69 short-answer entries; exam goal, seven days, thirty minutes; isolated baseline archive and current app; no AI.",
+  "baseline": {
+    "files": ["baseline-0.json", "baseline-1.json", "baseline-2.json"],
+    "codeSnapshot": "2b55b8ca7ded3b141891d5cd5e2462cebb297346",
+    "browser": "156.0.8078.4",
+    "viewport": {
+      "width": 1440,
+      "height": 1000
+    },
+    "timezone": "Asia/Shanghai",
+    "firstQuestionMs": {
+      "median": 2111,
+      "min": 2102,
+      "max": 2122,
+      "values": [2122, 2102, 2111]
+    },
+    "firstSavedMs": {
+      "median": 2352,
+      "min": 2346,
+      "max": 2364,
+      "values": [2364, 2346, 2352]
+    },
+    "counts": {
+      "preparation": {
+        "median": 4,
+        "min": 4,
+        "max": 4,
+        "values": [4, 4, 4]
+      },
+      "goalRequirements": {
+        "median": 3,
+        "min": 3,
+        "max": 3,
+        "values": [3, 3, 3]
+      },
+      "answerEntry": {
+        "median": 20,
+        "min": 20,
+        "max": 20,
+        "values": [20, 20, 20]
+      },
+      "answerSubmission": {
+        "median": 20,
+        "min": 20,
+        "max": 20,
+        "values": [20, 20, 20]
+      },
+      "correctnessConfirmation": {
+        "median": 20,
+        "min": 20,
+        "max": 20,
+        "values": [20, 20, 20]
+      },
+      "extraPerQuestionManagement": {
+        "median": 0,
+        "min": 0,
+        "max": 0,
+        "values": [0, 0, 0]
+      },
+      "offscreenPrimaryActions": {
+        "median": 1,
+        "min": 1,
+        "max": 1,
+        "values": [1, 1, 1]
+      }
+    },
+    "resumeOperations": {
+      "median": 2,
+      "min": 2,
+      "max": 2,
+      "values": [2, 2, 2]
+    },
+    "preparationQuality": {
+      "sourceAnchored": 69,
+      "literalExcerptMatched": 69,
+      "referenceQAPairsMatched": 69,
+      "automatedPromptProblems": 0,
+      "exactPromptDuplicates": 0,
+      "semanticHumanAcceptance": null
+    }
+  },
+  "candidate": {
+    "files": ["candidate-0.json", "candidate-1.json", "candidate-2.json"],
+    "codeSnapshot": "613941ff375270b40cfed52bc4452633f51efa4c",
+    "browser": "156.0.8078.4",
+    "viewport": {
+      "width": 1440,
+      "height": 1000
+    },
+    "timezone": "Asia/Shanghai",
+    "firstQuestionMs": {
+      "median": 2611,
+      "min": 2593,
+      "max": 2620,
+      "values": [2611, 2593, 2620]
+    },
+    "firstSavedMs": {
+      "median": 2863,
+      "min": 2838,
+      "max": 2865,
+      "values": [2863, 2838, 2865]
+    },
+    "counts": {
+      "preparation": {
+        "median": 3,
+        "min": 3,
+        "max": 3,
+        "values": [3, 3, 3]
+      },
+      "goalRequirements": {
+        "median": 3,
+        "min": 3,
+        "max": 3,
+        "values": [3, 3, 3]
+      },
+      "answerEntry": {
+        "median": 20,
+        "min": 20,
+        "max": 20,
+        "values": [20, 20, 20]
+      },
+      "answerSubmission": {
+        "median": 20,
+        "min": 20,
+        "max": 20,
+        "values": [20, 20, 20]
+      },
+      "correctnessConfirmation": {
+        "median": 20,
+        "min": 20,
+        "max": 20,
+        "values": [20, 20, 20]
+      },
+      "extraPerQuestionManagement": {
+        "median": 0,
+        "min": 0,
+        "max": 0,
+        "values": [0, 0, 0]
+      },
+      "offscreenPrimaryActions": {
+        "median": 0,
+        "min": 0,
+        "max": 0,
+        "values": [0, 0, 0]
+      }
+    },
+    "resumeOperations": {
+      "median": 1,
+      "min": 1,
+      "max": 1,
+      "values": [1, 1, 1]
+    },
+    "preparationQuality": {
+      "sourceAnchored": 69,
+      "literalExcerptMatched": 69,
+      "referenceQAPairsMatched": 69,
+      "automatedPromptProblems": 0,
+      "exactPromptDuplicates": 0,
+      "semanticHumanAcceptance": null
+    }
+  },
+  "limitations": [
+    "Single Linux host; three runs per condition; background load not rigorously controlled.",
+    "Script timing excludes human reading, judgment and recall. No demonstrated improvement in learning outcomes.",
+    "Literal source/fixture checks are not independent human semantic assessment.",
+    "Not an authenticated competitive end-to-end speed comparison."
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "phase": "candidate",
+  "actor": "Playwright script; not human reading, understanding or recall",
+  "fixture": "69 provided fictional Q/A entries; one current question per response",
+  "firstQuestionMs": 2451,
+  "firstSavedMs": 2655,
+  "counts": {
+    "preparation": 3,
+    "goalRequirements": 3,
+    "answerEntry": 20,
+    "answerSubmission": 20,
+    "correctnessConfirmation": 20,
+    "extraPerQuestionManagement": 0,
+    "offscreenPrimaryActions": 0
+  },
+  "resumeOperations": 1,
+  "preparationQuality": {
+    "sourceAnchored": 69,
+    "literalExcerptMatched": null,
+    "referenceQAPairsMatched": null,
+    "automatedPromptProblems": null,
+    "exactPromptDuplicates": null,
+    "semanticHumanAcceptance": null,
+    "note": "Pilot asserted document ID links and saved evidence; initial fixture expectations are not individual quote/semantic measurements."
+  },
+  "realUserTime": null,
+  "delayedRecallOutcome": null,
+  "fixtureExpectationsNotIndividuallyMeasured": {
+    "sourceAnchored": 69,
+    "referenceTextMatched": 69,
+    "knownValidPrompts": 69,
+    "severeDuplicates": 0,
+    "semanticHumanAcceptance": null
+  }
+}

@@ -1,9 +1,16 @@
 {
   "phase": "baseline",
+  "codeSnapshot": "2b55b8ca7ded3b141891d5cd5e2462cebb297346",
+  "browser": "156.0.8078.4",
+  "viewport": {
+    "width": 1440,
+    "height": 1000
+  },
+  "timezone": "Asia/Shanghai",
   "actor": "Playwright script; not human reading, understanding or recall",
   "fixture": "69 provided fictional Q/A entries; one current question per response",
-  "firstQuestionMs": 1810,
-  "firstSavedMs": 2019,
+  "firstQuestionMs": 2111,
+  "firstSavedMs": 2352,
   "counts": {
     "preparation": 4,
     "goalRequirements": 3,
@@ -16,12 +23,11 @@
   "resumeOperations": 2,
   "preparationQuality": {
     "sourceAnchored": 69,
-    "literalExcerptMatched": null,
-    "referenceQAPairsMatched": null,
-    "automatedPromptProblems": null,
-    "exactPromptDuplicates": null,
-    "semanticHumanAcceptance": null,
-    "note": "Baseline asserted 69 card/document ID links and the 20 saved evidence records; separate full quote/reference and semantic checks were not measured."
+    "literalExcerptMatched": 69,
+    "referenceQAPairsMatched": 69,
+    "automatedPromptProblems": 0,
+    "exactPromptDuplicates": 0,
+    "semanticHumanAcceptance": null
   },
   "realUserTime": null,
   "delayedRecallOutcome": null
