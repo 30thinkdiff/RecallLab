@@ -124,3 +124,43 @@ test('mobile import preview and confirmation remain usable', async ({ page }) =>
   await page.getByRole('button', { name: '确认导入 2 道题', exact: true }).click();
   await expect(page.getByRole('heading', { name: '导入完成', exact: true })).toBeVisible();
 });
+
+test('creates a manual question without uploading a file and keeps edit controls available', async ({
+  page,
+}) => {
+  await page.goto('/#import-task');
+  await page.getByRole('button', { name: '先创建项目，再手动添加问答' }).click();
+  await page.getByLabel('项目名称').fill('临时记忆任务');
+  await page.getByRole('button', { name: '保存项目' }).click();
+  await expect(page.getByRole('heading', { name: '临时记忆任务' })).toBeVisible();
+  await page.getByRole('button', { name: '添加问答题', exact: true }).first().click();
+  await page.getByLabel('问题', { exact: false }).fill('临时知识是什么？');
+  await page.getByLabel('标准答案').fill('用户手动补充的临时答案');
+  await page.getByRole('button', { name: '保存题目' }).click();
+  await expect(page.getByRole('heading', { name: '临时知识是什么？' })).toBeVisible();
+  await page.getByRole('button', { name: '编辑题目：临时知识是什么？' }).click();
+  await page.getByLabel('标准答案').fill('用户手动修正后的答案');
+  await page.getByLabel('修改原因').fill('人工补充了知识');
+  await page.getByRole('button', { name: '保存题目' }).click();
+  await page.getByText('查看标准答案', { exact: true }).click();
+  await expect(page.getByText('用户手动修正后的答案')).toBeVisible();
+});
+
+test('pasted Q&A text enters normal import flow without selecting any external file', async ({
+  page,
+}) => {
+  await page.goto('/#import');
+  await page.getByText('粘贴文字或临时笔记', { exact: true }).click();
+  await page
+    .getByLabel('粘贴的学习内容')
+    .fill('Q: 何为主动回忆？\nA: 不看资料，从记忆中独立提取。');
+  await page.getByRole('button', { name: '解析粘贴内容' }).click();
+  await expect(page.getByRole('heading', { name: '候选题目（1）' })).toBeVisible();
+  await expect(page.getByLabel('第 1 题答案', { exact: true })).toHaveValue(
+    '不看资料，从记忆中独立提取。',
+  );
+  await page.getByRole('button', { name: '确认导入 1 道题' }).click();
+  await expect(page.getByRole('heading', { name: '导入完成' })).toBeVisible();
+  await page.getByRole('link', { name: '返回项目题库' }).click();
+  await expect(page.getByRole('heading', { name: '何为主动回忆？' })).toBeVisible();
+});
