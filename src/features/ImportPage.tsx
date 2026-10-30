@@ -16,11 +16,13 @@ export function ImportPage({
   cards,
   initialProjectId,
   goalFlow = false,
+  onManualCreate,
 }: {
   projects: LearningProject[];
   cards: PracticeItem[];
   initialProjectId?: string;
   goalFlow?: boolean;
+  onManualCreate: (projectId?: string) => void;
 }) {
   const [parsed, setParsed] = useState<ParsedMaterial | null>(null);
   const [rows, setRows] = useState<ImportCandidate[]>([]);
@@ -32,6 +34,12 @@ export function ImportPage({
         : (projects[0]?.id ?? 'new'),
   );
   const [projectName, setProjectName] = useState('');
+  const [manualProjectId, setManualProjectId] = useState(
+    initialProjectId && projects.some((p) => p.id === initialProjectId)
+      ? initialProjectId
+      : (projects[0]?.id ?? ''),
+  );
+  const [pastedText, setPastedText] = useState('');
   const [dirty, setDirty] = useState(false);
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState('');
@@ -158,6 +166,54 @@ export function ImportPage({
           </li>
         ))}
       </ol>
+      {!result && !parsed && (
+        <section className="question-panel" aria-label="不上传文件也能创建知识">
+          <h2>不上传文件，也能开始</h2>
+          <p className="muted">临时想到要记住的内容，可以直接录入问答；复制的笔记或题库也能粘贴整理。</p>
+          {projects.length > 1 && (
+            <label>
+              手动录入到哪个项目
+              <select value={manualProjectId} onChange={(event) => setManualProjectId(event.target.value)}>
+                {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+            </label>
+          )}
+          <button
+            type="button"
+            className="button secondary"
+            disabled={loading || action.busy}
+            onClick={() => onManualCreate(manualProjectId || undefined)}
+          >
+            {projects.length ? '直接添加一道问答' : '先创建项目，再手动添加问答'}
+          </button>
+          <details>
+            <summary>粘贴文字或临时笔记</summary>
+            <label>
+              粘贴的学习内容
+              <textarea
+                aria-label="粘贴的学习内容"
+                rows={6}
+                value={pastedText}
+                onChange={(event) => setPastedText(event.target.value)}
+                placeholder={'Q: 你希望记住什么？\\nA: 写下答案，也可以粘贴整段笔记。'}
+              />
+            </label>
+            <p className="muted">问答格式可以自动生成候选题；普通段落会保留为文字资料，之后可选取原文制作问答。无需另存成文件。</p>
+            <button
+              type="button"
+              className="button secondary"
+              disabled={!pastedText.trim() || loading || action.busy}
+              onClick={() =>
+                void read(
+                  new File([pastedText], '手动粘贴的学习内容.txt', { type: 'text/plain' }),
+                )
+              }
+            >
+              解析粘贴内容
+            </button>
+          </details>
+        </section>
+      )}
       {!result && (
         <section className="question-panel">
           <label>
