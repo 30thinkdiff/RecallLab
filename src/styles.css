@@ -2242,3 +2242,9 @@ select:focus {
 .study-context {
   margin: 12px 0 20px;
 }
+
+@media (max-width: 800px) {
+  .import-confirm > p {
+    flex: initial;
+  }
+}

@@ -1,4 +1,5 @@
 import { test, expect, type Locator } from '@playwright/test';
+import { promptProblem } from '../../src/domain/readiness';
 import { mkdir, writeFile } from 'node:fs/promises';
 const phase = process.env.RECALLLAB_JOURNEY_PHASE ?? 'candidate';
 const bank = Array.from({ length: 69 }, (_, i) => ({
@@ -8,6 +9,7 @@ const bank = Array.from({ length: 69 }, (_, i) => ({
 }));
 test('measures first useful question and twenty-answer decision burden with the same public 69-question bank', async ({
   page,
+  browser,
 }, info) => {
   const counts = {
     preparation: 0,
@@ -96,6 +98,40 @@ test('measures first useful question and twenty-answer decision burden with the 
   expect(
     data.cards.every((c) => c.sourceReferences.some((r) => r.documentId === data.sources[0]!.id)),
   ).toBe(true);
+  const document = data.sources[0]!;
+  const references = new Map(bank.map((row) => [row.question, row.standardAnswer]));
+  const quality = {
+    sourceAnchored: data.cards.filter((c) =>
+      c.sourceReferences.some((r) => r.documentId === document.id),
+    ).length,
+    literalExcerptMatched: data.cards.filter((c) =>
+      c.sourceReferences.some(
+        (r) =>
+          r.documentId === document.id &&
+          !!r.excerpt &&
+          document.extractedContent.includes(r.excerpt) &&
+          (r.startOffset === undefined ||
+            document.extractedContent.slice(r.startOffset, r.endOffset) === r.excerpt),
+      ),
+    ).length,
+    referenceQAPairsMatched: data.cards.filter(
+      (c) => references.get(c.question) === c.standardAnswer,
+    ).length,
+    automatedPromptProblems: data.cards.filter((c) => promptProblem(c)).length,
+    exactPromptDuplicates:
+      data.cards.length -
+      new Set(
+        data.cards.map((c) => c.question.normalize('NFKC').replace(/\s+/g, '').toLocaleLowerCase()),
+      ).size,
+    semanticHumanAcceptance: null,
+  };
+  expect(quality).toMatchObject({
+    sourceAnchored: 69,
+    literalExcerptMatched: 69,
+    referenceQAPairsMatched: 69,
+    automatedPromptProblems: 0,
+    exactPromptDuplicates: 0,
+  });
   const pause = page.getByRole('link', { name: '暂停并返回学习方案' });
   await pause.click();
   await page.goto('/#home');
@@ -110,19 +146,17 @@ test('measures first useful question and twenty-answer decision burden with the 
   expect((await get()).events).toEqual(data.events);
   const result = {
     phase,
+    codeSnapshot: process.env.RECALLLAB_UX_SHA ?? null,
+    browser: browser.version(),
+    viewport: page.viewportSize(),
+    timezone: info.project.use.timezoneId ?? null,
     actor: 'Playwright script; not human reading, understanding or recall',
     fixture: '69 provided fictional Q/A entries; one current question per response',
     firstQuestionMs,
     firstSavedMs,
     counts,
     resumeOperations,
-    preparationQuality: {
-      sourceAnchored: 69,
-      referenceTextMatched: 69,
-      knownValidPrompts: 69,
-      severeDuplicates: 0,
-      semanticHumanAcceptance: null,
-    },
+    preparationQuality: quality,
     realUserTime: null,
     delayedRecallOutcome: null,
   };
@@ -131,9 +165,10 @@ test('measures first useful question and twenty-answer decision burden with the 
     contentType: 'application/json',
   });
   if (process.env.RECALLLAB_WRITE_UX === '1') {
-    await mkdir('evaluation/v061', { recursive: true });
+    const output = process.env.RECALLLAB_UX_OUTPUT_DIR ?? 'evaluation/v061';
+    await mkdir(output, { recursive: true });
     await writeFile(
-      `evaluation/v061/${phase}-${info.repeatEachIndex}.json`,
+      `${output}/${phase}-${info.repeatEachIndex}.json`,
       JSON.stringify(result, null, 2) + '\n',
     );
   }

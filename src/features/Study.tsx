@@ -1,4 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks';
+import { LearningWrapUp } from './LearningWrapUp';
 import { CompactStudy } from './CompactStudy';
 import {
   freshAssessment,
@@ -71,8 +72,31 @@ export function Study({
         <p>
           完成 {completed.length - skipped} 题，跳过 {skipped} 题。学习记录已保存在本地。
         </p>
-        {last && <DecisionFeedback decision={last} adaptive={session.reviewPlan?.adaptive} />}
-        {session.reviewPlan && (
+        {session.reviewPlan?.adaptive ? (
+          <details>
+            <summary>查看最后一题反馈</summary>{' '}
+            {last && (
+              <DecisionFeedback
+                decision={last}
+                adaptive={session.reviewPlan?.adaptive}
+                compact={session.reviewPlan?.compact}
+              />
+            )}
+          </details>
+        ) : (
+          <>
+            {' '}
+            {last && (
+              <DecisionFeedback
+                decision={last}
+                adaptive={session.reviewPlan?.adaptive}
+                compact={session.reviewPlan?.compact}
+              />
+            )}
+          </>
+        )}
+        {session.reviewPlan?.adaptive && <LearningWrapUp projectId={session.projectId} />}
+        {session.reviewPlan && !session.reviewPlan.adaptive && (
           <a
             className="button"
             href={session.reviewPlan.adaptive ? `#learn/${session.projectId}` : '#daily'}
@@ -80,25 +104,50 @@ export function Study({
             查看今日复习与下次到期
           </a>
         )}
-        <div className="completion-note">
-          花一点时间回想：哪些内容还需要下一次独立回忆？
-          <br />
-          主观熟悉感并不等于经过验证的长期记忆。
-        </div>
-        <div className="button-row">
-          <a className="button" href={`#project/${session.projectId}`}>
-            返回题库 <ArrowRight size={16} />
-          </a>
-          <a className="button secondary" href="#history">
-            查看学习记录
-          </a>
-        </div>
+        {!session.reviewPlan?.adaptive && (
+          <div className="completion-note">
+            花一点时间回想：哪些内容还需要下一次独立回忆？
+            <br />
+            主观熟悉感并不等于经过验证的长期记忆。
+          </div>
+        )}
+        {session.reviewPlan?.adaptive ? (
+          <details>
+            <summary>学习记录与题库管理</summary>{' '}
+            <div className="button-row">
+              <a className="button" href={`#project/${session.projectId}`}>
+                返回题库 <ArrowRight size={16} />
+              </a>
+              <a className="button secondary" href="#history">
+                查看学习记录
+              </a>
+            </div>
+          </details>
+        ) : (
+          <>
+            {' '}
+            <div className="button-row">
+              <a className="button" href={`#project/${session.projectId}`}>
+                返回题库 <ArrowRight size={16} />
+              </a>
+              <a className="button secondary" href="#history">
+                查看学习记录
+              </a>
+            </div>
+          </>
+        )}
       </div>
     );
   }
   return (
     <>
-      {last && <DecisionFeedback decision={last} adaptive={session.reviewPlan?.adaptive} />}
+      {last && (
+        <DecisionFeedback
+          decision={last}
+          adaptive={session.reviewPlan?.adaptive}
+          compact={session.reviewPlan?.compact}
+        />
+      )}
       {session.reviewPlan?.compact && !!retained && (
         <p role="status">
           该轮次已保护{retained}份未提交草稿，可在<a href={`#project/${session.projectId}`}>题库</a>
@@ -604,9 +653,11 @@ function StudyQuestion({
 function DecisionFeedback({
   decision,
   adaptive = false,
+  compact = false,
 }: {
   decision: ReviewDecision;
   adaptive?: boolean;
+  compact?: boolean;
 }) {
   return (
     <section className="info-note" aria-label="本次复习结果">
@@ -621,18 +672,39 @@ function DecisionFeedback({
           刚揭晓后的补救至少等待10分钟再独立复测；FSRS到期不等于立即重复，第三次当天失败后会暂停自动重复。
         </p>
       )}
-      {decision.grade !== null && (
-        <small>间隔按揭晓时保留的回忆证据安排，稍后保存不会额外延长。</small>
+      {compact ? (
+        <details>
+          <summary>查看评分依据</summary>{' '}
+          {decision.grade !== null && (
+            <small>间隔按揭晓时保留的回忆证据安排，稍后保存不会额外延长。</small>
+          )}
+          <small>
+            {decision.source === 'deterministic'
+              ? '来源：短答案文字一致核对，不是语义验证'
+              : decision.source === 'self_report'
+                ? '来源：用户自报'
+                : decision.source === 'user_checked'
+                  ? '来源：保留作答后的人工核对'
+                  : '没有客观核验结果'}
+          </small>
+        </details>
+      ) : (
+        <>
+          {' '}
+          {decision.grade !== null && (
+            <small>间隔按揭晓时保留的回忆证据安排，稍后保存不会额外延长。</small>
+          )}
+          <small>
+            {decision.source === 'deterministic'
+              ? '来源：短答案文字一致核对，不是语义验证'
+              : decision.source === 'self_report'
+                ? '来源：用户自报'
+                : decision.source === 'user_checked'
+                  ? '来源：保留作答后的人工核对'
+                  : '没有客观核验结果'}
+          </small>
+        </>
       )}
-      <small>
-        {decision.source === 'deterministic'
-          ? '来源：短答案文字一致核对，不是语义验证'
-          : decision.source === 'self_report'
-            ? '来源：用户自报'
-            : decision.source === 'user_checked'
-              ? '来源：保留作答后的人工核对'
-              : '没有客观核验结果'}
-      </small>
     </section>
   );
 }

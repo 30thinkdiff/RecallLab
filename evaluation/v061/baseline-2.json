@@ -16,10 +16,12 @@
   "resumeOperations": 2,
   "preparationQuality": {
     "sourceAnchored": 69,
-    "referenceTextMatched": 69,
-    "knownValidPrompts": 69,
-    "severeDuplicates": 0,
-    "semanticHumanAcceptance": null
+    "literalExcerptMatched": null,
+    "referenceQAPairsMatched": null,
+    "automatedPromptProblems": null,
+    "exactPromptDuplicates": null,
+    "semanticHumanAcceptance": null,
+    "note": "Baseline asserted 69 card/document ID links and the 20 saved evidence records; separate full quote/reference and semantic checks were not measured."
   },
   "realUserTime": null,
   "delayedRecallOutcome": null
