@@ -27,6 +27,7 @@ export function isDue(memory: MemoryState, now: Date, timezone: string) {
   );
 }
 export interface QueueOptions {
+  adaptive?: boolean;
   mode?: ReviewMode;
   sectionId?: string;
   customIds?: string[];

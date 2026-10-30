@@ -15,17 +15,21 @@ export function ImportPage({
   projects,
   cards,
   initialProjectId,
+  goalFlow = false,
 }: {
   projects: LearningProject[];
   cards: PracticeItem[];
   initialProjectId?: string;
+  goalFlow?: boolean;
 }) {
   const [parsed, setParsed] = useState<ParsedMaterial | null>(null);
   const [rows, setRows] = useState<ImportCandidate[]>([]);
   const [projectId, setProjectId] = useState(
     initialProjectId && projects.some((project) => project.id === initialProjectId)
       ? initialProjectId
-      : (projects[0]?.id ?? 'new'),
+      : goalFlow
+        ? 'new'
+        : (projects[0]?.id ?? 'new'),
   );
   const [projectName, setProjectName] = useState('');
   const [dirty, setDirty] = useState(false);
@@ -523,6 +527,11 @@ export function ImportPage({
       {result && (
         <section className="study-complete">
           <h2>导入完成</h2>
+          {goalFlow && (
+            <a className="button" href={`#learn/${result.projectId}`}>
+              设置目标并自动安排
+            </a>
+          )}
           <p>
             已追加 {result.itemIds.length} 道题，跳过 {result.skipped} 道候选。已有学习历史保留。
           </p>

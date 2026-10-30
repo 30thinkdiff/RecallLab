@@ -10,7 +10,7 @@ const envelopeSchema = z.strictObject({
   format: z.literal('RecallLabBackup'),
   formatVersion: z.literal(2),
   encoding: z.literal('exact-string-pool-v1'),
-  databaseVersion: z.number().int().min(1).max(7),
+  databaseVersion: z.number().int().min(1).max(8),
   createdAt: z.iso.datetime(),
   strings: z.array(z.string()).max(200000),
   payload: z.string(),

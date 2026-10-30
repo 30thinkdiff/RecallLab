@@ -1,3 +1,5 @@
+import { useLiveQuery } from 'dexie-react-hooks';
+import { CompactStudy } from './CompactStudy';
 import {
   freshAssessment,
   assessmentResult,
@@ -48,6 +50,10 @@ export function Study({
   projectName: string;
   cards: PracticeItem[];
 }) {
+  const retained = useLiveQuery(
+    () => repository.db.draftRecoveries.where('sessionId').equals(session.id).count(),
+    [session.id],
+  );
   const last = events
     .filter((e) => e.sessionId === session.id && e.queueIndex < session.index)
     .sort((a, b) => a.queueIndex - b.queueIndex)
@@ -65,9 +71,12 @@ export function Study({
         <p>
           完成 {completed.length - skipped} 题，跳过 {skipped} 题。学习记录已保存在本地。
         </p>
-        {last && <DecisionFeedback decision={last} />}
+        {last && <DecisionFeedback decision={last} adaptive={session.reviewPlan?.adaptive} />}
         {session.reviewPlan && (
-          <a className="button" href="#daily">
+          <a
+            className="button"
+            href={session.reviewPlan.adaptive ? `#learn/${session.projectId}` : '#daily'}
+          >
             查看今日复习与下次到期
           </a>
         )}
@@ -89,13 +98,27 @@ export function Study({
   }
   return (
     <>
-      {last && <DecisionFeedback decision={last} />}
-      <StudyQuestion
-        key={`${session.id}:${session.index}:${session.queue[session.index]?.revisionId}`}
-        session={session}
-        projectName={projectName}
-        cards={cards}
-      />
+      {last && <DecisionFeedback decision={last} adaptive={session.reviewPlan?.adaptive} />}
+      {session.reviewPlan?.compact && !!retained && (
+        <p role="status">
+          该轮次已保护{retained}份未提交草稿，可在<a href={`#project/${session.projectId}`}>题库</a>
+          的对应题目详情查看。
+        </p>
+      )}
+      {session.reviewPlan?.compact ? (
+        <CompactStudy
+          key={`${session.id}:${session.index}:${session.queue[session.index]?.revisionId}`}
+          session={session}
+          cards={cards}
+        />
+      ) : (
+        <StudyQuestion
+          key={`${session.id}:${session.index}:${session.queue[session.index]?.revisionId}`}
+          session={session}
+          projectName={projectName}
+          cards={cards}
+        />
+      )}
     </>
   );
 }
@@ -578,7 +601,13 @@ function StudyQuestion({
   );
 }
 
-function DecisionFeedback({ decision }: { decision: ReviewDecision }) {
+function DecisionFeedback({
+  decision,
+  adaptive = false,
+}: {
+  decision: ReviewDecision;
+  adaptive?: boolean;
+}) {
   return (
     <section className="info-note" aria-label="本次复习结果">
       <p>{reasonLabels[decision.reason]}。</p>
@@ -587,15 +616,22 @@ function DecisionFeedback({ decision }: { decision: ReviewDecision }) {
         {decision.nextDue ? ` · 下次到期：${dateTime(decision.nextDue)}` : ''}
         {decision.retestDue ? ` · 无提示复测：${dateTime(decision.retestDue)}` : ''}
       </p>
+      {adaptive && ['failure', 'partial_failure', 'hinted'].includes(decision.reason) && (
+        <p>
+          刚揭晓后的补救至少等待10分钟再独立复测；FSRS到期不等于立即重复，第三次当天失败后会暂停自动重复。
+        </p>
+      )}
       {decision.grade !== null && (
         <small>间隔按揭晓时保留的回忆证据安排，稍后保存不会额外延长。</small>
       )}
       <small>
-        {decision.source === 'self_report'
-          ? '来源：用户自报'
-          : decision.source === 'user_checked'
-            ? '来源：保留作答后的人工核对'
-            : '没有客观核验结果'}
+        {decision.source === 'deterministic'
+          ? '来源：短答案文字一致核对，不是语义验证'
+          : decision.source === 'self_report'
+            ? '来源：用户自报'
+            : decision.source === 'user_checked'
+              ? '来源：保留作答后的人工核对'
+              : '没有客观核验结果'}
       </small>
     </section>
   );

@@ -54,6 +54,7 @@ button:disabled {
   position: sticky;
   top: 0;
   height: 100vh;
+  overflow-y: auto;
   background: #f0f2e9;
   border-right: 1px solid var(--line);
   padding: 34px 22px;
@@ -2192,4 +2193,30 @@ select:focus {
   padding: 0.8rem;
   border-bottom: 1px solid var(--border, #e1e5e2);
   white-space: nowrap;
+}
+
+/* Default learning keeps technical tools available behind one disclosure. */
+.sidebar nav > details > summary {
+  padding: 12px 16px;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 13px;
+}
+@media (max-width: 1100px) {
+  .sidebar nav {
+    flex-wrap: wrap;
+  }
+  .sidebar nav > details {
+    flex-basis: 100%;
+  }
+  .sidebar nav > details[open] {
+    display: block;
+  }
+  .sidebar nav > details > .nav-item {
+    display: inline-flex;
+  }
+}
+
+.sidebar > * {
+  flex-shrink: 0;
 }

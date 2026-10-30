@@ -181,6 +181,27 @@ export class RecallDatabase extends Dexie {
         validateBackup(before);
         // Semantic version for unit planning/review decisions; no historical or scheduling rewrites.
       });
+    this.version(8)
+      .stores({})
+      .upgrade(async (transaction) => {
+        const data: Record<string, unknown[]> = {};
+        for (const name of dataTables) data[name] = await transaction.table(name).toArray();
+        const before = {
+          format: 'RecallLabBackup',
+          formatVersion: 1,
+          databaseVersion: 7,
+          createdAt: new Date().toISOString(),
+          data,
+        };
+        await transaction.table('recoveryBackups').add({
+          id: crypto.randomUUID(),
+          createdAt: before.createdAt,
+          reason: 'migration',
+          json: JSON.stringify(before),
+        });
+        validateBackup(before);
+        // New optional goals/timing/feedback semantics only. Never rewrite historical evidence or FSRS.
+      });
   }
 }
 

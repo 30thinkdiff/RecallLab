@@ -6,11 +6,17 @@ export type Grade = 1 | 2 | 3 | 4;
 export type ReviewMode = 'daily' | 'due' | 'new' | 'weak' | 'chapter' | 'custom';
 export type QueueReason = 'due' | 'retest' | 'focus' | 'new' | 'practice';
 export interface PlanEntry {
+  explanation?: string;
+  estimatedSeconds?: number;
   stateVersion: number;
   reason: QueueReason;
   canSchedule: boolean;
 }
 export interface ReviewPlan {
+  remainingBudgetSeconds?: number;
+  goalUpdatedAt?: string;
+  adaptive?: boolean;
+  compact?: boolean;
   practiceOnly?: boolean;
   mode: ReviewMode;
   timezone: string;
@@ -31,7 +37,7 @@ export interface ReviewDecision {
     | 'skipped'
     | 'ungraded'
     | 'practice';
-  source: 'self_report' | 'user_checked' | 'none';
+  source: 'self_report' | 'user_checked' | 'deterministic' | 'none';
   criteriaMet: boolean | null;
   difficulty: Difficulty | null;
   nextDue?: string;

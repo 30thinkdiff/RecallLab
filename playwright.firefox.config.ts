@@ -11,6 +11,8 @@ export default defineConfig({
     'backup.spec.ts',
     'criteria-check.spec.ts',
     'daily-review.spec.ts',
+    'goal-learning.spec.ts',
+    'goal-feedback.spec.ts',
     'learning-lifecycle.spec.ts',
     'concurrency.spec.ts',
     'scale.spec.ts',

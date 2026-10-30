@@ -1,0 +1,71 @@
+{
+  "actor": "automated private local acceptance; not human recall or learning-effect evidence",
+  "extraction": {
+    "pages": 11,
+    "nonempty": 11,
+    "pageCharacters": [477, 461, 561, 525, 593, 517, 544, 507, 457, 538, 267],
+    "independentPages": 11,
+    "independentCharacters": [490, 465, 567, 534, 600, 524, 552, 522, 466, 553, 286],
+    "normalizedLengths": [
+      [444, 444],
+      [425, 425],
+      [527, 527],
+      [494, 494],
+      [562, 562],
+      [485, 485],
+      [512, 512],
+      [475, 475],
+      [426, 426],
+      [507, 507],
+      [256, 256]
+    ],
+    "trigramCoverage": [
+      0.9977, 0.9976, 0.9981, 0.998, 0.9982, 0.9979, 0.998, 0.9979, 0.9976, 0.996, 0.9921
+    ],
+    "pageNumberRelocationExplainsDifference": [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ],
+    "normalizedExactPages": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    "sections": 6,
+    "sectionCounts": [31, 22, 3, 3, 8, 2],
+    "candidates": 69,
+    "pending": 7,
+    "crossPage": 10,
+    "sourceLocated": true,
+    "parserVersion": "PDF.js-5.5.207-legacy-structured-ocr-3"
+  },
+  "unclassifiedCount": 12,
+  "lifecycle": {
+    "goalFullDays": 7,
+    "formalReviewEvents": 1,
+    "scheduled": true,
+    "answerRevisionIsolated": true,
+    "oldEvidenceUnchanged": true,
+    "backupRestored": true,
+    "databaseVersion": 8
+  },
+  "externalRequestsBlocked": 0,
+  "privacy": "No original text, title, question, answer, screenshot or file was exported or submitted."
+}

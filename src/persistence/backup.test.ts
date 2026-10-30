@@ -38,7 +38,7 @@ describe('backup and real v1 upgrade', () => {
     );
     const db = new RecallDatabase(name);
     await db.open();
-    expect(db.verno).toBe(7);
+    expect(db.verno).toBe(8);
     expect(await db.reviewEvents.toArray()).toEqual(
       [...legacyJson.data.reviewEvents].sort((a, b) => a.id.localeCompare(b.id)),
     );
@@ -58,7 +58,7 @@ describe('backup and real v1 upgrade', () => {
       )
       .first();
     expect(JSON.parse(copy!.json).data.reviewEvents).toEqual(before?.data.reviewEvents);
-    await expect(exportBackup(db)).resolves.toMatchObject({ databaseVersion: 7 });
+    await expect(exportBackup(db)).resolves.toMatchObject({ databaseVersion: 8 });
     db.close();
   });
 
@@ -200,7 +200,7 @@ describe('backup and real v1 upgrade', () => {
     expect(before?.databaseVersion).toBe(2);
     const current = new RecallDatabase(name);
     await current.open();
-    expect(current.verno).toBe(7);
+    expect(current.verno).toBe(8);
     expect((await exportBackup(current)).data.reviewEvents).toEqual(before?.data.reviewEvents);
     expect(await current.sourceDocuments.count()).toBe(0);
     await restoreBackup(current, before!);
@@ -275,13 +275,13 @@ it('v3 to v4 preserves old events, creates no FSRS evidence, protects a backup a
       reopened.close();
     } else {
       await upgraded.open();
-      expect(upgraded.verno).toBe(7);
+      expect(upgraded.verno).toBe(8);
       expect(await upgraded.memoryStates.count()).toBe(0);
       expect(await upgraded.schedulingLogs.count()).toBe(0);
       expect(await upgraded.reviewEvents.toArray()).toEqual(
         [...data.reviewEvents].sort((a, b) => a.id.localeCompare(b.id)),
       );
-      expect(await upgraded.recoveryBackups.count()).toBe(4);
+      expect(await upgraded.recoveryBackups.count()).toBe(5);
       upgraded.close();
     }
   }
@@ -377,19 +377,19 @@ it('upgrades real v4 scheduling data to v5 without changing evidence, exports a 
   expect(before.data.memoryStates).toHaveLength(1);
   const current = new RecallDatabase(name);
   await current.open();
-  expect(current.verno).toBe(7);
+  expect(current.verno).toBe(8);
   expect((await exportBackup(current)).data).toEqual(before.data);
   const protectedCopy = JSON.parse(
     (await current.recoveryBackups.toArray()).find((c) => JSON.parse(c.json).databaseVersion === 4)!
       .json,
   );
-  expect(await current.recoveryBackups.count()).toBe(3);
+  expect(await current.recoveryBackups.count()).toBe(4);
   expect(protectedCopy.databaseVersion).toBe(4);
   expect(validateBackup(protectedCopy).data).toEqual(before.data);
   expect(protectedCopy.data).not.toHaveProperty('aiDrafts');
   await restoreBackup(current, before);
   const restored = await exportBackup(current);
-  expect(restored.databaseVersion).toBe(7);
+  expect(restored.databaseVersion).toBe(8);
   expect(restored.data.reviewEvents).toEqual(before.data.reviewEvents);
   expect(restored.data.memoryStates).toEqual(before.data.memoryStates);
   expect(restored.data.schedulingLogs).toEqual(before.data.schedulingLogs);
@@ -398,7 +398,7 @@ it('upgrades real v4 scheduling data to v5 without changing evidence, exports a 
   oldWriter.version(4).stores(schema);
   // Dexie 4 automatically retries VersionError without a requested version. Never claim the bump alone blocks old clients.
   await oldWriter.open();
-  expect(oldWriter.backendDB().version).toBe(70);
+  expect(oldWriter.backendDB().version).toBe(80);
   expect(await oldWriter.table('reviewEvents').toArray()).toEqual(before.data.reviewEvents);
   oldWriter.close();
 });
@@ -450,7 +450,7 @@ it('refuses a future database before normal access without deleting its records'
   const name = `future-${crypto.randomUUID()}`;
   names.push(name);
   const future = new Dexie(name);
-  future.version(8).stores({ projects: 'id' });
+  future.version(9).stores({ projects: 'id' });
   await future.open();
   await future.table('projects').add({ id: 'future-evidence', text: '公开虚构的未来记录' });
   future.close();
@@ -464,7 +464,7 @@ it('refuses a future database before normal access without deleting its records'
     id: 'future-evidence',
     text: '公开虚构的未来记录',
   });
-  expect(Math.floor(original.backendDB().version / 10)).toBe(8);
+  expect(Math.floor(original.backendDB().version / 10)).toBe(9);
   original.close();
 });
 
@@ -504,7 +504,7 @@ it.each([false, true])(
       reopened.close();
     } else {
       await current.open();
-      expect(current.verno).toBe(7);
+      expect(current.verno).toBe(8);
       expect(await current.aiDrafts.count()).toBe(0);
       const before = JSON.parse(
         (await current.recoveryBackups.toArray()).find(
@@ -594,8 +594,8 @@ it.each([false, true])(
       const after = await exportBackup(upgraded);
       expect(after.data).toEqual(backup.data);
       const copies = await upgraded.recoveryBackups.toArray();
-      expect(copies).toHaveLength(1);
-      expect(JSON.parse(copies[0]!.json).databaseVersion).toBe(6);
+      expect(copies).toHaveLength(2);
+      expect(copies.map((c) => JSON.parse(c.json).databaseVersion).sort()).toEqual([6, 7]);
       upgraded.close();
     }
     seed.close();

@@ -1,3 +1,4 @@
+import { exactShort, timingSchema, assertLearningEvidence } from '../learning/evidence';
 import { assertAiAnchors, type AiConfirmation, type AiProvenance } from '../ai/provenance';
 import {
   assessmentSchema,
@@ -39,7 +40,7 @@ export interface RevisionInput {
 export type DraftPatch = Partial<
   Pick<
     StudyDraft,
-    'userResponse' | 'responseMode' | 'confidenceBeforeReveal' | 'attemptedBeforeReveal'
+    'userResponse' | 'responseMode' | 'confidenceBeforeReveal' | 'attemptedBeforeReveal' | 'timing'
   >
 >;
 
@@ -96,6 +97,7 @@ export class Repository {
       const existing = id ? await this.requireProject(id) : undefined;
       const project = {
         ...input,
+        automaticGoal: input.automaticGoal ?? existing?.automaticGoal,
         priority: input.priority ?? existing?.priority ?? 2,
         newCardLimit: input.newCardLimit ?? existing?.newCardLimit ?? 10,
         id: existing?.id ?? crypto.randomUUID(),
@@ -397,6 +399,7 @@ export class Repository {
       const session = await this.requireSession(sessionId, index, token);
       if (session.draft.wasAnswerRevealed)
         throw new ConflictError('答案已揭晓，不能修改揭晓前的作答证据');
+      if (patch.timing) timingSchema.parse(patch.timing);
       const draft = { ...session.draft, ...patch };
       if (draft.userResponse.length > 20000) throw new Error('答案最多 20000 字');
       if (!['quick', 'typed'].includes(draft.responseMode)) throw new Error('无效的作答模式');
@@ -422,6 +425,14 @@ export class Repository {
       };
       await this.db.sessions.put(updated);
       return updated;
+    });
+  }
+  async clearLearningIssue(itemId: string, expectedRevisionId: string) {
+    await this.write(async () => {
+      const item = await this.db.practiceItems.get(itemId);
+      if (!item || item.currentRevisionId !== expectedRevisionId)
+        throw new ConflictError('题目已修改，请载入最新内容');
+      await this.db.practiceItems.update(itemId, { learningIssue: undefined });
     });
   }
   async confirmQualityBatch(rows: { id: string; expectedRevisionId: string }[]) {
@@ -568,6 +579,8 @@ export class Repository {
     mastery: SubjectiveMastery | null,
     token: SessionToken,
     difficulty: Difficulty = 'good',
+    automaticCheck = false,
+    issueReason?: string,
   ) {
     const scheduling = await this.schedulingHooks(sessionId);
     return this.write(async () => {
@@ -578,6 +591,46 @@ export class Repository {
       if (!item) throw new Error('学习队列损坏');
       const now = new Date().toISOString();
       let event = buildReviewEvent(session, item, performance, mastery, now);
+      if (session.reviewPlan?.compact) {
+        const docs = await this.db.sourceDocuments.bulkGet(
+          item.sourceReferences.flatMap((r) => (r.documentId ? [r.documentId] : [])),
+        );
+        const sourceReady = docs.every(
+          (d) =>
+            d &&
+            d.extractionStatus === 'ready' &&
+            !d.warnings.length &&
+            d.pages.every((p) => p.method !== 'ocr' && p.status === 'ready'),
+        );
+        const literalMatch = exactShort(item, session.draft.userResponse);
+        if (
+          automaticCheck &&
+          (!sourceReady ||
+            !literalMatch ||
+            performance !== 'correct' ||
+            !event.wasIndependentRecall ||
+            event.hintLevelUsed)
+        )
+          throw new Error('本次回答不能自动核对，请快速人工确认。');
+        event = {
+          ...event,
+          schemaVersion: 5,
+          quickFeedback: {
+            checker: automaticCheck ? 'exact-short-v1' : 'manual-v1',
+            literalMatch,
+            overridden:
+              !automaticCheck &&
+              literalMatch &&
+              sourceReady &&
+              event.wasIndependentRecall &&
+              event.hintLevelUsed === 0 &&
+              event.assessmentResult !== 'correct',
+            sourceReady,
+          },
+          ...(automaticCheck ? { assessmentSource: 'deterministic' as const } : {}),
+        };
+        assertLearningEvidence(event);
+      }
       if (session.reviewPlan) {
         if (!scheduling) throw new ConflictError();
         event = await scheduling.applyScheduling(
@@ -588,6 +641,14 @@ export class Repository {
           new Date(now),
         );
       }
+      if (issueReason) {
+        if (performance !== 'skipped' || issueReason.length > 1000)
+          throw new Error('问题标记需跳过当前题目并保留历史');
+        await this.db.practiceItems.update(item.id, {
+          learningIssue: { reason: issueReason, at: now },
+        });
+        event.errorTypes = [...event.errorTypes, 'item_flagged'];
+      }
       await this.db.reviewEvents.add(event);
       const nextIndex = index + 1;
       const available = new Map(
@@ -597,7 +658,7 @@ export class Repository {
         const item = available.get(snapshot.id);
         return item ? [snapshotOf(item)] : [];
       });
-      await this.db.sessions.put({
+      const updated: StudySession = {
         ...session,
         queue: [...session.queue.slice(0, nextIndex), ...remaining],
         index: nextIndex,
@@ -606,7 +667,10 @@ export class Repository {
         draft: freshDraft(now, session.draft.responseMode),
         planVersion: session.planVersion + 1,
         draftVersion: session.draftVersion + 1,
-      });
+      };
+      if (session.reviewPlan?.adaptive && scheduling)
+        await scheduling.rebuildAdaptiveTail(this.db, updated, new Date(now));
+      await this.db.sessions.put(updated);
       return true;
     });
   }

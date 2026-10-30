@@ -27,13 +27,17 @@ export const decisionSchema = z.object({
     'ungraded',
     'practice',
   ]),
-  source: z.enum(['self_report', 'user_checked', 'none']),
+  source: z.enum(['self_report', 'user_checked', 'deterministic', 'none']),
   criteriaMet: z.boolean().nullable(),
   difficulty: z.enum(['hard', 'good', 'easy']).nullable(),
   nextDue: date.optional(),
   retestDue: date.optional(),
 });
 export const planSchema = z.object({
+  remainingBudgetSeconds: z.number().finite().nonnegative().max(86400).optional(),
+  goalUpdatedAt: date.optional(),
+  adaptive: z.boolean().optional(),
+  compact: z.boolean().optional(),
   practiceOnly: z.boolean().optional(),
   mode: z.enum(['daily', 'due', 'new', 'weak', 'chapter', 'custom']),
   timezone: z
@@ -53,6 +57,8 @@ export const planSchema = z.object({
   entries: z.record(
     id,
     z.object({
+      explanation: z.string().max(2000).optional(),
+      estimatedSeconds: z.number().positive().max(3600).optional(),
       stateVersion: z.number().int().nonnegative(),
       reason: z.enum(['due', 'retest', 'focus', 'new', 'practice']),
       canSchedule: z.boolean(),
