@@ -22,7 +22,7 @@ test('built app reopens offline in a fresh page and preserves independent answer
   await reopened.goto(url);
   await expect(reopened.getByLabel('你的回答')).toHaveValue('公开虚构离线前草稿');
   await reopened.getByRole('button', { name: '揭晓答案', exact: true }).click();
-  await reopened.getByLabel('核对方式').selectOption('detailed');
+  await reopened.getByRole('combobox', { name: '核对方式', exact: true }).selectOption('detailed');
   await reopened.getByLabel('必需要点 1 核对').selectOption('correct');
   await reopened.getByLabel('必需要点 2 核对').selectOption('correct');
   await reopened.getByRole('radio', { name: '3 基本掌握', exact: true }).click();
