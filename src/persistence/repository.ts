@@ -542,6 +542,7 @@ export class Repository {
         ...session,
         queue: [...prefix, ...remaining],
         draft: changed ? freshDraft(now, session.draft.responseMode) : session.draft,
+        lastWriterId: token.writerId,
         planVersion: session.planVersion + 1,
         draftVersion: session.draftVersion + 1,
         status: remaining.length ? 'active' : 'completed',

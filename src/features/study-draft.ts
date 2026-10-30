@@ -101,7 +101,7 @@ export class StudyDraftController {
     if (
       !changedIdentity &&
       session.lastWriterId === this.writerId &&
-      session.planVersion === this.base.planVersion
+      (session.planVersion === this.base.planVersion || this.pending > 0)
     )
       return;
     if (
@@ -164,6 +164,12 @@ export class StudyDraftController {
   async flush() {
     await this.chain;
     if (this.conflict) throw new ConflictError(this.error);
+  }
+  async synchronize(includeNew: boolean) {
+    this.enqueue(() =>
+      this.repo.syncSession(this.base.id, this.base.index, this.token(), { includeNew }),
+    );
+    await this.flush();
   }
   async perform(action: 'hint' | 'reveal') {
     await this.flush();
