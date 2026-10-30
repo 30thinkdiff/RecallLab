@@ -25,10 +25,7 @@ export function SessionControls({
         (card) => card.projectId === session.projectId && !card.archivedAt && !planned.has(card.id),
       );
   async function sync(includeNew: boolean) {
-    if (controller)
-      await controller.withCurrent((current, token) =>
-        repository.syncSession(current.id, current.index, token, { includeNew }),
-      );
+    if (controller) await controller.synchronize(includeNew);
     else await repository.syncSession(session.id, session.index, tokenOf(session), { includeNew });
   }
   async function finish(restart: boolean) {

@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { RecallDatabase } from '../persistence/database';
 import { Repository } from '../persistence/repository';
 import { StudyDraftController } from './study-draft';
@@ -117,4 +117,58 @@ describe('serialized per-tab draft writer', () => {
     await controller.retainAndReload();
     expect(controller.getSnapshot().conflict).toBe(false);
   });
+});
+
+it('serializes an immediate reveal after its own queue refresh without waiting for React liveQuery', async () => {
+  const controller = new StudyDraftController(await current(), repo);
+  controller.edit({ responseMode: 'typed', userResponse: '保留的原始作答' });
+  await controller.flush();
+  const sync = controller.synchronize(false);
+  const reveal = controller.perform('reveal');
+  await Promise.all([sync, reveal]);
+  expect(controller.getSnapshot().conflict).toBe(false);
+  expect((await current()).draft).toMatchObject({
+    userResponse: '保留的原始作答',
+    wasAnswerRevealed: true,
+  });
+});
+it('accepts its own plan-version notification before the refresh promise resolves and retains edits queued behind it', async () => {
+  const controller = new StudyDraftController(await current(), repo);
+  controller.edit({ userResponse: '先前草稿' });
+  await controller.flush();
+  const original = repo.syncSession.bind(repo);
+  let release!: () => void;
+  const gate = new Promise<void>((r) => {
+    release = r;
+  });
+  let committed!: () => void;
+  const done = new Promise<void>((r) => {
+    committed = r;
+  });
+  vi.spyOn(repo, 'syncSession').mockImplementation(async (...args) => {
+    const updated = await original(...args);
+    controller.receive(updated);
+    committed();
+    await gate;
+    return updated;
+  });
+  const sync = controller.synchronize(false);
+  await done;
+  controller.edit({ userResponse: '同步期间继续输入' });
+  release();
+  await sync;
+  await controller.flush();
+  expect(controller.getSnapshot().conflict).toBe(false);
+  expect((await current()).draft.userResponse).toBe('同步期间继续输入');
+});
+it('does not treat a different writer queue refresh as its own while local work is pending', async () => {
+  const base = await current(),
+    owner = new StudyDraftController(base, repo),
+    other = new StudyDraftController(base, repo);
+  await other.synchronize(false);
+  owner.edit({ userResponse: '另页输入不能丢' });
+  owner.receive(await current());
+  await expect(owner.flush()).rejects.toThrow();
+  expect(owner.getSnapshot().draft.userResponse).toBe('另页输入不能丢');
+  expect((await current()).draft.userResponse).toBe('');
 });

@@ -1,3 +1,15 @@
+# V0.6.1 实际验证
+
+本机完整221单元/组件通过，3个按需真实模型任务未启用；96 Chromium、54 Firefox（纽约时区）、6发布/离线全通过，浏览器失败/重试均0。夹具、严格类型、Lint、格式、构建及npm audit0通过。新测覆盖：通知竞态与同步输入；明确/不完整题子集；桌面1440/窄屏390；完成后的当前状态/历史计数；合格证据与弱项；夏令时/午夜；活跃预算耗尽与漏日；默认路径离线重开/来源/历史。原学习、导入/PDF/OCR、AI草稿、v1—v8/备份、修订、CAS和1000题规模测试均保留。
+
+原CI失败实际Trace/截图定位为同步后旧令牌假冲突，新增受控通知测试与原例重复10次通过，没有增加等待时长、删断言或配置重试。功能613941ff两类CI通过；最终收尾同HEAD结果与附件见[PR #16](https://github.com/30thinkdiff/RecallLab/pull/16)。
+
+指标脚本tests/e2e/product-journey.spec.ts在旧UI archive2b55b8ca（复制同一测量脚本）设置RECALLLAB_JOURNEY_PHASE=baseline，在当前UI默认candidate，均单worker/同浏览器/同69条虚构短问答，各重复3次。RECALLLAB_WRITE_UX=1才落本机评测文件，可用RECALLLAB_UX_OUTPUT_DIR指定隔离输出；RECALLLAB_UX_SHA记录实际代码快照。正常CI只附指标，不覆盖已公开实测文件。npm run metrics:product汇总，fixtures:check核对摘要一致性。对新UI设置baseline不构成旧版模拟，必须使用真实旧UI隔离快照。
+
+所有时间是脚本时间，不是用户理解/回忆耗时，未做真人试验。两浏览器/时区、390px布局不等于真机iOS/Android或Windows/macOS已验证；没有WebKit结果。详见[完整产品评测](evaluations/V061_PRODUCT_REPORT.md)。
+
+以下保留历史版本与工程操作说明。
+
 # V0.6 实际验证补充
 
 本地完整check通过：211单元/组件（3个已有按需真实模型测试明确跳过）、夹具、类型、Lint、格式、构建。90 Chromium、48 Firefox（纽约时区）、5生产/离线全通过。含正式v7→v8原始备份与回滚、旧备份、CAS、跨日/夏令时、旧正式轮次采用新目标、动态新增/修订、简洁核对与人工更正、暂停草稿、预算耗尽。

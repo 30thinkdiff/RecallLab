@@ -2220,3 +2220,31 @@ select:focus {
 .sidebar > * {
   flex-shrink: 0;
 }
+
+/* Keep the action and the source/selection explanation readable on both widths. */
+.import-confirm {
+  flex-wrap: wrap;
+}
+.import-confirm > p {
+  flex: 1 1 240px;
+}
+.import-confirm > .button {
+  flex: 0 0 auto;
+}
+.learning-wrap-up {
+  text-align: left;
+  margin-top: 24px;
+}
+.study-complete .learning-wrap-up p {
+  color: var(--text, #3e4a36);
+  line-height: 1.7;
+}
+.study-context {
+  margin: 12px 0 20px;
+}
+
+@media (max-width: 800px) {
+  .import-confirm > p {
+    flex: initial;
+  }
+}

@@ -11,6 +11,9 @@ import { initialMemory, advance } from './engine';
 import { decide } from './policy';
 import { buildPlan, isDue, type QueueOptions } from './planner';
 import type { Difficulty, ReviewPlan, MemoryState, SchedulingLog } from './types';
+export class NoReviewWorkError extends Error {
+  override name = 'NoReviewWorkError';
+}
 export class ScheduleService {
   constructor(
     readonly db: RecallDatabase = defaultDb,
@@ -60,7 +63,7 @@ export class ScheduleService {
         options,
       );
       if (!plan.selected.length)
-        throw new Error(
+        throw new NoReviewWorkError(
           plan.budgetExhausted
             ? '今天的预计学习预算已用完，可暂停或明确选择临时加练。'
             : '当前没有符合条件的题目。可检查到期时间、筛选或待完善内容。',

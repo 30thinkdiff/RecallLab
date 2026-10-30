@@ -1,0 +1,34 @@
+{
+  "phase": "baseline",
+  "codeSnapshot": "2b55b8ca7ded3b141891d5cd5e2462cebb297346",
+  "browser": "156.0.8078.4",
+  "viewport": {
+    "width": 1440,
+    "height": 1000
+  },
+  "timezone": "Asia/Shanghai",
+  "actor": "Playwright script; not human reading, understanding or recall",
+  "fixture": "69 provided fictional Q/A entries; one current question per response",
+  "firstQuestionMs": 2102,
+  "firstSavedMs": 2346,
+  "counts": {
+    "preparation": 4,
+    "goalRequirements": 3,
+    "answerEntry": 20,
+    "answerSubmission": 20,
+    "correctnessConfirmation": 20,
+    "extraPerQuestionManagement": 0,
+    "offscreenPrimaryActions": 1
+  },
+  "resumeOperations": 2,
+  "preparationQuality": {
+    "sourceAnchored": 69,
+    "literalExcerptMatched": 69,
+    "referenceQAPairsMatched": 69,
+    "automatedPromptProblems": 0,
+    "exactPromptDuplicates": 0,
+    "semanticHumanAcceptance": null
+  },
+  "realUserTime": null,
+  "delayedRecallOutcome": null
+}

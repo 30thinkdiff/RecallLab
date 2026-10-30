@@ -1,0 +1,28 @@
+{
+  "phase": "baseline",
+  "actor": "Playwright script; not human reading, understanding or recall",
+  "fixture": "69 provided fictional Q/A entries; one current question per response",
+  "firstQuestionMs": 1833,
+  "firstSavedMs": 2034,
+  "counts": {
+    "preparation": 4,
+    "goalRequirements": 3,
+    "answerEntry": 20,
+    "answerSubmission": 20,
+    "correctnessConfirmation": 20,
+    "extraPerQuestionManagement": 0,
+    "offscreenPrimaryActions": 1
+  },
+  "resumeOperations": 2,
+  "preparationQuality": {
+    "sourceAnchored": 69,
+    "literalExcerptMatched": null,
+    "referenceQAPairsMatched": null,
+    "automatedPromptProblems": null,
+    "exactPromptDuplicates": null,
+    "semanticHumanAcceptance": null,
+    "note": "Baseline asserted 69 card/document ID links and the 20 saved evidence records; separate full quote/reference and semantic checks were not measured."
+  },
+  "realUserTime": null,
+  "delayedRecallOutcome": null
+}

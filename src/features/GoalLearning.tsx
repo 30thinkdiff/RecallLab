@@ -1,11 +1,11 @@
-import { promptProblem } from '../domain/readiness';
+import { nextReviewAt } from '../learning/progress';
 import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../persistence/database';
 import { useReviewData, useReviewClock } from './review-data';
 import { forecastGoal } from '../learning/adaptive';
 import { calibrationReport } from '../learning/calibration';
-import { scheduleService } from '../scheduling/service';
+import { scheduleService, NoReviewWorkError } from '../scheduling/service';
 import { repository } from '../persistence/repository';
 import { objectiveLabels, type LearningObjective } from '../ai/protocol';
 import { useAction, dateTime } from '../components/actions';
@@ -20,6 +20,7 @@ export function LearningHome({
   sessions: StudySession[];
   onCreate: () => void;
 }) {
+  const action = useAction();
   const total = useLiveQuery(() => db.practiceItems.count(), []);
   const historyCount = useLiveQuery(() => db.reviewEvents.count(), []);
   const active = sessions.find((s) => s.status === 'active' && s.reviewPlan?.adaptive);
@@ -41,14 +42,35 @@ export function LearningHome({
           创建学习任务
         </a>
         {next && (
-          <a className="button" href={`#learn/${next.id}`}>
+          <button
+            className="button"
+            disabled={action.busy}
+            onClick={() =>
+              void action.run(async () => {
+                if (!next.automaticGoal) {
+                  window.location.assign(`#learn/${next.id}`);
+                  return;
+                }
+                try {
+                  window.location.assign(
+                    `#study/${await scheduleService.start(next.id, { adaptive: true })}`,
+                  );
+                } catch (error) {
+                  if (error instanceof NoReviewWorkError)
+                    window.location.assign(`#learn/${next.id}`);
+                  else throw error;
+                }
+              })
+            }
+          >
             继续今天的学习
-          </a>
+          </button>
         )}
         <button className="button secondary" onClick={onCreate}>
           创建项目
         </button>
       </div>
+      <ErrorNotice message={action.error} />
       <section className="question-panel">
         <h2>学习进展</h2>
         <p>
@@ -165,36 +187,7 @@ function GoalPanel({
     }
     window.location.assign(`#study/${await scheduleService.start(project.id, { adaptive: true })}`);
   }
-  const latestByState = new Map<string, (typeof data.events)[number]>();
-  for (const e of data.events) {
-    const key = e.snapshot.learningStateId;
-    if (!key || ['skipped', 'ungraded'].includes(e.assessmentResult)) continue;
-    const old = latestByState.get(key);
-    if (!old || (old.reviewedAt ?? old.timestamp) < (e.reviewedAt ?? e.timestamp))
-      latestByState.set(key, e);
-  }
-  const nextDue = data.memories
-    .filter((m) =>
-      data.cards.some(
-        (c) =>
-          c.learningStateId === m.id &&
-          !c.archivedAt &&
-          !promptProblem(c) &&
-          (!section || c.sourceReferences.some((r) => r.sectionId === section)),
-      ),
-    )
-    .map((m) => {
-      const e = latestByState.get(m.id);
-      return Math.max(
-        Date.parse(m.retestDue ?? m.due),
-        e &&
-          (e.hintLevelUsed > 0 || ['incorrect', 'partially_correct'].includes(e.assessmentResult))
-          ? Date.parse(e.reviewedAt ?? e.timestamp) + 600000
-          : 0,
-      );
-    })
-    .filter((t) => t > now.getTime())
-    .sort((a, b) => a - b)[0];
+  const nextDue = nextReviewAt(preview, data.cards, data.memories, data.events, now);
   return (
     <>
       <h1>目标与自动学习方案</h1>
@@ -240,35 +233,6 @@ function GoalPanel({
         <p className="muted">
           按目标日期前的完整学习日估算，不计目标日。没有期限时显示未来14天的滚动情景，不保证考试结果。
         </p>
-        <details>
-          <summary>调整范围与高级设置</summary>
-          <label>
-            学习章节
-            <select value={section} onChange={(e) => setSection(e.target.value)}>
-              <option value="">全部项目内容</option>
-              {sections.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.filename} · {s.title}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            每日新题上限（留空由系统安排）
-            <input
-              type="number"
-              min={0}
-              max={1000}
-              value={limit}
-              onChange={(e) => setLimit(e.target.value)}
-            />
-          </label>
-          <p>
-            重要题目可在“今日复习”的高级管理中标记。默认优先补救、逾期及期限内覆盖，不会反复刷未到期强项。
-          </p>
-          <a href={`#daily/${project.id}`}>高级复习与重点管理</a> ·{' '}
-          <a href={`#project/${project.id}`}>手动题库与完整轮次</a>
-        </details>
         {stale && (
           <section role="alert">
             <p>目标已在另一页面修改，本页内容保留。</p>
@@ -300,15 +264,6 @@ function GoalPanel({
             分钟；估算剩余预算 {plan.budgetRemaining} 分钟。到期 {plan.due}，待无提示复测{' '}
             {plan.retest}，未学习 {plan.newCount}。
           </p>
-          <p>
-            本次引入新题{plan.selected.filter((r) => r.fresh).length}
-            道；新题与复习、补救共享每天预算，后续按实际反馈重排。
-          </p>
-          <p>
-            {plan.selected.filter((r) => r.estimateSource === 'observed').length
-              ? '部分耗时参考合格的本机活跃作答样本，仍不是专注时间测量。'
-              : '尚无足够合格耗时样本，按题长与必需要点使用通用估计。'}
-          </p>
           {plan.status === 'expired' ? (
             <p role="status">目标日期已到或已过，不能承诺按时完成。可以继续复习并调整期限。</p>
           ) : plan.gapMinutes > 0 ? (
@@ -322,7 +277,16 @@ function GoalPanel({
             </p>
           )}
           <details>
-            <summary>查看工作量依据与不确定性</summary>
+            <summary>查看工作量依据与不确定性</summary>{' '}
+            <p>
+              本次引入新题{plan.selected.filter((r) => r.fresh).length}
+              道；新题与复习、补救共享每天预算，后续按实际反馈重排。
+            </p>
+            <p>
+              {plan.selected.filter((r) => r.estimateSource === 'observed').length
+                ? '部分耗时参考合格的本机活跃作答样本，仍不是专注时间测量。'
+                : '尚无足够合格耗时样本，按题长与必需要点使用通用估计。'}
+            </p>
             <p>
               最低覆盖/已到期工作约{plan.minimumMinutes}分钟；加入后续复习约{plan.expectedMinutes}
               分钟，另留约{plan.remedyMinutes}分钟补救余量；当前{plan.horizon}个学习日共约
@@ -382,6 +346,35 @@ function GoalPanel({
               。到点后重新计算，不强制提前练习。
             </p>
           )}
+          <details>
+            <summary>调整范围与高级设置</summary>
+            <label>
+              学习章节
+              <select value={section} onChange={(e) => setSection(e.target.value)}>
+                <option value="">全部项目内容</option>
+                {sections.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.filename} · {s.title}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              每日新题上限（留空由系统安排）
+              <input
+                type="number"
+                min={0}
+                max={1000}
+                value={limit}
+                onChange={(e) => setLimit(e.target.value)}
+              />
+            </label>
+            <p>
+              重要题目可在“今日复习”的高级管理中标记。默认优先补救、逾期及期限内覆盖，不会反复刷未到期强项。
+            </p>
+            <a href={`#daily/${project.id}`}>高级复习与重点管理</a> ·{' '}
+            <a href={`#project/${project.id}`}>手动题库与完整轮次</a>
+          </details>
           <details>
             <summary>查看本次推荐及原因</summary>
             <ol>

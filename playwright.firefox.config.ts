@@ -12,6 +12,8 @@ export default defineConfig({
     'criteria-check.spec.ts',
     'daily-review.spec.ts',
     'goal-learning.spec.ts',
+    'product-journey.spec.ts',
+    'product-experience.spec.ts',
     'goal-feedback.spec.ts',
     'learning-lifecycle.spec.ts',
     'concurrency.spec.ts',
