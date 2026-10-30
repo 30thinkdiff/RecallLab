@@ -169,12 +169,21 @@ export function ImportPage({
       {!result && !parsed && (
         <section className="question-panel" aria-label="不上传文件也能创建知识">
           <h2>不上传文件，也能开始</h2>
-          <p className="muted">临时想到要记住的内容，可以直接录入问答；复制的笔记或题库也能粘贴整理。</p>
+          <p className="muted">
+            临时想到要记住的内容，可以直接录入问答；复制的笔记或题库也能粘贴整理。
+          </p>
           {projects.length > 1 && (
             <label>
               手动录入到哪个项目
-              <select value={manualProjectId} onChange={(event) => setManualProjectId(event.target.value)}>
-                {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+              <select
+                value={manualProjectId}
+                onChange={(event) => setManualProjectId(event.target.value)}
+              >
+                {projects.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
               </select>
             </label>
           )}
@@ -195,18 +204,18 @@ export function ImportPage({
                 rows={6}
                 value={pastedText}
                 onChange={(event) => setPastedText(event.target.value)}
-                placeholder={'Q: 你希望记住什么？\\nA: 写下答案，也可以粘贴整段笔记。'}
+                placeholder={'Q: 你希望记住什么？\nA: 写下答案，也可以粘贴整段笔记。'}
               />
             </label>
-            <p className="muted">问答格式可以自动生成候选题；普通段落会保留为文字资料，之后可选取原文制作问答。无需另存成文件。</p>
+            <p className="muted">
+              问答格式可以自动生成候选题；普通段落会保留为文字资料，之后可选取原文制作问答。无需另存成文件。
+            </p>
             <button
               type="button"
               className="button secondary"
               disabled={!pastedText.trim() || loading || action.busy}
               onClick={() =>
-                void read(
-                  new File([pastedText], '手动粘贴的学习内容.txt', { type: 'text/plain' }),
-                )
+                void read(new File([pastedText], '手动粘贴的学习内容.txt', { type: 'text/plain' }))
               }
             >
               解析粘贴内容
