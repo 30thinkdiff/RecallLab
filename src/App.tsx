@@ -274,6 +274,9 @@ function Workspace() {
                 cards={data.allCards}
                 initialProjectId={id}
                 goalFlow={section === 'import-task'}
+                onManualCreate={(projectId) =>
+                  setModal(projectId ? { type: 'card', projectId } : { type: 'project' })
+                }
               />
             </Suspense>
           ) : section === 'ai' && id && aiId ? (
