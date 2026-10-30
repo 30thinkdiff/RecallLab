@@ -151,7 +151,9 @@ test('pasted Q&A text enters normal import flow without selecting any external f
 }) => {
   await page.goto('/#import');
   await page.getByText('粘贴文字或临时笔记', { exact: true }).click();
-  await page.getByLabel('粘贴的学习内容').fill('Q: 何为主动回忆？\nA: 不看资料，从记忆中独立提取。');
+  await page
+    .getByLabel('粘贴的学习内容')
+    .fill('Q: 何为主动回忆？\nA: 不看资料，从记忆中独立提取。');
   await page.getByRole('button', { name: '解析粘贴内容' }).click();
   await expect(page.getByRole('heading', { name: '候选题目（1）' })).toBeVisible();
   await expect(page.getByLabel('第 1 题答案', { exact: true })).toHaveValue(
