@@ -150,11 +150,6 @@ export function CompactStudy({ session, cards }: { session: StudySession; cards:
         <span>第{session.index + 1}题 · 简洁学习</span>
       </div>
       <h1>先回忆，再看答案。</h1>
-      <p className="muted">
-        本题已记录活跃作答{Math.floor((view.draft.timing?.activeMs ?? 0) / 1000)}
-        秒；当前计划剩余预算约{Math.ceil((session.reviewPlan?.remainingBudgetSeconds ?? 0) / 60)}
-        分钟（含本题，属于估算）。
-      </p>
       {(view.draft.timing?.activeMs ?? 0) / 1000 +
         15 +
         (session.reviewPlan?.entries[item.id]?.reason === 'new' ? 45 : 0) >=
@@ -164,9 +159,21 @@ export function CompactStudy({ session, cards }: { session: StudySession; cards:
         </p>
       )}
       <h2>{item.question}</h2>
-      <p className="muted">
-        {session.reviewPlan?.entries[item.id]?.explanation ?? '系统根据当前目标安排'}。可随时暂停。
-      </p>
+      <details className="study-context">
+        <summary>为什么复习这题 · 时间与预算</summary>
+        <p className="muted">
+          {session.reviewPlan?.entries[item.id]?.explanation ?? '系统根据当前目标安排'}
+          。可随时暂停。
+        </p>
+        <p className="muted">
+          本题已记录活跃作答{Math.floor((view.draft.timing?.activeMs ?? 0) / 1000)}
+          秒；当前计划剩余预算约{Math.ceil((session.reviewPlan?.remainingBudgetSeconds ?? 0) / 60)}
+          分钟（含本题，属于估算）。
+        </p>
+        <p className="muted">
+          活跃作答只记录本页交互，后台与长时间空闲不计；它不是脑内回忆时间测量。
+        </p>
+      </details>
       {conflict && (
         <section role="alert">
           <p>题目或另一页面状态已更新，当前输入保留；请载入最新状态后继续。</p>
@@ -359,10 +366,7 @@ export function CompactStudy({ session, cards }: { session: StudySession; cards:
         </button>
       </div>
       <ErrorNotice message={action.error || view.error} />
-      <p className="muted">
-        {view.pending ? '正在保存草稿…' : '草稿保存在本机'} ·
-        活跃作答只记录本页交互，后台与长时间空闲不计；它不是脑内回忆时间测量。
-      </p>
+      <p className="muted">{view.pending ? '正在保存草稿…' : '草稿保存在本机，可随时暂停'}</p>
     </section>
   );
 }

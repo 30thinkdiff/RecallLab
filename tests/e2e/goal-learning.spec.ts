@@ -22,7 +22,7 @@ async function upload(page: Page) {
     .getByLabel('选择学习资料')
     .setInputFiles(fileURLToPath(new URL('../fixtures/import/bank-69.json', import.meta.url)));
   await page.getByRole('button', { name: '确认导入 69 道题', exact: true }).click();
-  await page.getByRole('link', { name: '设置目标并自动安排', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '目标与自动学习方案' })).toBeVisible();
   await expect(page.getByRole('heading', { name: '目标与自动学习方案' })).toBeVisible();
   const date = await page.evaluate(() => {
     const d = new Date();
@@ -191,7 +191,7 @@ test('short exact answers have explainable feedback that can be corrected; detai
     ),
   });
   await page.getByRole('button', { name: '确认导入 2 道题', exact: true }).click();
-  await page.getByRole('link', { name: '设置目标并自动安排' }).click();
+  await expect(page.getByRole('heading', { name: '目标与自动学习方案' })).toBeVisible();
   await page.getByRole('button', { name: '自动安排并开始学习', exact: true }).click();
   let s = await state(page);
   let active = s.sessions.find((s) => s.status === 'active')!;

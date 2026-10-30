@@ -198,39 +198,47 @@ export function ImportPage({
         <>
           <section className="import-target">
             <p className="muted">当前预览：{parsed.document.filename}</p>
-            <h2>导入到哪里？</h2>
-            <div className="form-grid">
-              <label>
-                目标学习项目
-                <select
-                  value={projectId}
-                  disabled={action.busy}
-                  onChange={(event) => {
-                    setProjectId(event.target.value);
-                    setAllowDuplicates(false);
-                  }}
-                >
-                  {projects.map((project) => (
-                    <option key={project.id} value={project.id}>
-                      {project.name}
-                    </option>
-                  ))}
-                  <option value="new">创建新项目</option>
-                </select>
-              </label>
-              {projectId === 'new' && (
+            <p>
+              {projectId === 'new'
+                ? `将新建题库：${projectName}`
+                : '将追加到所选题库，保留已有内容。'}
+            </p>
+            <details open={!goalFlow}>
+              <summary>修改题库名称与保存位置</summary>
+              <h2>导入到哪里？</h2>
+              <div className="form-grid">
                 <label>
-                  新项目名称
-                  <input
-                    required
-                    maxLength={100}
-                    value={projectName}
+                  目标学习项目
+                  <select
+                    value={projectId}
                     disabled={action.busy}
-                    onChange={(event) => setProjectName(event.target.value)}
-                  />
+                    onChange={(event) => {
+                      setProjectId(event.target.value);
+                      setAllowDuplicates(false);
+                    }}
+                  >
+                    {projects.map((project) => (
+                      <option key={project.id} value={project.id}>
+                        {project.name}
+                      </option>
+                    ))}
+                    <option value="new">创建新项目</option>
+                  </select>
                 </label>
-              )}
-            </div>
+                {projectId === 'new' && (
+                  <label>
+                    新项目名称
+                    <input
+                      required
+                      maxLength={100}
+                      value={projectName}
+                      disabled={action.busy}
+                      onChange={(event) => setProjectName(event.target.value)}
+                    />
+                  </label>
+                )}
+              </div>
+            </details>
           </section>
           {parsed.document.fileType === 'pdf' && (
             <section className="info-note" aria-label="PDF 页面类型">
@@ -339,6 +347,58 @@ export function ImportPage({
               </p>
             </section>
           )}
+          <div className="import-confirm">
+            <p>请抽查题干、完整答案与来源。字段完整不代表内容正确。</p>
+            <p>
+              将保存 1 份资料、追加 {selected.length} 道题；跳过 {rows.length - selected.length}{' '}
+              道。其中 {selected.filter((row) => promptProblem(row)).length}{' '}
+              道待完善，保存为草稿，不进入学习。已有题库和学习历史保留。
+            </p>
+            <button
+              className="button"
+              disabled={
+                action.busy ||
+                invalid.length > 0 ||
+                !parsed.document.pages.some((p) => p.status !== 'failed' && p.text.trim()) ||
+                (projectId === 'new' && !projectName.trim()) ||
+                (selectedDuplicates.length > 0 && !allowDuplicates) ||
+                (parsed.document.warnings.length > 0 && !ack)
+              }
+              onClick={() =>
+                void action.run(async () => {
+                  const target =
+                    projectId === 'new'
+                      ? {
+                          newProject: {
+                            name: projectName,
+                            description: '',
+                            learningGoal: '',
+                            targetDate: '',
+                            dailyTimeBudget: 20,
+                          },
+                        }
+                      : { projectId };
+                  const saved = await commitImport(
+                    repository,
+                    parsed,
+                    rows,
+                    target,
+                    allowDuplicates,
+                    ack,
+                  );
+                  setResult(saved);
+                  if (goalFlow && saved.itemIds.length > 0 && saved.skipped === 0)
+                    window.location.assign(`#learn/${saved.projectId}`);
+                })
+              }
+            >
+              {action.busy
+                ? '正在保存…'
+                : selected.length
+                  ? `确认导入 ${selected.length} 道题`
+                  : '仅保存资料'}
+            </button>
+          </div>
           <section>
             <div className="section-heading">
               <h2>候选题目（{rows.length}）</h2>
@@ -351,6 +411,19 @@ export function ImportPage({
               待完善题干会保留为知识草稿，完善前不会进入学习队列。问题与答案都可修改。相同问题的候选仅提示，不覆盖旧题；导入不会继承旧学习成绩。
             </p>
             <div className="button-row">
+              {invalid.length > 0 && (
+                <button
+                  className="button secondary"
+                  disabled={action.busy}
+                  onClick={() =>
+                    selectRows(
+                      (row) => cardInputSchema.safeParse(row).success && !duplicates.has(row.id),
+                    )
+                  }
+                >
+                  选择字段完整且非重复的题目
+                </button>
+              )}
               <button
                 className="button secondary"
                 disabled={action.busy}
@@ -475,48 +548,6 @@ export function ImportPage({
               我已核对，仍然追加这些重复候选（不替换旧题）
             </label>
           )}
-          <div className="import-confirm">
-            <p>
-              将保存 1 份资料、追加 {selected.length} 道题；跳过 {rows.length - selected.length}{' '}
-              道。已有题库和学习历史保留。
-            </p>
-            <button
-              className="button"
-              disabled={
-                action.busy ||
-                invalid.length > 0 ||
-                !parsed.document.pages.some((p) => p.status !== 'failed' && p.text.trim()) ||
-                (projectId === 'new' && !projectName.trim()) ||
-                (selectedDuplicates.length > 0 && !allowDuplicates) ||
-                (parsed.document.warnings.length > 0 && !ack)
-              }
-              onClick={() =>
-                void action.run(async () => {
-                  const target =
-                    projectId === 'new'
-                      ? {
-                          newProject: {
-                            name: projectName,
-                            description: '',
-                            learningGoal: '',
-                            targetDate: '',
-                            dailyTimeBudget: 20,
-                          },
-                        }
-                      : { projectId };
-                  setResult(
-                    await commitImport(repository, parsed, rows, target, allowDuplicates, ack),
-                  );
-                })
-              }
-            >
-              {action.busy
-                ? '正在保存…'
-                : selected.length
-                  ? `确认导入 ${selected.length} 道题`
-                  : '仅保存资料'}
-            </button>
-          </div>
           <SourceReader
             document={parsed.document}
             previews={parsed.previews}

@@ -17,7 +17,7 @@ test('accepts conservative exact feedback, persists Good without subjective mast
     ),
   });
   await page.getByRole('button', { name: '确认导入 1 道题', exact: true }).click();
-  await page.getByRole('link', { name: '设置目标并自动安排' }).click();
+  await expect(page.getByRole('heading', { name: '目标与自动学习方案' })).toBeVisible();
   await page.getByRole('button', { name: '自动安排并开始学习', exact: true }).click();
   await page.getByRole('textbox', { name: '你的回答', exact: true }).fill('青晶信号');
   await page.getByRole('button', { name: '提交回答', exact: true }).click();
