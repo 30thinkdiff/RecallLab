@@ -151,7 +151,8 @@ test('cancelling current-question editing preserves the answer exposure and orig
   expect(after.events).toEqual(before.events);
   expect(after.memories).toEqual(before.memories);
   const session = after.sessions.find((s) => s.status === 'active')!;
-  expect(session.draft.responseDuration).toBe(frozen.responseDuration);
+  expect(typeof frozen.timing?.activeMs).toBe('number');
+  expect(session.draft.revealedAt).toBe(frozen.revealedAt);
   expect(session.draft.timing?.activeMs).toBe(frozen.timing?.activeMs);
   expect(session.draft.wasAnswerRevealed).toBe(true);
   expect(session.draft.userResponse).toBe('揭晓前写下的原回答');
