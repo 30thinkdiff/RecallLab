@@ -140,7 +140,10 @@ test('cancelling current-question editing preserves the answer exposure and orig
   await page.getByRole('textbox', { name: '你的回答', exact: true }).fill('揭晓前写下的原回答');
   const before = await data(page);
   await page.getByRole('button', { name: '修改这道题', exact: true }).click();
+  // A click can finish before the awaited reveal transaction and modal render.
+  await expect(page.getByRole('dialog', { name: '编辑问答题' })).toBeVisible();
   const frozen = (await data(page)).sessions.find((s) => s.status === 'active')!.draft;
+  expect(frozen.revealedAt).not.toBeNull();
   await page.clock.fastForward(120000);
   await page.getByLabel('标准答案').fill('取消的修改');
   await page.getByRole('button', { name: '取消', exact: true }).click();

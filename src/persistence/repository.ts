@@ -268,7 +268,11 @@ export class Repository {
         importance: input.importance ?? existing?.importance ?? 2,
         paused: input.paused ?? existing?.paused ?? false,
         editVersion: (existing?.editVersion ?? 0) + 1,
-        creationOrigin: existing?.creationOrigin ?? (importedSources?.length ? 'source' : 'user'),
+        creationOrigin:
+          existing?.creationOrigin ??
+          (importedSources?.length || existing?.sourceReferences.some((ref) => ref.documentId)
+            ? 'source'
+            : 'user'),
         revision: number,
         currentRevisionId: revisionId(itemId, number),
         learningStateId:
