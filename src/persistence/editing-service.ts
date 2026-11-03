@@ -3,7 +3,7 @@ import { cardEditToken, cardUnchanged, preservesRequirements } from '../domain/e
 import { cardInputSchema, type CardInput } from '../domain/validation';
 import { ConflictError } from '../domain/revisions';
 import { assertSourceReference } from '../domain/sources';
-import type { SourceReference } from '../domain/models';
+import type { SourceReference, SessionToken } from '../domain/models';
 import { editorDraftSchema, type EditorDraft } from './editable-format';
 export class EditingService {
   constructor(readonly repo: Repository = repository) {}
@@ -162,6 +162,35 @@ export class EditingService {
       if (options.draftId) await this.repo.db.editorDrafts.delete(options.draftId);
       return { id: id!, projectId: pid, changed: contentChanged, reset: !!old && !preserve };
     });
+  }
+  async correctInStudy(
+    sessionId: string,
+    index: number,
+    token: SessionToken,
+    draft: EditorDraft,
+    input: CardInput,
+    confirmReset: boolean,
+  ) {
+    if (draft.kind !== 'card' || draft.sessionId !== sessionId || !draft.practiceItemId)
+      throw new Error('编辑草稿不属于当前学习题');
+    const old = await this.repo.db.practiceItems.get(draft.practiceItemId);
+    const save = () =>
+      this.saveCard(draft.projectId, input, {
+        id: draft.practiceItemId,
+        expectedToken: draft.baseRevisionId,
+        confirmReset,
+        draftId: draft.id,
+        draftVersion: draft.version,
+        draftEpoch: draft.epoch,
+      });
+    if (
+      old &&
+      cardUnchanged(old, input) &&
+      (old.paused ?? false) === (input.paused ?? old.paused ?? false) &&
+      (old.importance ?? 2) === (input.importance ?? old.importance ?? 2)
+    )
+      return { ...(await save()), advanced: false };
+    return { ...(await this.repo.correctInStudy(sessionId, index, token, save)), advanced: true };
   }
   async createSourceNote(documentId: string) {
     return this.write(async () => {

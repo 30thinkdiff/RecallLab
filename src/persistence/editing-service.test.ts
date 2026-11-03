@@ -237,3 +237,152 @@ it.each([false, true])(
     }
   },
 );
+
+async function currentCorrection() {
+  const { item, projectId } = await create();
+  await service.saveCard(projectId, {
+    ...raw,
+    question: '虚构第二项是什么？',
+    standardAnswer: '白晶信号',
+  });
+  const scheduler = new ScheduleService(db);
+  const sid = await scheduler.start(projectId, { adaptive: true });
+  let s = (await db.sessions.get(sid))!;
+  const current = (await db.practiceItems.get(s.queue[s.index]!.id))!;
+  s = await repo.updateDraft(
+    sid,
+    s.index,
+    { responseMode: 'typed', userResponse: '更正前已经写下的原回答' },
+    tokenOf(s),
+  );
+  s = await repo.updateDraft(sid, s.index, {}, tokenOf(s), 'reveal');
+  const input = {
+    ...raw,
+    question: current.question,
+    standardAnswer: '用户更正后的新答案',
+    sourceLabel: current.sourceReferences[0]?.label ?? '',
+  };
+  const now = new Date().toISOString();
+  const d = await service.openDraft({
+    id: `study:${sid}:${current.id}`,
+    epoch: crypto.randomUUID(),
+    kind: 'card',
+    projectId,
+    practiceItemId: current.id,
+    sessionId: sid,
+    baseRevisionId: cardEditToken(current),
+    version: 0,
+    values: input,
+    createdAt: now,
+    updatedAt: now,
+  });
+  return { item, projectId, scheduler, s, current, input, d };
+}
+it('in-study correction atomically preserves an ungraded old answer, advances, and delays independent use of the new answer', async () => {
+  const { s, current, input, d, projectId, scheduler } = await currentCorrection();
+  const memory = await db.memoryStates.get(current.learningStateId);
+  await service.correctInStudy(s.id, s.index, tokenOf(s), d, input, true);
+  const event = (await db.reviewEvents.toArray())[0]!;
+  expect(event).toMatchObject({
+    assessmentResult: 'ungraded',
+    assessmentSource: 'none',
+    subjectiveMastery: null,
+    userResponse: '更正前已经写下的原回答',
+    snapshot: { standardAnswer: current.standardAnswer, learningStateId: current.learningStateId },
+    scheduling: { grade: null },
+  });
+  const next = (await db.practiceItems.get(current.id))!;
+  expect(next.learningStateId).not.toBe(current.learningStateId);
+  expect((await db.memoryStates.get(current.learningStateId))!.card).toEqual(memory!.card);
+  expect(await db.memoryStates.get(next.learningStateId)).toBeUndefined();
+  const session = (await db.sessions.get(s.id))!;
+  expect(session.index).toBe(s.index + 1);
+  expect(session.draft.userResponse).toBe('');
+  expect((await db.draftRecoveries.toArray())[0]!.draft.userResponse).toBe(
+    '更正前已经写下的原回答',
+  );
+  expect(await db.editorDrafts.count()).toBe(0);
+  const { buildAdaptivePlan } = await import('../learning/adaptive');
+  const p = (await db.projects.get(projectId))!;
+  expect(
+    buildAdaptivePlan(
+      p,
+      await db.practiceItems.toArray(),
+      await db.memoryStates.toArray(),
+      await db.reviewEvents.toArray(),
+      new Date(),
+      'Asia/Shanghai',
+    ).selected.some((r) => r.item.id === current.id),
+  ).toBe(false);
+  expect(
+    buildAdaptivePlan(
+      p,
+      await db.practiceItems.toArray(),
+      await db.memoryStates.toArray(),
+      await db.reviewEvents.toArray(),
+      new Date(Date.parse(next.answerExposedAt!) + 600001),
+      'Asia/Shanghai',
+    ).selected.some((r) => r.item.id === current.id),
+  ).toBe(true);
+  expect(scheduler).toBeDefined();
+  await exportBackup(db);
+});
+it('a failed in-study save rolls back its teaching event, memory, recovery and revision together', async () => {
+  const { s, current, input, d } = await currentCorrection();
+  const before = await exportBackup(db);
+  await expect(service.correctInStudy(s.id, s.index, tokenOf(s), d, input, false)).rejects.toThrow(
+    '确认',
+  );
+  expect((await exportBackup(db)).data).toEqual(before.data);
+  expect((await db.practiceItems.get(current.id))!.standardAnswer).toBe(current.standardAnswer);
+});
+it('cancelling after answer exposure changes no content, revision, event or FSRS, and keeps the exposure fact', async () => {
+  const { s, d } = await currentCorrection();
+  const before = await exportBackup(db);
+  await service.cancelDraft(d.id, d.version, d.epoch);
+  const after = await exportBackup(db);
+  for (const key of [
+    'practiceItems',
+    'knowledgeUnits',
+    'revisions',
+    'reviewEvents',
+    'memoryStates',
+    'schedulingLogs',
+  ] as const)
+    expect(after.data[key]).toEqual(before.data[key]);
+  const session = (await db.sessions.get(s.id))!;
+  expect(session.draft.wasAnswerRevealed).toBe(true);
+  expect(session.draft.userResponse).toBe('更正前已经写下的原回答');
+});
+it('free-practice correction creates no FSRS state or score', async () => {
+  const { item, projectId } = await create();
+  const sid = await repo.startSession(projectId);
+  let s = (await db.sessions.get(sid))!;
+  s = await repo.updateDraft(
+    sid,
+    0,
+    { responseMode: 'typed', userResponse: '原始回答' },
+    tokenOf(s),
+  );
+  s = await repo.updateDraft(sid, 0, {}, tokenOf(s), 'reveal');
+  const now = new Date().toISOString(),
+    input = { ...raw, standardAnswer: '自由练习中更正' };
+  const d = await service.openDraft({
+    id: 'free-editor',
+    epoch: crypto.randomUUID(),
+    kind: 'card',
+    projectId,
+    practiceItemId: item.id,
+    sessionId: sid,
+    baseRevisionId: cardEditToken(item),
+    version: 0,
+    values: input,
+    createdAt: now,
+    updatedAt: now,
+  });
+  await service.correctInStudy(sid, 0, tokenOf(s), d, input, true);
+  expect(await db.memoryStates.count()).toBe(0);
+  expect(await db.schedulingLogs.count()).toBe(0);
+  expect((await db.reviewEvents.toArray())[0]!.assessmentResult).toBe('ungraded');
+  await exportBackup(db);
+});

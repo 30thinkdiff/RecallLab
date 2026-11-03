@@ -1,3 +1,4 @@
+import { StudyCardEditor } from './StudyCardEditor';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { LearningWrapUp } from './LearningWrapUp';
 import { CompactStudy } from './CompactStudy';
@@ -244,6 +245,15 @@ function StudyQuestion({
           第 {session.index + 1} / {session.queue.length} 题
         </span>
       </div>
+      <StudyCardEditor
+        session={session}
+        card={current}
+        controller={controller}
+        blocked={blocked}
+        beforeOpen={async () => {
+          if (!controller.getSnapshot().draft.wasAnswerRevealed) await controller.perform('reveal');
+        }}
+      />
       <progress
         className="study-progress"
         value={session.index}

@@ -261,6 +261,10 @@ export class Repository {
         practiceType: 'free_recall',
         ...(existing?.focus === undefined ? {} : { focus: existing.focus }),
         verificationStatus: 'user_authored',
+        ...(existing?.answerExposedAt ? { answerExposedAt: existing.answerExposedAt } : {}),
+        ...(existing?.learningIssue && impact === 'preserve'
+          ? { learningIssue: existing.learningIssue }
+          : {}),
         importance: input.importance ?? existing?.importance ?? 2,
         paused: input.paused ?? existing?.paused ?? false,
         editVersion: (existing?.editVersion ?? 0) + 1,
@@ -578,6 +582,49 @@ export class Repository {
       const session = await this.requireSession(sessionId, index, token, false);
       await this.endSession(sessionId, index, token);
       return this.startSession(session.projectId);
+    });
+  }
+  async correctInStudy<T extends { id: string }>(
+    sessionId: string,
+    index: number,
+    token: SessionToken,
+    commit: () => Promise<T>,
+  ) {
+    const scheduling = await this.schedulingHooks(sessionId);
+    return this.write(async () => {
+      const session = await this.requireSession(sessionId, index, token);
+      if (!session.draft.wasAnswerRevealed) throw new Error('请先记录答案已显示，再打开编辑');
+      const snapshot = session.queue[index]!,
+        now = new Date().toISOString();
+      await this.retain(session, '学习中纠正前的原回答与暂存核对（未评分）');
+      // Preserve tentative marks in recovery, never turn them into a grade during correction.
+      const teaching = { ...session, draft: { ...session.draft, assessment: undefined } };
+      let event = buildReviewEvent(teaching, snapshot, 'ungraded', null, now);
+      if (session.reviewPlan && scheduling)
+        event = await scheduling.applyScheduling(this.db, teaching, event, 'good', new Date(now));
+      await this.db.reviewEvents.add(event);
+      const result = await commit();
+      await this.db.practiceItems.update(result.id, { answerExposedAt: now });
+      const nextIndex = index + 1,
+        available = new Map((await this.available(session.projectId)).map((c) => [c.id, c]));
+      const remaining = session.queue.slice(nextIndex).flatMap((old) => {
+        const current = available.get(old.id);
+        return current ? [snapshotOf(current)] : [];
+      });
+      const updated: StudySession = {
+        ...session,
+        queue: [...session.queue.slice(0, nextIndex), ...remaining],
+        index: nextIndex,
+        status: remaining.length ? 'active' : 'completed',
+        completedAt: remaining.length ? null : now,
+        draft: freshDraft(now, session.draft.responseMode),
+        planVersion: session.planVersion + 1,
+        draftVersion: session.draftVersion + 1,
+        lastWriterId: token.writerId,
+      };
+      if (scheduling) await scheduling.refreshReviewPlan(this.db, updated, new Date(now));
+      await this.db.sessions.put(updated);
+      return result;
     });
   }
   async submitReview(

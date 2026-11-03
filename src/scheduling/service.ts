@@ -216,7 +216,9 @@ export async function applyScheduling(
   const reviewedAt = new Date(session.draft.revealedAt ?? event.timestamp);
   if (reviewedAt.getTime() > now.getTime())
     throw new Error('本机时间早于作答时间，请校准时间后保存；草稿仍保留。');
-  const decision = decide(event, entry.canSchedule, difficulty);
+  const recentlyExposed =
+    !!current.answerExposedAt && Date.parse(current.answerExposedAt) + 600000 > now.getTime();
+  const decision = decide(event, entry.canSchedule && !recentlyExposed, difficulty);
   decision.reviewedAt = reviewedAt.toISOString();
   let updated: MemoryState = memory;
   const log: SchedulingLog = {

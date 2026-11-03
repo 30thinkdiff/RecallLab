@@ -89,6 +89,7 @@ export interface KnowledgeUnit {
 }
 
 export interface PracticeItem {
+  answerExposedAt?: string;
   importance?: number;
   paused?: boolean;
   editVersion?: number;

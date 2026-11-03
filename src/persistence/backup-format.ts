@@ -97,6 +97,7 @@ const knowledge = z.object({
   updatedAt: date,
 });
 const item = snapshot.omit({ revisionId: true }).extend({
+  answerExposedAt: date.optional(),
   importance: z.number().int().min(1).max(3).optional(),
   paused: z.boolean().optional(),
   editVersion: z.number().int().nonnegative().optional(),

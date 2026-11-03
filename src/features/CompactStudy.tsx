@@ -1,3 +1,4 @@
+import { StudyCardEditor } from './StudyCardEditor';
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import type { Performance, PracticeItem, StudySession } from '../domain/models';
 import { StudyDraftController } from './study-draft';
@@ -160,6 +161,15 @@ export function CompactStudy({ session, cards }: { session: StudySession; cards:
         </p>
       )}
       <h2>{item.question}</h2>
+      <StudyCardEditor
+        session={session}
+        card={current}
+        controller={controller}
+        blocked={blocked}
+        beforeOpen={async () => {
+          if (!controller.getSnapshot().draft.wasAnswerRevealed) await reveal();
+        }}
+      />
       <details className="study-context">
         <summary>为什么复习这题 · 时间与预算</summary>
         <p className="muted">

@@ -5,6 +5,8 @@ async function data(page: Page) {
       typeof import('../../src/persistence/database')
     >);
     return {
+      sessions: await db.sessions.toArray(),
+      recoveries: await db.draftRecoveries.toArray(),
       projects: await db.projects.toArray(),
       cards: await db.practiceItems.toArray(),
       events: await db.reviewEvents.toArray(),
@@ -64,4 +66,77 @@ test('cancelling a new question changes no project, card or scheduling state', a
   expect(s.events).toHaveLength(0);
   expect(s.memories).toHaveLength(0);
   expect(s.revisions).toHaveLength(0);
+});
+
+async function twoQuestions(page: Page) {
+  await page.goto('/#compose');
+  await page.getByLabel('问题', { exact: false }).fill('虚构一号使用什么标识？');
+  await page.getByLabel('标准答案').fill('蓝晶标识');
+  await page.getByRole('button', { name: '保存并继续添加', exact: true }).click();
+  await expect(page.getByLabel('问题', { exact: false })).toHaveValue('');
+  await page.getByLabel('问题', { exact: false }).fill('虚构二号使用什么标识？');
+  await page.getByLabel('标准答案').fill('白晶标识');
+  await page.getByRole('button', { name: '保存并学习', exact: true }).click();
+  await expect(page.getByRole('textbox', { name: '你的回答', exact: true })).toBeVisible();
+}
+test('editing the current question preserves its raw answer, survives refresh and continues in the same task', async ({
+  page,
+}) => {
+  await twoQuestions(page);
+  const before = await data(page),
+    session = before.sessions.find((s) => s.status === 'active')!,
+    old = session.queue[session.index]!;
+  await page.getByRole('textbox', { name: '你的回答', exact: true }).fill('用户的旧版原始回答');
+  await page.getByRole('button', { name: '修改这道题', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: '编辑问答题' })).toBeVisible();
+  await page.getByLabel('标准答案').fill('用户确认的新标准答案');
+  await expect(page.getByTestId('editor-status')).toHaveText('编辑草稿已保存在本机');
+  await page.reload();
+  await expect(page.getByLabel('标准答案')).toHaveValue('用户确认的新标准答案');
+  expect((await data(page)).cards.find((c) => c.id === old.id)!.standardAnswer).toBe(
+    old.standardAnswer,
+  );
+  await page.getByRole('button', { name: '保存题目', exact: true }).click();
+  await page.getByRole('button', { name: '确认更新并重新安排', exact: true }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.getByRole('textbox', { name: '你的回答', exact: true })).toHaveValue('');
+  const after = await data(page);
+  expect(after.sessions.find((s) => s.id === session.id)!.index).toBe(session.index + 1);
+  expect(after.events[0]).toMatchObject({
+    assessmentResult: 'ungraded',
+    subjectiveMastery: null,
+    userResponse: '用户的旧版原始回答',
+    scheduling: { grade: null },
+    snapshot: { standardAnswer: old.standardAnswer },
+  });
+  expect(after.cards.find((c) => c.id === old.id)!.learningStateId).not.toBe(old.learningStateId);
+  expect(after.recoveries.some((r) => r.draft.userResponse === '用户的旧版原始回答')).toBe(true);
+  await expect
+    .poll(
+      async () =>
+        (await data(page)).drafts.filter(
+          (d) => d.sessionId === session.id && !d.id.startsWith('recovery:'),
+        ).length,
+    )
+    .toBe(0);
+});
+test('cancelling current-question editing preserves the answer exposure and original response without a grade', async ({
+  page,
+}) => {
+  await twoQuestions(page);
+  await page.getByRole('textbox', { name: '你的回答', exact: true }).fill('揭晓前写下的原回答');
+  const before = await data(page);
+  await page.getByRole('button', { name: '修改这道题', exact: true }).click();
+  await page.getByLabel('标准答案').fill('取消的修改');
+  await page.getByRole('button', { name: '取消', exact: true }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  const after = await data(page);
+  expect(after.cards).toEqual(before.cards);
+  expect(after.revisions).toEqual(before.revisions);
+  expect(after.events).toEqual(before.events);
+  expect(after.memories).toEqual(before.memories);
+  const session = after.sessions.find((s) => s.status === 'active')!;
+  expect(session.draft.wasAnswerRevealed).toBe(true);
+  expect(session.draft.userResponse).toBe('揭晓前写下的原回答');
+  await expect(page.getByRole('textbox', { name: '你的回答', exact: true })).toHaveCount(0);
 });

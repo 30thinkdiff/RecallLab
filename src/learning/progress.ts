@@ -39,7 +39,14 @@ export function nextReviewAt(
   events: ReviewEvent[],
   now: Date,
 ) {
-  const states = new Set(currentCards(project, cards).map((c) => c.learningStateId));
+  const ready = currentCards(project, cards);
+  const states = new Set(ready.map((c) => c.learningStateId));
+  const exposed = new Map(
+    ready.map((c) => [
+      c.learningStateId,
+      c.answerExposedAt ? Date.parse(c.answerExposedAt) + 600000 : 0,
+    ]),
+  );
   const latest = latestEvidence(
     events.filter((e) => e.projectId === project.id),
     states,
@@ -50,6 +57,7 @@ export function nextReviewAt(
       const e = latest.get(m.id);
       return Math.max(
         Date.parse(m.retestDue ?? m.due),
+        exposed.get(m.id) ?? 0,
         e &&
           (e.hintLevelUsed > 0 || ['incorrect', 'partially_correct'].includes(e.assessmentResult))
           ? Date.parse(e.reviewedAt ?? e.timestamp) + 600000
@@ -57,6 +65,12 @@ export function nextReviewAt(
       );
     })
     .filter((t) => Number.isFinite(t) && t > now.getTime());
+  future.push(
+    ...ready
+      .filter((c) => !memories.some((m) => m.id === c.learningStateId && m.card.reps > 0))
+      .map((c) => exposed.get(c.learningStateId) ?? 0)
+      .filter((t) => Number.isFinite(t) && t > now.getTime()),
+  );
   return future.length ? Math.min(...future) : undefined;
 }
 export function learningProgress(

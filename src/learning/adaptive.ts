@@ -122,6 +122,10 @@ export function buildAdaptivePlan(
     if (overdue) due++;
     if (retry) retest++;
     if (fresh) newCount++;
+    if (item.answerExposedAt && Date.parse(item.answerExposedAt) + 600000 > now.getTime()) {
+      delayed++;
+      return [];
+    }
     if (
       fresh &&
       memories.some(

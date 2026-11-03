@@ -36,6 +36,7 @@ function valuesOf(card?: PracticeItem): CardDraftValues {
   };
 }
 export function CardForm(props: CardFormProps) {
+  const [initialCard] = useState(props.card);
   const [target, setTarget] = useState(props.projectId),
     [nonce, setNonce] = useState(0),
     [record, setRecord] = useState<EditorDraft>(),
@@ -47,22 +48,22 @@ export function CardForm(props: CardFormProps) {
   useEffect(() => {
     let active = true;
     const now = new Date().toISOString();
-    const id = props.card
+    const id = initialCard
       ? props.sessionId
-        ? `study:${props.sessionId}:${props.card.id}:${props.card.currentRevisionId}`
-        : `card:${props.card.id}`
+        ? `study:${props.sessionId}:${initialCard.id}:${initialCard.currentRevisionId}`
+        : `card:${initialCard.id}`
       : `new:${target ?? 'auto'}`;
     const initial: EditorDraft = {
       id,
       epoch: crypto.randomUUID(),
       kind: 'card',
       ...(target ? { projectId: target } : {}),
-      ...(props.card
-        ? { practiceItemId: props.card.id, baseRevisionId: cardEditToken(props.card) }
+      ...(initialCard
+        ? { practiceItemId: initialCard.id, baseRevisionId: cardEditToken(initialCard) }
         : {}),
       ...(props.sessionId ? { sessionId: props.sessionId } : {}),
       version: 0,
-      values: { ...valuesOf(props.card), ...(!props.card ? preferences : {}) },
+      values: { ...valuesOf(initialCard), ...(!initialCard ? preferences : {}) },
       createdAt: now,
       updatedAt: now,
     };
@@ -77,10 +78,10 @@ export function CardForm(props: CardFormProps) {
     return () => {
       active = false;
     };
-  }, [target, nonce, props.card, props.sessionId, preferences]);
+  }, [target, nonce, initialCard, props.sessionId, preferences]);
   if (!record)
     return (
-      <Modal title={props.card ? '编辑问答题' : '添加问答题'} onClose={props.onClose}>
+      <Modal title={initialCard ? '编辑问答题' : '添加问答题'} onClose={props.onClose}>
         <p role="status">正在恢复编辑草稿…</p>
         <ErrorNotice message={error} />
       </Modal>
@@ -89,6 +90,7 @@ export function CardForm(props: CardFormProps) {
     <CardFields
       key={`${record.id}:${record.epoch}:${nonce}`}
       {...props}
+      card={initialCard}
       record={record}
       count={count}
       onNext={(pid, settings) => {
@@ -197,6 +199,11 @@ function CardFields(
       }}
     >
       <form onSubmit={submit}>
+        {props.sessionId && (
+          <p className="info-note">
+            编辑已显示标准答案。原回答保留；保存更正后继续下一题，新内容稍后重新学习。取消不会改题目，也不会抹去已看答案的事实。
+          </p>
+        )}
         {props.count > 0 && <p role="status">已添加 {props.count} 道，继续录入同一题库。</p>}
         <label>
           问题 <span>*</span>
