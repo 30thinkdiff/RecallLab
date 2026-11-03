@@ -135,10 +135,13 @@ test('editing the current question preserves its raw answer, survives refresh an
 test('cancelling current-question editing preserves the answer exposure and original response without a grade', async ({
   page,
 }) => {
+  await page.clock.install();
   await twoQuestions(page);
   await page.getByRole('textbox', { name: '你的回答', exact: true }).fill('揭晓前写下的原回答');
   const before = await data(page);
   await page.getByRole('button', { name: '修改这道题', exact: true }).click();
+  const frozen = (await data(page)).sessions.find((s) => s.status === 'active')!.draft;
+  await page.clock.fastForward(120000);
   await page.getByLabel('标准答案').fill('取消的修改');
   await page.getByRole('button', { name: '取消', exact: true }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
@@ -148,6 +151,8 @@ test('cancelling current-question editing preserves the answer exposure and orig
   expect(after.events).toEqual(before.events);
   expect(after.memories).toEqual(before.memories);
   const session = after.sessions.find((s) => s.status === 'active')!;
+  expect(session.draft.responseDuration).toBe(frozen.responseDuration);
+  expect(session.draft.timing?.activeMs).toBe(frozen.timing?.activeMs);
   expect(session.draft.wasAnswerRevealed).toBe(true);
   expect(session.draft.userResponse).toBe('揭晓前写下的原回答');
   await expect(page.getByRole('textbox', { name: '你的回答', exact: true })).toHaveCount(0);

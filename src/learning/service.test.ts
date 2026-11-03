@@ -155,11 +155,16 @@ it('preserves a paused draft and isolates corrected answers; formatting revision
   const old = (await db.memoryStates.get(learned.learningStateId))!;
   await repo.saveCard(
     pid,
-    { ...raw(0), question: learned.question, standardAnswer: `  ${learned.standardAnswer}  ` },
+    {
+      ...raw(0),
+      question: learned.question,
+      standardAnswer: learned.standardAnswer,
+      hints: '辅助提示，不改考核要求',
+    },
     learned.id,
     {
       changeType: 'cosmetic',
-      changeSummary: '整理空白',
+      changeSummary: '更新辅助提示',
       impactOnLearningState: 'preserve',
       expectedRevisionId: learned.currentRevisionId,
     },

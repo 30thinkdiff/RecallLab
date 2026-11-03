@@ -441,3 +441,32 @@ it('archiving is guarded against stale edits and preserves all historical eviden
   await repo.restoreCard(projectId, item.id, cardEditToken((await db.practiceItems.get(item.id))!));
   expect((await db.practiceItems.get(item.id))!.archivedAt).toBeUndefined();
 });
+
+it('preserves exact outer indentation and only inherits memory for lossless CRLF display changes', async () => {
+  const a = await service.saveCard(undefined, { ...raw, standardAnswer: 'line1\r\n    line2' });
+  const old = (await db.practiceItems.get(a.id))!;
+  await learn(a.projectId);
+  const memory = await db.memoryStates.get(old.learningStateId);
+  await service.saveCard(
+    a.projectId,
+    { ...raw, standardAnswer: 'line1\n    line2' },
+    { id: old.id, expectedToken: cardEditToken(old) },
+  );
+  const next = (await db.practiceItems.get(a.id))!;
+  expect(next.learningStateId).toBe(old.learningStateId);
+  expect(await db.memoryStates.get(old.learningStateId)).toEqual(memory);
+  const code = await service.saveCard(a.projectId, {
+    ...raw,
+    question: '代码要求什么缩进？',
+    standardAnswer: '    return x',
+  });
+  const item = (await db.practiceItems.get(code.id))!;
+  expect(item.standardAnswer).toBe('    return x');
+  await expect(
+    service.saveCard(
+      a.projectId,
+      { ...raw, question: item.question, standardAnswer: 'return x' },
+      { id: item.id, expectedToken: cardEditToken(item) },
+    ),
+  ).rejects.toThrow('确认');
+});
