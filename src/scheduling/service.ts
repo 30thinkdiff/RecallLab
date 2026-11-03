@@ -43,8 +43,33 @@ export class ScheduleService {
             mode: 'daily',
           };
         if (active.reviewPlan?.adaptive) {
-          // Resume always uses current cards, flags, goals and time; preserve the current draft.
-          await rebuildAdaptiveTail(this.db, active, this.clock(), true);
+          const snapshot = active.queue[active.index];
+          const current = snapshot && (await this.db.practiceItems.get(snapshot.id));
+          const keepCurrent =
+            !!current &&
+            !current.archivedAt &&
+            !promptProblem(current) &&
+            current.currentRevisionId === snapshot?.revisionId;
+          if (snapshot && !keepCurrent) {
+            const draft = active.draft;
+            if (
+              draft.userResponse ||
+              draft.wasAnswerRevealed ||
+              draft.hintLevelUsed ||
+              draft.attemptedBeforeReveal
+            )
+              await this.db.draftRecoveries.add({
+                id: crypto.randomUUID(),
+                sessionId: active.id,
+                practiceItemId: snapshot.id,
+                revision: snapshot.revision,
+                createdAt: this.clock().toISOString(),
+                reason: '恢复计划时题目已更正、暂停或归档：保留旧版作答',
+                draft: structuredClone(draft),
+              });
+            active.draft = freshDraft(this.clock().toISOString(), draft.responseMode);
+          }
+          await rebuildAdaptiveTail(this.db, active, this.clock(), keepCurrent);
           active.planVersion++;
           active.draftVersion++;
           await this.db.sessions.put(active);

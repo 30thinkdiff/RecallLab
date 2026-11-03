@@ -51,7 +51,7 @@ export function CardForm(props: CardFormProps) {
     const id = initialCard
       ? props.sessionId
         ? `study:${props.sessionId}:${initialCard.id}:${initialCard.currentRevisionId}`
-        : `card:${initialCard.id}`
+        : `card:${initialCard.id}:${cardEditToken(initialCard)}`
       : `new:${target ?? 'auto'}`;
     const initial: EditorDraft = {
       id,

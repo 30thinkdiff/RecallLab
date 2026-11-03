@@ -1,3 +1,4 @@
+import { editingService } from '../persistence/editing-service';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useState } from 'react';
 import type { LearningProject, PracticeItem, SourceReference } from '../domain/models';
@@ -141,7 +142,19 @@ export function DocumentDetail({
         <p>
           <a className="button secondary" href={`#ai/document/${document.id}`}>
             AI 辅助整理
-          </a>
+          </a>{' '}
+          <button
+            className="button secondary"
+            disabled={action.busy}
+            onClick={() =>
+              void action.run(async () => {
+                const id = await editingService.createSourceNote(document.id);
+                window.location.assign(`#note/${id}`);
+              })
+            }
+          >
+            整理为学习稿
+          </button>
         </p>
       )}
       {document.warnings.map((warning) => (

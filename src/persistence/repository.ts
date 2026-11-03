@@ -1,4 +1,4 @@
-import { displayText } from '../domain/editing';
+import { cardEditToken, displayText } from '../domain/editing';
 import { exactShort, timingSchema, assertLearningEvidence } from '../learning/evidence';
 import { assertAiAnchors, type AiConfirmation, type AiProvenance } from '../ai/provenance';
 import {
@@ -349,20 +349,30 @@ export class Repository {
       return changes.length;
     });
   }
-  async archiveCard(projectId: string, id: string) {
+  async archiveCard(projectId: string, id: string, expectedToken?: string) {
     await this.write(async () => {
       await this.requireProject(projectId);
       const item = await this.db.practiceItems.get(id);
       if (!item || item.projectId !== projectId) throw new Error('题目不存在');
-      await this.db.practiceItems.update(id, { archivedAt: new Date().toISOString() });
+      if (expectedToken && expectedToken !== cardEditToken(item))
+        throw new ConflictError('题目已在另一页面变化，请载入最新后删除');
+      await this.db.practiceItems.update(id, {
+        archivedAt: new Date().toISOString(),
+        editVersion: (item.editVersion ?? 0) + 1,
+      });
     });
   }
-  async restoreCard(projectId: string, id: string) {
+  async restoreCard(projectId: string, id: string, expectedToken?: string) {
     await this.write(async () => {
       await this.requireProject(projectId);
       const item = await this.db.practiceItems.get(id);
       if (!item || item.projectId !== projectId) throw new Error('题目不存在');
-      await this.db.practiceItems.update(id, { archivedAt: undefined });
+      if (expectedToken && expectedToken !== cardEditToken(item))
+        throw new ConflictError('题目已在另一页面变化，请载入最新后恢复');
+      await this.db.practiceItems.update(id, {
+        archivedAt: undefined,
+        editVersion: (item.editVersion ?? 0) + 1,
+      });
     });
   }
   private async available(projectId: string) {

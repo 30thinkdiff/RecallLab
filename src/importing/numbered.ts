@@ -69,8 +69,8 @@ export function extractNumbered(text: string, pages: DocumentPage[], id: string,
     const auxIndex = bodyLines.findIndex((l) => auxiliary.test(l));
     const main = (auxIndex < 0 ? bodyLines : bodyLines.slice(0, auxIndex)).join('\n').trim();
     const answerMarker = main.split('\n').findIndex((l) => amark.test(l));
-    let question = '',
-      standardAnswer = '';
+    let question: string;
+    let standardAnswer = '';
     if (answerMarker >= 0) {
       const a = main.split('\n');
       question = a.slice(0, answerMarker).join('\n').trim();

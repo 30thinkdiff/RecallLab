@@ -94,7 +94,7 @@ test('E: cosmetic revisions keep current valid progress', async ({ page }) => {
   await page.getByRole('button', { name: '开始学习', exact: true }).click();
   await rate(page, true);
   await page.getByRole('link', { name: '返回题库', exact: true }).click();
-  await editCard(page, 1, '答案 1：不查看资料，主动从记忆中提取知识。\n', 'cosmetic');
+  await editCard(page, 1, '答案 1：不查看资料，主动从记忆中提取知识。', 'cosmetic');
   await expect(page.getByText('最近自评：基本掌握', { exact: true })).toBeVisible();
   await page.getByRole('link', { name: '学习概览', exact: true }).click();
   await expect(page.locator('.stat-card').filter({ hasText: '已学习题目' })).toContainText('1');

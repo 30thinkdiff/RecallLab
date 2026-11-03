@@ -1,3 +1,5 @@
+import { cardEditToken } from './domain/editing';
+import { WorkingNote } from './features/WorkingNote';
 import { OfflineStatus } from './features/OfflineStatus';
 import { useEffect, useState, lazy, Suspense } from 'react';
 import { useWorkspaceData } from './features/workspace-data';
@@ -292,6 +294,8 @@ function Workspace() {
             <Suspense fallback={<p role="status">正在准备 AI 辅助整理…</p>}>
               <AiWorkspace key={`${id}/${aiId}`} kind={id} id={aiId} cards={data.allCards} />
             </Suspense>
+          ) : section === 'note' && id ? (
+            <WorkingNote key={id} id={id} />
           ) : section === 'documents' ? (
             <Documents projects={data.allProjects} />
           ) : section === 'document' && id ? (
@@ -388,7 +392,11 @@ function Workspace() {
           description="题目将从题库中隐藏，已有学习记录及当时的答案快照会保留。"
           onClose={() => setModal(null)}
           onConfirm={async () => {
-            await repository.archiveCard(modal.card.projectId, modal.card.id);
+            await repository.archiveCard(
+              modal.card.projectId,
+              modal.card.id,
+              cardEditToken(modal.card),
+            );
           }}
         />
       )}

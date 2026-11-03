@@ -378,7 +378,7 @@ export function forecastGoal(
     total: cards.filter((c) => c.projectId === project.id && !c.archivedAt).length,
     ready: ready.length,
     qualityPending: cards.filter(
-      (c) => c.projectId === project.id && !c.archivedAt && promptProblem(c),
+      (c) => c.projectId === project.id && !c.archivedAt && !c.paused && promptProblem(c),
     ).length,
     outsideScope: cards.filter(
       (c) =>

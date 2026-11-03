@@ -17,7 +17,7 @@ const input = {
   sourceLabel: '',
 };
 it('keeps lexical spaces, formula/code symbols, case and required criteria significant', () => {
-  for (const answer of ['ab', 'A b', 'a+b', 'a b。'])
+  for (const answer of ['ab', 'A b', 'a+b', 'a b。', ' a b', 'a b ', 'a b\n'])
     expect(preservesRequirements(item, { ...input, standardAnswer: answer })).toBe(false);
   expect(preservesRequirements(item, { ...input, hints: '用户辅助信息' })).toBe(true);
   expect(preservesRequirements(item, { ...input, answerCriteria: '新增必须项' })).toBe(false);

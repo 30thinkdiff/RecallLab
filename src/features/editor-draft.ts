@@ -61,6 +61,33 @@ export class EditorDraftController {
     if (this.error) throw new Error(this.error);
     return this.current;
   }
+  saveNote() {
+    this.pending++;
+    this.emit();
+    this.chain = this.chain
+      .then(async () => {
+        if (this.error) return;
+        const d = this.current;
+        if (d.kind !== 'note' || !d.knowledgeUnitId) throw new Error('学习稿类型不匹配');
+        await this.service.saveNote(
+          d.knowledgeUnitId,
+          d.baseNoteVersion ?? 0,
+          d.values.content,
+          d.id,
+          d.version,
+          d.epoch,
+        );
+        await this.refresh();
+      })
+      .catch((e) => {
+        this.error = e instanceof Error ? e.message : '学习稿保存失败，本页输入保留';
+      })
+      .finally(() => {
+        this.pending--;
+        this.emit();
+      });
+    return this.chain;
+  }
   async refresh() {
     const latest = await this.service.repo.db.editorDrafts.get(this.current.id);
     if (!latest || latest.epoch !== this.current.epoch || latest.version !== this.current.version)

@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 import { test, expect, type Page } from '@playwright/test';
 async function data(page: Page) {
   return page.evaluate(async () => {
@@ -19,7 +20,8 @@ async function data(page: Page) {
 }
 test('home creates a useful question without a file, project form, revision fields or algorithm settings', async ({
   page,
-}) => {
+}, info) => {
+  const started = performance.now();
   await page.goto('/');
   await page.getByRole('link', { name: '直接创建问答', exact: true }).click();
   await expect(page.getByLabel('核对要点', { exact: false })).not.toBeVisible();
@@ -32,6 +34,16 @@ test('home creates a useful question without a file, project form, revision fiel
   expect(s.projects).toHaveLength(1);
   expect(s.cards[0]!.creationOrigin).toBe('user');
   expect(s.cards[0]!.sourceReferences[0]!.label).toBe('用户创建');
+  await info.attach('direct-create-observation', {
+    body: JSON.stringify({
+      actor: 'Playwright automation, not a human',
+      steps: ['open create', 'enter question', 'enter answer', 'save and study'],
+      projectNamesRequired: 0,
+      algorithmSettingsRequired: 0,
+      automatedMilliseconds: Math.round(performance.now() - started),
+    }),
+    contentType: 'application/json',
+  });
 });
 test('ten consecutive questions reuse the same container and resume an unfinished raw editor after refresh', async ({
   page,
@@ -139,4 +151,131 @@ test('cancelling current-question editing preserves the answer exposure and orig
   expect(session.draft.wasAnswerRevealed).toBe(true);
   expect(session.draft.userResponse).toBe('揭晓前写下的原回答');
   await expect(page.getByRole('textbox', { name: '你的回答', exact: true })).toHaveCount(0);
+});
+
+test('working notes autosave independently, recover after reload, and retain question and source history', async ({
+  page,
+}) => {
+  await twoQuestions(page);
+  const before = await data(page),
+    card = before.cards[0]!;
+  await page.goto(`/#item/${card.id}`);
+  await page.getByRole('link', { name: '编辑学习稿', exact: true }).click();
+  await page
+    .getByLabel('学习稿正文')
+    .fill('用户补充：白晶信号只用于虚构案例。\n原始问答仍然保留。');
+  await expect(page.getByTestId('note-status')).toHaveText('学习稿已自动保存 · 版本 1');
+  await page.reload();
+  await expect(page.getByLabel('学习稿正文')).toHaveValue(
+    '用户补充：白晶信号只用于虚构案例。\n原始问答仍然保留。',
+  );
+  const after = await data(page);
+  expect(after.cards).toEqual(before.cards);
+  expect(after.memories).toEqual(before.memories);
+  expect(after.revisions).toEqual(before.revisions);
+  await page.goto(`/#item/${card.id}`);
+  await page.getByRole('button', { name: '修改这道题', exact: true }).click();
+  await page.getByLabel('标准答案').fill('用户另外更正题目答案');
+  await page.getByRole('button', { name: '保存题目', exact: true }).click();
+  await page.getByRole('button', { name: '确认更新并重新安排', exact: true }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  expect(
+    (await data(page)).notes.find((n) => n.id === card.knowledgeUnitId)!.canonicalContent,
+  ).toBe('用户补充：白晶信号只用于虚构案例。\n原始问答仍然保留。');
+});
+
+test('two tabs cannot silently overwrite a newer working note', async ({ page, context }) => {
+  await twoQuestions(page);
+  const card = (await data(page)).cards[0]!;
+  await page.goto(`/#note/${card.knowledgeUnitId}`);
+  await expect(page.getByLabel('学习稿正文')).toBeVisible();
+  const other = await context.newPage();
+  await other.goto(`/#note/${card.knowledgeUnitId}`);
+  await expect(other.getByLabel('学习稿正文')).toBeVisible();
+  await page.getByLabel('学习稿正文').fill('第一页面确认的新学习稿');
+  await expect(page.getByTestId('note-status')).toHaveText('学习稿已自动保存 · 版本 1');
+  await other.getByLabel('学习稿正文').fill('过期页面尚未保存的补充');
+  await expect(other.getByRole('alert')).toContainText('另一页面');
+  await expect(other.getByLabel('学习稿正文')).toHaveValue('过期页面尚未保存的补充');
+  expect(
+    (await data(page)).notes.find((n) => n.id === card.knowledgeUnitId)!.canonicalContent,
+  ).toBe('第一页面确认的新学习稿');
+});
+
+test('narrow-screen direct creation and in-place correction remain usable', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await twoQuestions(page);
+  await page.getByRole('textbox', { name: '你的回答', exact: true }).fill('移动端原回答');
+  await page.getByRole('button', { name: '修改这道题', exact: true }).click();
+  await page.getByLabel('标准答案').fill('移动端更正答案');
+  await page.getByRole('button', { name: '保存题目', exact: true }).click();
+  await page.getByRole('button', { name: '确认更新并重新安排', exact: true }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.getByRole('textbox', { name: '你的回答', exact: true })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+    true,
+  );
+});
+
+test('three PDF question corrections keep immutable source, then working note and complete backup restore stay independent', async ({
+  page,
+}, info) => {
+  await page.goto('/#import');
+  await page
+    .getByLabel('选择学习资料')
+    .setInputFiles(fileURLToPath(new URL('../fixtures/import/chinese-cid.pdf', import.meta.url)));
+  await expect(page.getByRole('heading', { name: '候选题目（69）', exact: true })).toBeVisible();
+  await page.getByRole('checkbox', { name: '我已核对警告，确认要保存的内容', exact: true }).check();
+  await page.getByRole('button', { name: '确认导入 69 道题', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '导入完成', exact: true })).toBeVisible();
+  const before = await data(page);
+  const sources = await page.evaluate(async () =>
+    (await import('/src/persistence/database.ts' + '')).db.sourceDocuments.toArray(),
+  );
+  for (const [index, card] of before.cards.slice(0, 3).entries()) {
+    await page.goto(`/#item/${card.id}`);
+    await page.getByRole('button', { name: '修改这道题', exact: true }).click();
+    await page.getByLabel('标准答案').fill(`用户补充修正${index + 1}：这是虚构的新版标准表述。`);
+    await page.getByRole('button', { name: '保存题目', exact: true }).click();
+    await page.getByRole('button', { name: '确认更新并重新安排', exact: true }).click();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+  }
+  const card = before.cards[0]!;
+  await page.goto(`/#note/${card.knowledgeUnitId}`);
+  await page.getByLabel('学习稿正文').fill('用户自己整理的学习稿，不是PDF原文。');
+  await expect(page.getByTestId('note-status')).toHaveText('学习稿已自动保存 · 版本 1');
+  const saved = await data(page);
+  expect(saved.revisions).toHaveLength(before.revisions.length + 3);
+  for (const old of before.cards.slice(0, 3)) {
+    const current = saved.cards.find((c) => c.id === old.id)!;
+    expect(current.learningStateId).not.toBe(old.learningStateId);
+    expect(current.sourceReferences).toEqual(old.sourceReferences);
+    expect(
+      saved.revisions.find((r) => r.id === old.currentRevisionId)!.snapshot.standardAnswer,
+    ).toBe(old.standardAnswer);
+  }
+  expect(
+    await page.evaluate(async () =>
+      (await import('/src/persistence/database.ts' + '')).db.sourceDocuments.toArray(),
+    ),
+  ).toEqual(sources);
+  await page.goto('/#backup');
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    page.getByRole('button', { name: '导出完整备份', exact: true }).click(),
+  ]);
+  const path = info.outputPath('fictional-edited-v9.json');
+  await download.saveAs(path);
+  await page.getByLabel('选择 JSON 备份').setInputFiles(path);
+  await page.getByRole('checkbox', { name: '我确认以此备份替换当前数据', exact: true }).check();
+  await page.getByRole('button', { name: '确认恢复备份', exact: true }).click();
+  await expect(page.getByRole('status')).toContainText('恢复成功');
+  const restored = await data(page);
+  expect(restored.cards).toEqual(saved.cards);
+  expect(restored.events).toEqual(saved.events);
+  expect(restored.memories).toEqual(saved.memories);
+  expect(restored.notes).toEqual(saved.notes);
+  expect(restored.revisions).toEqual(saved.revisions);
+  await page.goto(`/#note/${card.knowledgeUnitId}`);
+  await expect(page.getByLabel('学习稿正文')).toHaveValue('用户自己整理的学习稿，不是PDF原文。');
 });

@@ -386,3 +386,58 @@ it('free-practice correction creates no FSRS state or score', async () => {
   expect((await db.reviewEvents.toArray())[0]!.assessmentResult).toBe('ungraded');
   await exportBackup(db);
 });
+
+it('resume excludes paused or corrected current content, protects its raw draft and includes new active questions', async () => {
+  const { item, projectId } = await create();
+  const scheduling = new ScheduleService(db);
+  const sid = await scheduling.start(projectId, { adaptive: true });
+  let session = (await db.sessions.get(sid))!;
+  await repo.updateDraft(sid, 0, { userResponse: '未提交的原回答' }, tokenOf(session));
+  await service.saveCard(
+    projectId,
+    { ...raw, paused: true },
+    { id: item.id, expectedToken: cardEditToken(item) },
+  );
+  const next = await service.saveCard(projectId, {
+    ...raw,
+    question: '新知识使用什么标识？',
+    standardAnswer: '蓝晶信号',
+  });
+  expect(await scheduling.start(projectId, { adaptive: true })).toBe(sid);
+  session = (await db.sessions.get(sid))!;
+  expect(session.queue.slice(session.index).map((s) => s.id)).toEqual([next.id]);
+  expect(session.draft.userResponse).toBe('');
+  expect((await db.draftRecoveries.toArray())[0]!.draft.userResponse).toBe('未提交的原回答');
+  expect(await db.reviewEvents.count()).toBe(0);
+  expect((await db.memoryStates.get(item.learningStateId))!.card.reps).toBe(0);
+  const paused = (await db.practiceItems.get(item.id))!;
+  await service.saveCard(
+    projectId,
+    { ...raw, paused: false },
+    { id: item.id, expectedToken: cardEditToken(paused) },
+  );
+  await scheduling.start(projectId, { adaptive: true });
+  session = (await db.sessions.get(sid))!;
+  expect(session.queue.slice(session.index).map((s) => s.id)).toContain(item.id);
+});
+
+it('archiving is guarded against stale edits and preserves all historical evidence', async () => {
+  const { item, projectId } = await create();
+  await learn(projectId);
+  const backup = await exportBackup(db);
+  await service.saveCard(
+    projectId,
+    { ...raw, hints: '新增辅助信息' },
+    { id: item.id, expectedToken: cardEditToken(item) },
+  );
+  await expect(repo.archiveCard(projectId, item.id, cardEditToken(item))).rejects.toThrow(
+    '另一页面',
+  );
+  const current = (await db.practiceItems.get(item.id))!;
+  await repo.archiveCard(projectId, item.id, cardEditToken(current));
+  expect((await db.practiceItems.get(item.id))!.archivedAt).toBeTruthy();
+  expect(await db.reviewEvents.toArray()).toEqual(backup.data.reviewEvents);
+  expect(await db.memoryStates.toArray()).toEqual(backup.data.memoryStates);
+  await repo.restoreCard(projectId, item.id, cardEditToken((await db.practiceItems.get(item.id))!));
+  expect((await db.practiceItems.get(item.id))!.archivedAt).toBeUndefined();
+});

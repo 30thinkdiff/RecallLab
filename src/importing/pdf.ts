@@ -87,9 +87,8 @@ export async function parsePdfBytes(
         const startOffset = content.length;
         let text = '',
           items = 0;
-        let status: DocumentPage['status'] = 'ready';
-        let kind: DocumentPage['kind'] = 'failed',
-          method: DocumentPage['method'] = 'text',
+        let status: DocumentPage['status'];
+        let method: DocumentPage['method'] = 'text',
           confidence: number | undefined,
           errorName: string | undefined;
         const warnings: string[] = [];
@@ -135,7 +134,7 @@ export async function parsePdfBytes(
           status = 'failed';
           errorName ??= 'ImageInspectionError';
         }
-        kind = classifyPdfPage(status, images);
+        const kind: DocumentPage['kind'] = classifyPdfPage(status, images);
         if (status === 'empty')
           warnings.push(
             images

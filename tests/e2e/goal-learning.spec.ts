@@ -140,7 +140,7 @@ test('goal flow: public 69 bank, exact feedback, refresh/pause, human correction
       version: b.databaseVersion,
     };
   });
-  expect(result).toEqual({ same: true, version: 8 });
+  expect(result).toEqual({ same: true, version: 9 });
 });
 test('cross-tab stale inputs stay protected; skips and flagged questions do not become FSRS failures', async ({
   page,

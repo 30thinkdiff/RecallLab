@@ -1,3 +1,6 @@
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from '../persistence/database';
+import { CardForm } from './CardEditor';
 import { useState } from 'react';
 import { objectiveLabels } from '../ai/protocol';
 import type {
@@ -16,6 +19,11 @@ import { EventHistory } from './EventHistory';
 import type { WorkspaceData } from './Workspace';
 
 export function ItemDetail({ item, data }: { item: PracticeItem; data: WorkspaceData }) {
+  const [editing, setEditing] = useState(false);
+  const editorCopies = useLiveQuery(
+    () => db.editorDrafts.where('practiceItemId').equals(item.id).toArray(),
+    [item.id],
+  );
   const [scope, setScope] = useState<'current' | 'all'>('current');
   const evidence = itemEvidence(item, data.allEvents, data.revisions);
   const revisions = data.revisions
@@ -39,12 +47,26 @@ export function ItemDetail({ item, data }: { item: PracticeItem; data: Workspace
       </a>
       <div className="eyebrow">ONE QUESTION, A COMPLETE HISTORY</div>
       <h1>{item.question}</h1>
+      {!item.archivedAt && !archivedProject && (
+        <button className="button" onClick={() => setEditing(true)}>
+          修改这道题
+        </button>
+      )}
+      {editing && (
+        <CardForm projectId={item.projectId} card={item} onClose={() => setEditing(false)} />
+      )}
       <p className="page-intro">
         当前有效修订 {item.revision} · {item.archivedAt ? '已归档，不参与正常学习' : '有效题目'} ·{' '}
         {currentRevision ? changeLabels[currentRevision.changeType] : ''}
       </p>
       {!archivedProject && !item.archivedAt && (
         <p>
+          <a className="button secondary" href={`#note/${item.knowledgeUnitId}`}>
+            编辑学习稿
+          </a>{' '}
+          <a className="button secondary" href={`#project/${item.projectId}`}>
+            返回题库
+          </a>{' '}
           <a className="button secondary" href={`#ai/item/${item.id}`}>
             AI 建议要点与题干
           </a>
@@ -221,6 +243,18 @@ export function ItemDetail({ item, data }: { item: PracticeItem; data: Workspace
       </section>
       <section>
         <h2>未提交作答与冲突副本</h2>
+        {(editorCopies ?? []).map((copy) => (
+          <details key={copy.id}>
+            <summary>未提交编辑 · {dateTime(copy.updatedAt)}</summary>
+            <pre className="preserve-lines">{JSON.stringify(copy.values, null, 2)}</pre>
+            <button
+              className="button secondary"
+              onClick={() => downloadJson(copy, 'RecallLab-editor-copy.json')}
+            >
+              下载编辑副本
+            </button>
+          </details>
+        ))}
         <p className="muted">这些是暂存原始输入，不是正式练习成绩。不会自动粘贴到新版答案中。</p>
         {recoveries.length ? (
           recoveries.map((recovery) => (

@@ -1,3 +1,4 @@
+import { migrateBackup } from './migration';
 import { it, expect } from 'vitest';
 import {
   packBackup,
@@ -86,4 +87,32 @@ it('refuses expansion bombs and nonexistent pool references even with a self-con
       ),
     ),
   ).rejects.toThrow('引用无效');
+});
+it('accepts the v9 envelope with editable drafts and keeps legacy envelopes supported', async () => {
+  const b = plain();
+  b.data = migrateBackup(b);
+  b.databaseVersion = 9;
+  const draft = {
+    id: 'public-unsaved-new',
+    epoch: 'public-epoch',
+    version: 0,
+    kind: 'card' as const,
+    values: {
+      question: '公开未确认题干',
+      standardAnswer: '尚未保存的答案',
+      answerCriteria: '',
+      hints: '',
+      mnemonics: '',
+      confusionWarnings: '',
+      sourceLabel: '用户创建',
+    },
+    createdAt: b.createdAt,
+    updatedAt: b.createdAt,
+  };
+  b.data.editorDrafts.push(draft);
+  const packed = await packBackup(b);
+  expect(await parsePortableBackup(JSON.stringify(packed.value))).toEqual(b);
+  expect(
+    (await parsePortableBackup(JSON.stringify((await packBackup(plain())).value))).databaseVersion,
+  ).toBe(1);
 });
