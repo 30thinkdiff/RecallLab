@@ -470,3 +470,26 @@ it('preserves exact outer indentation and only inherits memory for lossless CRLF
     ),
   ).rejects.toThrow('确认');
 });
+
+it('rejects automatic grading of trimmed code indentation without rewriting old literal-check history', async () => {
+  const made = await service.saveCard(undefined, { ...raw, standardAnswer: '    return x' });
+  const sid = await new ScheduleService(db).start(made.projectId, { adaptive: true });
+  let s = (await db.sessions.get(sid))!;
+  s = await repo.updateDraft(
+    sid,
+    0,
+    { responseMode: 'typed', userResponse: 'return x' },
+    tokenOf(s),
+  );
+  s = await repo.updateDraft(sid, 0, {}, tokenOf(s), 'reveal');
+  await expect(
+    repo.submitReview(sid, 0, 'correct', null, tokenOf(s), 'good', true),
+  ).rejects.toThrow('不能自动核对');
+  expect(await db.reviewEvents.count()).toBe(0);
+  expect((await db.memoryStates.toArray())[0]!.card.reps).toBe(0);
+  await repo.submitReview(sid, 0, 'incorrect', null, tokenOf(s));
+  const event = (await db.reviewEvents.toArray())[0]!;
+  expect(event.assessmentSource).toBe('user_checked');
+  expect(event.scheduling!.grade).toBe(1);
+  validateBackup(await exportBackup(db));
+});

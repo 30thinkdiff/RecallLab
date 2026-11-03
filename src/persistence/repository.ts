@@ -1,5 +1,10 @@
 import { cardEditToken, displayText } from '../domain/editing';
-import { exactShort, timingSchema, assertLearningEvidence } from '../learning/evidence';
+import {
+  exactCurrentShort,
+  exactShort,
+  timingSchema,
+  assertLearningEvidence,
+} from '../learning/evidence';
 import { assertAiAnchors, type AiConfirmation, type AiProvenance } from '../ai/provenance';
 import {
   assessmentSchema,
@@ -672,10 +677,11 @@ export class Repository {
             d.pages.every((p) => p.method !== 'ocr' && p.status === 'ready'),
         );
         const literalMatch = exactShort(item, session.draft.userResponse);
+        const currentMatch = exactCurrentShort(item, session.draft.userResponse);
         if (
           automaticCheck &&
           (!sourceReady ||
-            !literalMatch ||
+            !currentMatch ||
             performance !== 'correct' ||
             !event.wasIndependentRecall ||
             event.hintLevelUsed)
@@ -689,7 +695,7 @@ export class Repository {
             literalMatch,
             overridden:
               !automaticCheck &&
-              literalMatch &&
+              currentMatch &&
               sourceReady &&
               event.wasIndependentRecall &&
               event.hintLevelUsed === 0 &&

@@ -288,3 +288,24 @@ test('three PDF question corrections keep immutable source, then working note an
   await page.goto(`/#note/${card.knowledgeUnitId}`);
   await expect(page.getByLabel('学习稿正文')).toHaveValue('用户自己整理的学习稿，不是PDF原文。');
 });
+
+test('meaningful answer indentation is preserved and mismatching input requires human feedback', async ({
+  page,
+}) => {
+  await page.goto('/#compose');
+  await page.getByLabel('问题', { exact: false }).fill('虚构代码的一行完整表述是什么？');
+  await page.getByLabel('标准答案').fill('    return x');
+  await page.getByRole('button', { name: '保存并学习', exact: true }).click();
+  await page.getByRole('textbox', { name: '你的回答', exact: true }).fill('return x');
+  await page.getByRole('button', { name: '提交回答', exact: true }).click();
+  await expect(page.getByRole('button', { name: '全部正确，继续', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: '采用核对反馈并继续', exact: true })).toHaveCount(
+    0,
+  );
+  await page.getByRole('button', { name: '回答错误，继续', exact: true }).click();
+  await expect.poll(async () => (await data(page)).events.length).toBe(1);
+  const saved = await data(page);
+  expect(saved.cards[0]!.standardAnswer).toBe('    return x');
+  expect(saved.events[0]!.assessmentSource).toBe('user_checked');
+  expect(saved.events[0]!.scheduling!.grade).toBe(1);
+});

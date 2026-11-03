@@ -5,7 +5,7 @@ import { StudyDraftController } from './study-draft';
 import { repository } from '../persistence/repository';
 import { db } from '../persistence/database';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { exactShort } from '../learning/evidence';
+import { exactCurrentShort } from '../learning/evidence';
 import { AttemptClock } from '../learning/timing';
 import { SourceLinks } from './Documents';
 import { tokenOf } from '../domain/revisions';
@@ -86,7 +86,7 @@ export function CompactStudy({ session, cards }: { session: StudySession; cards:
     current.currentRevisionId !== item.revisionId;
   const blocked = action.busy || conflict;
   const revealed = session.draft.wasAnswerRevealed;
-  const match = exactShort(item, view.draft.userResponse);
+  const match = exactCurrentShort(item, view.draft.userResponse);
   const sourceReady =
     !!docs &&
     docs.every(

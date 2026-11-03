@@ -36,6 +36,16 @@ export function exactShort(item: PracticeSnapshot, response: string) {
     response.trim().normalize('NFC') === answer.normalize('NFC')
   );
 }
+// Current automatic feedback is a strict subset of the historical v1 check.
+// Keep v1 unchanged for immutable events and old backups; never trim new evidence.
+export function exactCurrentShort(item: PracticeSnapshot, response: string) {
+  return (
+    item.standardAnswer.length <= 80 &&
+    !/[\r\n]/u.test(item.standardAnswer) &&
+    exactShort(item, response) &&
+    response.normalize('NFC') === item.standardAnswer.normalize('NFC')
+  );
+}
 export function usableTiming(timing?: AttemptTiming): boolean {
   if (!timing || !timing.attemptedAt || !timingSchema.safeParse(timing).success) return false;
   const wall = Date.parse(timing.observedAt) - Date.parse(timing.attemptedAt);

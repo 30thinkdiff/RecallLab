@@ -1,10 +1,15 @@
 import { it, expect } from 'vitest';
 import { AttemptClock } from './timing';
-import { exactShort, usableTiming } from './evidence';
+import { exactCurrentShort, exactShort, usableTiming } from './evidence';
 import { buildAdaptivePlan, forecastGoal } from './adaptive';
 import { initialMemory, advance } from '../scheduling/engine';
 import { snapshotOf } from '../domain/revisions';
-import type { PracticeItem, LearningProject, ReviewEvent } from '../domain/models';
+import type {
+  PracticeItem,
+  PracticeSnapshot,
+  LearningProject,
+  ReviewEvent,
+} from '../domain/models';
 import { calibrationReport } from './calibration';
 export const testProject: LearningProject = {
   id: 'p',
@@ -189,4 +194,14 @@ it('does not treat a quickly resumed partial clock as an uninterrupted personal-
   expect(usableTiming(saved)).toBe(true);
   const resumed = new AttemptClock(start + 5500, now.toISOString(), saved);
   expect(usableTiming(resumed.snapshot(start + 6000))).toBe(false);
+});
+it('current automatic evidence retains every lexical space while historic v1 checks remain verifiable', () => {
+  const card = {
+    standardAnswer: '    return x',
+    answerCriteria: [],
+  } as unknown as PracticeSnapshot;
+  expect(exactShort(card, 'return x')).toBe(true);
+  expect(exactCurrentShort(card, 'return x')).toBe(false);
+  expect(exactCurrentShort(card, '    return x')).toBe(true);
+  expect(exactCurrentShort({ ...card, standardAnswer: 'a b' }, ' a b ')).toBe(false);
 });
