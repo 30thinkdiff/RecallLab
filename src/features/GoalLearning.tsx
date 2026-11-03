@@ -38,6 +38,9 @@ export function LearningHome({
         给出资料、目标和每天可用时间，系统安排练习。你负责回忆，遇到不准确的内容随时更正。
       </p>
       <div className="button-row">
+        <a className="button" href="#compose">
+          直接创建问答
+        </a>
         <a className="button" href="#import-task">
           创建学习任务
         </a>

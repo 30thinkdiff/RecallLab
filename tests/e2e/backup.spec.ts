@@ -114,7 +114,7 @@ test('N: backup restore and a real browser restart retain revision links and his
       databaseVersion: number;
       data: { reviewEvents: unknown[]; revisions: unknown[]; sessions: unknown[] };
     };
-    expect(exported.databaseVersion).toBe(8);
+    expect(exported.databaseVersion).toBe(9);
     expect(exported.data.reviewEvents).toHaveLength(4);
     expect(exported.data.revisions).toHaveLength(6);
     await page.getByLabel('选择 JSON 备份').setInputFiles(file);
@@ -351,8 +351,8 @@ test('v4 upgrade first downloads a backup, preserves formal scheduling byte-for-
       ),
     };
   });
-  expect(result.version).toBe(8);
-  expect(result.after.databaseVersion).toBe(8);
+  expect(result.version).toBe(9);
+  expect(result.after.databaseVersion).toBe(9);
   expect(result.after.data).toEqual(before);
   expect(result.oldWriter).toBe('VersionError');
   expect(

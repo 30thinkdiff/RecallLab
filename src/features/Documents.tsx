@@ -67,7 +67,9 @@ export function Documents({ projects }: { projects: LearningProject[] }) {
                 {document.fileType.toUpperCase()} ·{' '}
                 {document.extractionStatus === 'ready' ? '已提取' : '需人工核对'}
               </span>
-              <h2>{document.filename}</h2>
+              <h2>
+                {document.inputOrigin === 'pasted' ? '用户粘贴的原始快照' : document.filename}
+              </h2>
               <p>
                 {projects.find((project) => project.id === document.projectId)?.name} ·{' '}
                 {document.sections.length} 个章节

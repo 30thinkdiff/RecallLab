@@ -208,7 +208,10 @@ function StudyQuestion({
   const performance = assessmentResult(assessment, item);
   const current = cards.find((card) => card.id === item.id);
   const contentConflict =
-    !current || !!current.archivedAt || current.currentRevisionId !== item.revisionId;
+    !current ||
+    !!current.archivedAt ||
+    !!current.paused ||
+    current.currentRevisionId !== item.revisionId;
   const blocked = action.busy || contentConflict || view.conflict;
   const persist = (patch: Parameters<StudyDraftController['edit']>[0]) => controller.edit(patch);
   async function submit(skipped = false) {

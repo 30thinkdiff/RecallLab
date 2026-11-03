@@ -1,3 +1,4 @@
+import { validateBackup } from '../persistence/backup-format';
 import { beforeEach, afterEach, it, expect, vi } from 'vitest';
 import Dexie from 'dexie';
 import { RecallDatabase } from '../persistence/database';
@@ -267,14 +268,16 @@ it.each([false, true])(
         rawDb.close();
       } else {
         await upgraded.open();
-        expect(upgraded.verno).toBe(8);
+        expect(upgraded.verno).toBe(9);
         expect((await exportBackup(upgraded)).data).toEqual(data);
         const copies = await upgraded.recoveryBackups.toArray();
-        expect(copies).toHaveLength(1);
-        expect(JSON.parse(copies[0]!.json)).toMatchObject({
-          databaseVersion: 7,
-          data: JSON.parse(JSON.stringify(data)),
-        });
+        expect(copies).toHaveLength(2);
+        const rawProtection = JSON.parse(
+          copies.find((c) => JSON.parse(c.json).databaseVersion === 7)!.json,
+        );
+        expect(rawProtection.databaseVersion).toBe(7);
+        expect(validateBackup(rawProtection).data).toEqual(JSON.parse(JSON.stringify(data)));
+        expect(rawProtection.data).not.toHaveProperty('editorDrafts');
       }
     } finally {
       upgraded.close();

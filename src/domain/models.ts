@@ -50,6 +50,7 @@ export interface DocumentSection {
   page?: number;
 }
 export interface SourceDocument {
+  inputOrigin?: 'file' | 'pasted';
   id: string;
   projectId: string;
   filename: string;
@@ -69,6 +70,7 @@ export interface SourceDocument {
 }
 
 export interface KnowledgeUnit {
+  noteVersion?: number;
   learningObjective?: LearningObjective;
   aiProvenance?: AiProvenance;
   id: string;
@@ -87,6 +89,10 @@ export interface KnowledgeUnit {
 }
 
 export interface PracticeItem {
+  importance?: number;
+  paused?: boolean;
+  editVersion?: number;
+  creationOrigin?: 'user' | 'source';
   learningIssue?: { reason: string; at: string };
   learningObjective?: LearningObjective;
   aiProvenance?: AiProvenance;
@@ -137,6 +143,7 @@ export type VersionedSnapshot = PracticeSnapshot & { revisionId: string; learnin
 export type ChangeType =
   'initial' | 'legacy' | 'cosmetic' | 'clarification' | 'substantive' | 'replacement';
 export interface PracticeItemRevision {
+  equivalencePolicy?: 'literal-v1';
   id: string;
   practiceItemId: string;
   revisionNumber: number;

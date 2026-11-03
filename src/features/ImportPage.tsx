@@ -75,7 +75,7 @@ export function ImportPage({
     setPage(0);
     if (fileInput.current) fileInput.current.value = '';
   }
-  async function read(file: File, ocr = false) {
+  async function read(file: File, ocr = false, inputOrigin: 'file' | 'pasted' = 'file') {
     if (dirty && !window.confirm('重新解析会替换尚未保存的候选编辑。确定放弃这些修改并继续吗？')) {
       if (file !== sourceFile.current && fileInput.current) fileInput.current.value = '';
       return;
@@ -113,6 +113,15 @@ export function ImportPage({
         },
       );
       if (request !== version.current) return;
+      material.document.inputOrigin = inputOrigin;
+      if (inputOrigin === 'pasted')
+        material.candidates = material.candidates.map((row) => ({
+          ...row,
+          source: {
+            ...row.source,
+            label: `用户粘贴原始快照${row.source.recordIndex ? ` · 第${row.source.recordIndex}条` : ''}`,
+          },
+        }));
       setParsed(material);
       const matches = duplicateReasons(material.candidates, existing);
       setRows(material.candidates.map((row) => ({ ...row, selected: !matches.has(row.id) })));
@@ -193,7 +202,7 @@ export function ImportPage({
             disabled={loading || action.busy}
             onClick={() => onManualCreate(manualProjectId || undefined)}
           >
-            {projects.length ? '直接添加一道问答' : '先创建项目，再手动添加问答'}
+            直接添加一道问答
           </button>
           <details>
             <summary>粘贴文字或临时笔记</summary>
@@ -215,7 +224,11 @@ export function ImportPage({
               className="button secondary"
               disabled={!pastedText.trim() || loading || action.busy}
               onClick={() =>
-                void read(new File([pastedText], '手动粘贴的学习内容.txt', { type: 'text/plain' }))
+                void read(
+                  new File([pastedText], '用户粘贴内容.txt', { type: 'text/plain' }),
+                  false,
+                  'pasted',
+                )
               }
             >
               解析粘贴内容
@@ -262,7 +275,12 @@ export function ImportPage({
       {parsed && !result && (
         <>
           <section className="import-target">
-            <p className="muted">当前预览：{parsed.document.filename}</p>
+            <p className="muted">
+              当前预览：
+              {parsed.document.inputOrigin === 'pasted'
+                ? '用户粘贴的原始快照'
+                : parsed.document.filename}
+            </p>
             <p>
               {projectId === 'new'
                 ? `将新建题库：${projectName}`

@@ -148,12 +148,17 @@ it('substantive corrections isolate old memory while cosmetic changes preserve i
   await submit();
   let item = (await db.practiceItems.get(itemId))!;
   const state = item.learningStateId;
-  await repo.saveCard(projectId, { ...raw, standardAnswer: raw.standardAnswer + '。' }, itemId, {
-    expectedRevisionId: item.currentRevisionId,
-    changeType: 'cosmetic',
-    changeSummary: '仅标点',
-    impactOnLearningState: 'preserve',
-  });
+  await repo.saveCard(
+    projectId,
+    { ...raw, standardAnswer: raw.standardAnswer, hints: '辅助说明' },
+    itemId,
+    {
+      expectedRevisionId: item.currentRevisionId,
+      changeType: 'cosmetic',
+      changeSummary: '仅标点',
+      impactOnLearningState: 'preserve',
+    },
+  );
   item = (await db.practiceItems.get(itemId))!;
   expect(item.learningStateId).toBe(state);
   expect((await db.memoryStates.get(state))?.card.reps).toBe(1);
@@ -258,12 +263,17 @@ it('rejects a backup that aliases two different questions to the same learning s
 it('rejects retaining real FSRS grades for a changed answer mislabeled as a cosmetic revision', async () => {
   await submit();
   const item = (await db.practiceItems.get(itemId))!;
-  await repo.saveCard(projectId, { ...raw, standardAnswer: raw.standardAnswer + '。' }, itemId, {
-    expectedRevisionId: item.currentRevisionId,
-    changeType: 'cosmetic',
-    changeSummary: '标点',
-    impactOnLearningState: 'preserve',
-  });
+  await repo.saveCard(
+    projectId,
+    { ...raw, standardAnswer: raw.standardAnswer, hints: '辅助说明' },
+    itemId,
+    {
+      expectedRevisionId: item.currentRevisionId,
+      changeType: 'cosmetic',
+      changeSummary: '标点',
+      impactOnLearningState: 'preserve',
+    },
+  );
   const backup = await exportBackup(db);
   const current = backup.data.practiceItems.find((c) => c.id === itemId)!;
   current.standardAnswer = '不同知识内容';

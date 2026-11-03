@@ -1,7 +1,15 @@
 import { DATABASE_VERSION } from './version';
 import type { RecallDatabase } from './database';
 import { backupSchema, validateBackup, type Backup } from './backup-format';
-import { dataTables, v5Tables, legacyTables, v2Tables, v3Tables, migrateBackup } from './migration';
+import {
+  v8Tables,
+  dataTables,
+  v5Tables,
+  legacyTables,
+  v2Tables,
+  v3Tables,
+  migrateBackup,
+} from './migration';
 
 // Dexie.exists() may delete its temporary database when a missing-name probe aborts.
 // A concurrent tab can create real data in between; never delete a database to inspect it.
@@ -37,7 +45,9 @@ export async function inspectBeforeUpgrade(name: string): Promise<Backup | null>
             ? v3Tables
             : version < 6
               ? v5Tables
-              : dataTables;
+              : version < 9
+                ? v8Tables
+                : dataTables;
     const data = await new Promise<Record<string, unknown[]>>((resolve, reject) => {
       const result: Record<string, unknown[]> = {};
       const transaction = existing.transaction([...tables], 'readonly');
@@ -103,6 +113,7 @@ export async function restoreBackup(db: RecallDatabase, input: Backup) {
   const backup = validateBackup(input);
   const migrated = migrateBackup(backup);
   // New generations invalidate all open tabs' pre-restore write tokens, even for identical IDs.
+  migrated.editorDrafts = migrated.editorDrafts.map((d) => ({ ...d, epoch: crypto.randomUUID() }));
   migrated.aiDrafts = migrated.aiDrafts.map((d) => ({
     ...d,
     epoch: crypto.randomUUID(),

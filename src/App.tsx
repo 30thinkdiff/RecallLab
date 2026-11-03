@@ -96,6 +96,7 @@ function Workspace() {
   const createProject = () => setModal({ type: 'project' });
   const activePage = [
     'home',
+    'compose',
     'overview',
     'learn',
     'goals',
@@ -185,7 +186,7 @@ function Workspace() {
           </p>
         </div>
         <div className="sidebar-footer">
-          RECALL. REFLECT. REPEAT.<span>0.6 · 目标驱动学习</span>
+          RECALL. REFLECT. REPEAT.<span>0.6.2 · 自由制题与学习</span>
           <OfflineStatus />
         </div>
       </aside>
@@ -243,6 +244,14 @@ function Workspace() {
                 }
               />
             </Suspense>
+          ) : section === 'compose' ? (
+            <CardForm
+              quick
+              projectId={id}
+              onClose={() => {
+                window.location.assign('#home');
+              }}
+            />
           ) : section === 'daily' ? (
             <Suspense fallback={<p role="status">正在准备今日复习…</p>}>
               <DailyReview
@@ -274,9 +283,9 @@ function Workspace() {
                 cards={data.allCards}
                 initialProjectId={id}
                 goalFlow={section === 'import-task'}
-                onManualCreate={(projectId) =>
-                  setModal(projectId ? { type: 'card', projectId } : { type: 'project' })
-                }
+                onManualCreate={(projectId) => {
+                  window.location.assign(projectId ? `#compose/${projectId}` : '#compose');
+                }}
               />
             </Suspense>
           ) : section === 'ai' && id && aiId ? (

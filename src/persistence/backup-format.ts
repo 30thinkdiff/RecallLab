@@ -1,3 +1,5 @@
+import { displayText } from '../domain/editing';
+import { editorDraftSchema, workingNoteRevisionSchema } from './editable-format';
 import {
   automaticGoalSchema,
   timingSchema,
@@ -70,6 +72,7 @@ const project = z.object({
   archivedAt: date.optional(),
 });
 const knowledge = z.object({
+  noteVersion: z.number().int().nonnegative().optional(),
   learningObjective: objectiveSchema.optional(),
   aiProvenance: aiProvenanceSchema.optional(),
   id,
@@ -94,6 +97,10 @@ const knowledge = z.object({
   updatedAt: date,
 });
 const item = snapshot.omit({ revisionId: true }).extend({
+  importance: z.number().int().min(1).max(3).optional(),
+  paused: z.boolean().optional(),
+  editVersion: z.number().int().nonnegative().optional(),
+  creationOrigin: z.enum(['user', 'source']).optional(),
   learningIssue: z.object({ reason: z.string().max(1000), at: date }).optional(),
   qualityReviewedRevisionId: id.optional(),
   projectId: id,
@@ -162,6 +169,7 @@ const session = z.object({
   lastWriterId: z.string().optional(),
 });
 const revision = z.object({
+  equivalencePolicy: z.literal('literal-v1').optional(),
   id,
   practiceItemId: id,
   revisionNumber: z.number().int().positive(),
@@ -201,9 +209,12 @@ export const backupSchema = z.object({
     z.literal(6),
     z.literal(7),
     z.literal(8),
+    z.literal(9),
   ]),
   createdAt: date,
   data: z.object({
+    editorDrafts: z.array(editorDraftSchema).max(100).default([]),
+    workingNoteRevisions: z.array(workingNoteRevisionSchema).default([]),
     aiDrafts: z.array(aiDraftSchema).max(20).default([]),
     projects: z.array(project),
     knowledgeUnits: z.array(knowledge),
@@ -288,6 +299,46 @@ export function validateBackup(raw: unknown): Backup {
     for (const itemId of doc.initialItemIds)
       if (items.get(itemId)?.projectId !== doc.projectId) throw new Error('资料导入题目引用无效');
   }
+
+  if (backup.databaseVersion < 9 && (data.editorDrafts.length || data.workingNoteRevisions.length))
+    throw new Error('旧版备份不能包含新编辑记录');
+  if (new TextEncoder().encode(JSON.stringify(data.editorDrafts)).byteLength > 12 * 1024 * 1024)
+    throw new Error('编辑草稿超过12 MiB');
+  const noteKeys = new Set<string>();
+  for (const r of data.workingNoteRevisions) {
+    requireRef('knowledgeUnits', r.knowledgeUnitId, '学习稿版本');
+    const unit = data.knowledgeUnits.find((u) => u.id === r.knowledgeUnitId)!;
+    if (unit.projectId !== r.projectId) throw new Error('学习稿不能跨项目');
+    const key = `${r.knowledgeUnitId}:${r.version}`;
+    if (noteKeys.has(key)) throw new Error('重复学习稿版本');
+    noteKeys.add(key);
+    validateSources(r.sourceReferences, r.projectId);
+  }
+  for (const unit of data.knowledgeUnits)
+    if (unit.noteVersion !== undefined) {
+      const r = data.workingNoteRevisions.find(
+        (r) => r.knowledgeUnitId === unit.id && r.version === unit.noteVersion,
+      );
+      if (!r || r.content !== unit.canonicalContent) throw new Error('学习稿与版本记录不一致');
+    }
+  for (const d of data.editorDrafts) {
+    if (d.projectId) requireRef('projects', d.projectId, '编辑草稿');
+    if (d.practiceItemId) {
+      requireRef('practiceItems', d.practiceItemId, '编辑草稿');
+      if (items.get(d.practiceItemId)!.projectId !== d.projectId)
+        throw new Error('编辑草稿不能跨项目');
+    }
+    if (d.knowledgeUnitId) {
+      requireRef('knowledgeUnits', d.knowledgeUnitId, '编辑草稿');
+      if (data.knowledgeUnits.find((u) => u.id === d.knowledgeUnitId)!.projectId !== d.projectId)
+        throw new Error('编辑草稿不能跨项目');
+    }
+    if (d.sessionId) {
+      requireRef('sessions', d.sessionId, '编辑草稿');
+      if (data.sessions.find((s) => s.id === d.sessionId)!.projectId !== d.projectId)
+        throw new Error('编辑草稿不能跨学习任务');
+    }
+  }
   const stateOwners = new Map<string, string>();
   for (const revision of data.revisions) {
     const owner = stateOwners.get(revision.learningStateId);
@@ -311,6 +362,8 @@ export function validateBackup(raw: unknown): Backup {
     )
       throw new Error('记忆调度状态与内容版本不一致');
     if (item && item.learningStateId === memory.learningStateId && memory.card.reps > 0) {
+      // Legacy records keep their historical validation policy. New revisions are
+      // additionally checked literally, pair by pair, below; never rewrite old evidence.
       const comparable = (text: string) => text.replace(/\s+/g, '').replace(/。$/u, '');
       if (
         item.learningObjective !== rev!.snapshot.learningObjective ||
@@ -549,6 +602,21 @@ export function validateBackup(raw: unknown): Backup {
         previous.revisionNumber >= revision.revisionNumber
       )
         throw new Error('修订链无效');
+      if (
+        revision.equivalencePolicy === 'literal-v1' &&
+        revision.impactOnLearningState === 'preserve'
+      ) {
+        const a = previous.snapshot,
+          b = revision.snapshot;
+        if (
+          a.learningObjective !== b.learningObjective ||
+          displayText(a.question) !== displayText(b.question) ||
+          displayText(a.standardAnswer) !== displayText(b.standardAnswer) ||
+          a.answerCriteria.length !== b.answerCriteria.length ||
+          a.answerCriteria.some((c, i) => displayText(c) !== displayText(b.answerCriteria[i]!))
+        )
+          throw new Error('有效记忆状态不能继承不同知识内容的成绩');
+      }
       if (
         revision.impactOnLearningState === 'preserve' &&
         previous.learningStateId !== revision.learningStateId

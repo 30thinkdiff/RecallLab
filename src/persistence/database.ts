@@ -13,10 +13,13 @@ import type {
   RecoveryBackup,
   SourceDocument,
 } from '../domain/models';
-import { dataTables, v5Tables, v2Tables, v3Tables, legacyTables, migrateBackup } from './migration';
+import type { EditorDraft, WorkingNoteRevision } from './editable-format';
+import { v8Tables, v5Tables, v2Tables, v3Tables, legacyTables, migrateBackup } from './migration';
 import { validateBackup } from './backup-format';
 
 export class RecallDatabase extends Dexie {
+  editorDrafts!: Table<EditorDraft, string>;
+  workingNoteRevisions!: Table<WorkingNoteRevision, string>;
   aiDrafts!: Table<AiDraftRecord, string>;
   projects!: Table<LearningProject, string>;
   knowledgeUnits!: Table<KnowledgeUnit, string>;
@@ -164,7 +167,7 @@ export class RecallDatabase extends Dexie {
       .stores({})
       .upgrade(async (transaction) => {
         const data: Record<string, unknown[]> = {};
-        for (const name of dataTables) data[name] = await transaction.table(name).toArray();
+        for (const name of v8Tables) data[name] = await transaction.table(name).toArray();
         const before = {
           format: 'RecallLabBackup',
           formatVersion: 1,
@@ -185,7 +188,7 @@ export class RecallDatabase extends Dexie {
       .stores({})
       .upgrade(async (transaction) => {
         const data: Record<string, unknown[]> = {};
-        for (const name of dataTables) data[name] = await transaction.table(name).toArray();
+        for (const name of v8Tables) data[name] = await transaction.table(name).toArray();
         const before = {
           format: 'RecallLabBackup',
           formatVersion: 1,
@@ -201,6 +204,30 @@ export class RecallDatabase extends Dexie {
         });
         validateBackup(before);
         // New optional goals/timing/feedback semantics only. Never rewrite historical evidence or FSRS.
+      });
+    this.version(9)
+      .stores({
+        editorDrafts: 'id, projectId, practiceItemId, sessionId, updatedAt',
+        workingNoteRevisions: 'id, projectId, knowledgeUnitId, &[knowledgeUnitId+version]',
+      })
+      .upgrade(async (transaction) => {
+        const data: Record<string, unknown[]> = {};
+        for (const name of v8Tables) data[name] = await transaction.table(name).toArray();
+        const before = {
+          format: 'RecallLabBackup',
+          formatVersion: 1,
+          databaseVersion: 8,
+          createdAt: new Date().toISOString(),
+          data,
+        };
+        validateBackup(before);
+        await transaction.table('recoveryBackups').add({
+          id: crypto.randomUUID(),
+          createdAt: before.createdAt,
+          reason: 'migration',
+          json: JSON.stringify(before),
+        });
+        // Empty stores only: preserve every existing knowledge/source/event/FSRS row.
       });
   }
 }

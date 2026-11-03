@@ -81,6 +81,7 @@ export function CompactStudy({ session, cards }: { session: StudySession; cards:
     view.conflict ||
     !current ||
     !!current.archivedAt ||
+    !!current.paused ||
     current.currentRevisionId !== item.revisionId;
   const blocked = action.busy || conflict;
   const revealed = session.draft.wasAnswerRevealed;

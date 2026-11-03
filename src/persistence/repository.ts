@@ -1,3 +1,4 @@
+import { displayText } from '../domain/editing';
 import { exactShort, timingSchema, assertLearningEvidence } from '../learning/evidence';
 import { assertAiAnchors, type AiConfirmation, type AiProvenance } from '../ai/provenance';
 import {
@@ -83,7 +84,7 @@ export class Repository {
     if (validateContent) {
       const snapshot = session.queue[index];
       const current = snapshot && (await this.db.practiceItems.get(snapshot.id));
-      if (!current || current.archivedAt)
+      if (!current || current.archivedAt || current.paused)
         throw new ConflictError('当前题目已归档，请更新本轮题目。');
       if (current.currentRevisionId !== token.revisionId)
         throw new ConflictError('当前题目已更新，请载入最新版并重新作答。');
@@ -157,7 +158,7 @@ export class Repository {
       const impact = change?.impactOnLearningState ?? 'reset';
       // A user-supplied label is not sufficient proof that a revision is only cosmetic.
       // Never carry earlier recall evidence over to a different question, answer, or rubric.
-      const comparable = (value: string) => value.replace(/\s+/g, '').replace(/。$/u, '');
+      const comparable = displayText;
       if (existing && impact === 'preserve') {
         const unchangedQuestion = comparable(existing.question) === comparable(input.question);
         const unchangedAnswer =
@@ -260,6 +261,10 @@ export class Repository {
         practiceType: 'free_recall',
         ...(existing?.focus === undefined ? {} : { focus: existing.focus }),
         verificationStatus: 'user_authored',
+        importance: input.importance ?? existing?.importance ?? 2,
+        paused: input.paused ?? existing?.paused ?? false,
+        editVersion: (existing?.editVersion ?? 0) + 1,
+        creationOrigin: existing?.creationOrigin ?? (importedSources?.length ? 'source' : 'user'),
         revision: number,
         currentRevisionId: revisionId(itemId, number),
         learningStateId:
@@ -270,6 +275,7 @@ export class Repository {
         updatedAt: now,
       };
       await this.db.revisions.add({
+        equivalencePolicy: 'literal-v1',
         id: item.currentRevisionId,
         practiceItemId: item.id,
         revisionNumber: number,
@@ -282,22 +288,23 @@ export class Repository {
         snapshot: snapshotOf(item),
       });
       const unit = await this.db.knowledgeUnits.get(knowledgeUnitId);
-      await this.db.knowledgeUnits.put({
-        id: knowledgeUnitId,
-        projectId,
-        title: item.question,
-        knowledgeType: unit?.knowledgeType ?? 'fact',
-        canonicalContent: item.standardAnswer,
-        ...(item.learningObjective ? { learningObjective: item.learningObjective } : {}),
-        ...(item.aiProvenance ? { aiProvenance: item.aiProvenance } : {}),
-        sourceReferences: item.sourceReferences,
-        importance: unit?.importance ?? 1,
-        difficulty: unit?.difficulty ?? null,
-        tags: unit?.tags ?? [],
-        verificationStatus: 'user_authored',
-        createdAt: unit?.createdAt ?? now,
-        updatedAt: now,
-      });
+      if (!unit)
+        await this.db.knowledgeUnits.put({
+          id: knowledgeUnitId,
+          projectId,
+          title: item.question,
+          knowledgeType: 'fact',
+          canonicalContent: item.standardAnswer,
+          ...(item.learningObjective ? { learningObjective: item.learningObjective } : {}),
+          ...(item.aiProvenance ? { aiProvenance: item.aiProvenance } : {}),
+          sourceReferences: item.sourceReferences,
+          importance: 1,
+          difficulty: null,
+          tags: [],
+          verificationStatus: 'user_authored',
+          createdAt: now,
+          updatedAt: now,
+        });
       await this.db.practiceItems.put(item);
       return item.id;
     });

@@ -185,8 +185,10 @@ export function buildAdaptivePlan(
       : 0;
     const recall = predictedRecall(memory, now);
     const importance =
-      Math.max(1, Math.min(5, options.importance?.[item.knowledgeUnitId] ?? 1)) *
-      (item.focus ? 1.5 : 1);
+      Math.max(
+        0.5,
+        Math.min(5, options.importance?.[item.knowledgeUnitId] ?? (item.importance ?? 2) / 2),
+      ) * (item.focus ? 1.5 : 1);
     const score =
       (fresh ? 25 : 45) +
       Math.min(30, overdueDays * 5) +

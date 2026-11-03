@@ -96,14 +96,14 @@ test('stale standard-answer editors cannot overwrite a correction made in anothe
     await editor
       .getByRole('button', { name: '编辑题目：第 1 题：什么是主动回忆？', exact: true })
       .click();
-    await editor.getByLabel('修改原因').fill('并发修正测试');
   }
   await page.getByLabel('标准答案').fill('先保存的新答案');
   await page.getByRole('button', { name: '保存题目', exact: true }).click();
+  await page.getByRole('button', { name: '确认更新并重新安排', exact: true }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await second.getByLabel('标准答案').fill('后保存的过期页面答案');
-  await second.getByRole('button', { name: '保存题目', exact: true }).click();
-  await expect(second.getByRole('alert')).toContainText('其他页面修改');
+  await expect(second.getByRole('button', { name: '保存题目', exact: true })).toBeDisabled();
+  await expect(second.getByRole('alert')).toContainText(/另一页面/);
   await expect(second.getByLabel('标准答案')).toHaveValue('后保存的过期页面答案');
   await second.getByRole('button', { name: '取消', exact: true }).click();
   await second.locator('.library-answer summary').click();

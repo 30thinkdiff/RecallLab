@@ -27,7 +27,7 @@ describe('learning workspace', () => {
     await user.click(screen.getByRole('button', { name: '保存项目' }));
     await screen.findByRole('heading', { name: '生物学复习', level: 1 });
     await user.click(screen.getAllByRole('button', { name: '添加问答题' })[0]!);
-    await user.type(screen.getByLabelText(/^问题/), '细胞的能量工厂是什么？');
+    await user.type(await screen.findByLabelText(/^问题/), '细胞的能量工厂是什么？');
     await user.type(screen.getByLabelText(/^标准答案/), '线粒体');
     await user.click(screen.getByRole('button', { name: '保存题目' }));
     await screen.findByRole('heading', { name: '细胞的能量工厂是什么？' });

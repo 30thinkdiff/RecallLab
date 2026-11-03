@@ -129,19 +129,22 @@ test('creates a manual question without uploading a file and keeps edit controls
   page,
 }) => {
   await page.goto('/#import-task');
-  await page.getByRole('button', { name: '先创建项目，再手动添加问答' }).click();
-  await page.getByLabel('项目名称').fill('临时记忆任务');
-  await page.getByRole('button', { name: '保存项目' }).click();
-  await expect(page.getByRole('heading', { name: '临时记忆任务' })).toBeVisible();
-  await page.getByRole('button', { name: '添加问答题', exact: true }).first().click();
+  await page.getByRole('button', { name: '直接添加一道问答', exact: true }).click();
   await page.getByLabel('问题', { exact: false }).fill('临时知识是什么？');
   await page.getByLabel('标准答案').fill('用户手动补充的临时答案');
-  await page.getByRole('button', { name: '保存题目' }).click();
-  await expect(page.getByRole('heading', { name: '临时知识是什么？' })).toBeVisible();
+  await page.getByRole('button', { name: '保存并继续添加' }).click();
+  const pid = await page.evaluate(async () => {
+    const { db } = await (import('/src/persistence/database.ts' + '') as Promise<
+      typeof import('../../src/persistence/database')
+    >);
+    return (await db.projects.toArray())[0]!.id;
+  });
+  await page.goto(`/#project/${pid}`);
+  await expect(page.getByRole('heading', { name: '临时知识是什么？', level: 3 })).toBeVisible();
   await page.getByRole('button', { name: '编辑题目：临时知识是什么？' }).click();
   await page.getByLabel('标准答案').fill('用户手动修正后的答案');
-  await page.getByLabel('修改原因').fill('人工补充了知识');
   await page.getByRole('button', { name: '保存题目' }).click();
+  await page.getByRole('button', { name: '确认更新并重新安排', exact: true }).click();
   await page.getByText('查看标准答案', { exact: true }).click();
   await expect(page.getByText('用户手动修正后的答案')).toBeVisible();
 });

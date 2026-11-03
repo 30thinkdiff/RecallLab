@@ -13,6 +13,7 @@ export const source = z.object({
   recordIndex: z.number().int().positive().optional(),
 });
 export const sourceDocumentSchema = z.object({
+  inputOrigin: z.enum(['file', 'pasted']).optional(),
   id,
   projectId: id,
   filename: z.string().min(1).max(500),

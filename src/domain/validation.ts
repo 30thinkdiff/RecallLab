@@ -24,6 +24,8 @@ export const projectInputSchema = z.object({
 export type ProjectInput = z.infer<typeof projectInputSchema>;
 
 export const cardInputSchema = z.object({
+  importance: z.number().int().min(1).max(3).optional(),
+  paused: z.boolean().optional(),
   learningObjective: objectiveSchema.optional(),
   question: text(5000),
   standardAnswer: text(20000),
