@@ -1,3 +1,4 @@
+import type { EditorDraft, WorkingNoteRevision } from './editable-format';
 import type { AiDraftRecord } from '../ai/drafts-format';
 import type { MemoryState, SchedulingLog } from '../scheduling/types';
 import type { Backup } from './backup-format';
@@ -16,6 +17,8 @@ import type {
 import { legacyStateId, revisionId } from '../domain/revisions';
 
 export interface LearningData {
+  editorDrafts: EditorDraft[];
+  workingNoteRevisions: WorkingNoteRevision[];
   aiDrafts: AiDraftRecord[];
   projects: LearningProject[];
   knowledgeUnits: KnowledgeUnit[];
@@ -40,7 +43,10 @@ export const dataTables = [
   'memoryStates',
   'schedulingLogs',
   'aiDrafts',
+  'editorDrafts',
+  'workingNoteRevisions',
 ] as const;
+export const v8Tables = dataTables.slice(0, 11);
 export const v5Tables = dataTables.slice(0, 10);
 export const legacyTables = dataTables.slice(0, 5);
 export const v2Tables = dataTables.slice(0, 7);
@@ -94,6 +100,8 @@ export function migrateBackup(input: Backup): LearningData {
     }
   }
   const data: LearningData = {
+    editorDrafts: [],
+    workingNoteRevisions: [],
     aiDrafts: [],
     projects: input.data.projects,
     knowledgeUnits: input.data.knowledgeUnits,

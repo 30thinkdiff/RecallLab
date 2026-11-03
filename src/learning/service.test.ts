@@ -1,3 +1,4 @@
+import { validateBackup } from '../persistence/backup-format';
 import { beforeEach, afterEach, it, expect, vi } from 'vitest';
 import Dexie from 'dexie';
 import { RecallDatabase } from '../persistence/database';
@@ -154,11 +155,16 @@ it('preserves a paused draft and isolates corrected answers; formatting revision
   const old = (await db.memoryStates.get(learned.learningStateId))!;
   await repo.saveCard(
     pid,
-    { ...raw(0), question: learned.question, standardAnswer: `  ${learned.standardAnswer}  ` },
+    {
+      ...raw(0),
+      question: learned.question,
+      standardAnswer: learned.standardAnswer,
+      hints: '辅助提示，不改考核要求',
+    },
     learned.id,
     {
       changeType: 'cosmetic',
-      changeSummary: '整理空白',
+      changeSummary: '更新辅助提示',
       impactOnLearningState: 'preserve',
       expectedRevisionId: learned.currentRevisionId,
     },
@@ -267,14 +273,16 @@ it.each([false, true])(
         rawDb.close();
       } else {
         await upgraded.open();
-        expect(upgraded.verno).toBe(8);
+        expect(upgraded.verno).toBe(9);
         expect((await exportBackup(upgraded)).data).toEqual(data);
         const copies = await upgraded.recoveryBackups.toArray();
-        expect(copies).toHaveLength(1);
-        expect(JSON.parse(copies[0]!.json)).toMatchObject({
-          databaseVersion: 7,
-          data: JSON.parse(JSON.stringify(data)),
-        });
+        expect(copies).toHaveLength(2);
+        const rawProtection = JSON.parse(
+          copies.find((c) => JSON.parse(c.json).databaseVersion === 7)!.json,
+        );
+        expect(rawProtection.databaseVersion).toBe(7);
+        expect(validateBackup(rawProtection).data).toEqual(JSON.parse(JSON.stringify(data)));
+        expect(rawProtection.data).not.toHaveProperty('editorDrafts');
       }
     } finally {
       upgraded.close();

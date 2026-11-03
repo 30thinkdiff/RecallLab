@@ -24,9 +24,17 @@ export const projectInputSchema = z.object({
 export type ProjectInput = z.infer<typeof projectInputSchema>;
 
 export const cardInputSchema = z.object({
+  importance: z.number().int().min(1).max(3).optional(),
+  paused: z.boolean().optional(),
   learningObjective: objectiveSchema.optional(),
-  question: text(5000),
-  standardAnswer: text(20000),
+  question: z
+    .string()
+    .max(5000)
+    .refine((v) => !!v.trim(), '请填写必填内容'),
+  standardAnswer: z
+    .string()
+    .max(20000)
+    .refine((v) => !!v.trim(), '请填写必填内容'),
   hints: z.string().max(5000),
   answerCriteria: z.string().max(10000),
   mnemonics: z.string().trim().max(5000),
@@ -36,8 +44,5 @@ export const cardInputSchema = z.object({
 export type CardInput = z.infer<typeof cardInputSchema>;
 
 export function lines(value: string): string[] {
-  return value
-    .split('\n')
-    .map((line) => line.trim())
-    .filter(Boolean);
+  return value.split('\n').filter((line) => !!line.trim());
 }

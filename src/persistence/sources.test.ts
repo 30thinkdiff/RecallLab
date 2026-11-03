@@ -81,7 +81,7 @@ it('keeps original source text and old revision evidence when an imported answer
     input.standardAnswer,
   );
   const backup = await exportBackup(db);
-  expect(backup.databaseVersion).toBe(8);
+  expect(backup.databaseVersion).toBe(9);
   await restoreBackup(db, backup);
   expect((await db.sourceDocuments.get(document.id))?.sourceHash).toBe(document.sourceHash);
 });
@@ -141,4 +141,29 @@ it('round trips an explicitly initialized memory state without backfilling any r
   bad.data.memoryStates[0]!.learningStateId = 'wrong';
   await expect(restoreBackup(db, bad)).rejects.toThrow('版本');
   expect(await db.memoryStates.get(item.learningStateId)).toEqual(memory);
+});
+
+it('keeps a legacy imported question classified as source-derived after editing', async () => {
+  const id = await repo.saveCard(projectId, input, undefined, undefined, [
+    {
+      documentId: document.id,
+      label: input.sourceLabel,
+      page: 1,
+      startOffset: 0,
+      endOffset: 6,
+      excerpt: '原始标准答案',
+    },
+  ]);
+  // v8 cards had no creationOrigin metadata. This does not alter their immutable snapshot.
+  await db.practiceItems.update(id, { creationOrigin: undefined });
+  const old = (await db.practiceItems.get(id))!;
+  await repo.saveCard(projectId, { ...input, hints: '用户补充的辅助提示' }, id, {
+    expectedRevisionId: old.currentRevisionId,
+    changeType: 'cosmetic',
+    changeSummary: '系统记录：用户更新辅助信息',
+    impactOnLearningState: 'preserve',
+  });
+  expect((await db.practiceItems.get(id))!.creationOrigin).toBe('source');
+  expect((await db.practiceItems.get(id))!.sourceReferences).toEqual(old.sourceReferences);
+  expect((await db.sourceDocuments.get(document.id))!.extractedContent).toBe('原始标准答案');
 });

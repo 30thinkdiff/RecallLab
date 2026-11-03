@@ -43,8 +43,33 @@ export class ScheduleService {
             mode: 'daily',
           };
         if (active.reviewPlan?.adaptive) {
-          // Resume always uses current cards, flags, goals and time; preserve the current draft.
-          await rebuildAdaptiveTail(this.db, active, this.clock(), true);
+          const snapshot = active.queue[active.index];
+          const current = snapshot && (await this.db.practiceItems.get(snapshot.id));
+          const keepCurrent =
+            !!current &&
+            !current.archivedAt &&
+            !promptProblem(current) &&
+            current.currentRevisionId === snapshot?.revisionId;
+          if (snapshot && !keepCurrent) {
+            const draft = active.draft;
+            if (
+              draft.userResponse ||
+              draft.wasAnswerRevealed ||
+              draft.hintLevelUsed ||
+              draft.attemptedBeforeReveal
+            )
+              await this.db.draftRecoveries.add({
+                id: crypto.randomUUID(),
+                sessionId: active.id,
+                practiceItemId: snapshot.id,
+                revision: snapshot.revision,
+                createdAt: this.clock().toISOString(),
+                reason: '恢复计划时题目已更正、暂停或归档：保留旧版作答',
+                draft: structuredClone(draft),
+              });
+            active.draft = freshDraft(this.clock().toISOString(), draft.responseMode);
+          }
+          await rebuildAdaptiveTail(this.db, active, this.clock(), keepCurrent);
           active.planVersion++;
           active.draftVersion++;
           await this.db.sessions.put(active);
@@ -216,7 +241,9 @@ export async function applyScheduling(
   const reviewedAt = new Date(session.draft.revealedAt ?? event.timestamp);
   if (reviewedAt.getTime() > now.getTime())
     throw new Error('本机时间早于作答时间，请校准时间后保存；草稿仍保留。');
-  const decision = decide(event, entry.canSchedule, difficulty);
+  const recentlyExposed =
+    !!current.answerExposedAt && Date.parse(current.answerExposedAt) + 600000 > now.getTime();
+  const decision = decide(event, entry.canSchedule && !recentlyExposed, difficulty);
   decision.reviewedAt = reviewedAt.toISOString();
   let updated: MemoryState = memory;
   const log: SchedulingLog = {

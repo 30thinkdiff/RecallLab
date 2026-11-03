@@ -49,7 +49,10 @@ export function buildReviewEvent(
   const skipped = assessmentResult === 'skipped';
   if (
     !skipped &&
-    (!draft.wasAnswerRevealed || (subjectiveMastery === null && !session.reviewPlan?.compact))
+    (!draft.wasAnswerRevealed ||
+      (subjectiveMastery === null &&
+        !session.reviewPlan?.compact &&
+        assessmentResult !== 'ungraded'))
   ) {
     throw new Error('请先揭晓答案并完成主观评价');
   }

@@ -1,3 +1,4 @@
+import { StudyCardEditor } from './StudyCardEditor';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { LearningWrapUp } from './LearningWrapUp';
 import { CompactStudy } from './CompactStudy';
@@ -208,7 +209,10 @@ function StudyQuestion({
   const performance = assessmentResult(assessment, item);
   const current = cards.find((card) => card.id === item.id);
   const contentConflict =
-    !current || !!current.archivedAt || current.currentRevisionId !== item.revisionId;
+    !current ||
+    !!current.archivedAt ||
+    !!current.paused ||
+    current.currentRevisionId !== item.revisionId;
   const blocked = action.busy || contentConflict || view.conflict;
   const persist = (patch: Parameters<StudyDraftController['edit']>[0]) => controller.edit(patch);
   async function submit(skipped = false) {
@@ -241,6 +245,15 @@ function StudyQuestion({
           第 {session.index + 1} / {session.queue.length} 题
         </span>
       </div>
+      <StudyCardEditor
+        session={session}
+        card={current}
+        controller={controller}
+        blocked={blocked}
+        beforeOpen={async () => {
+          if (!controller.getSnapshot().draft.wasAnswerRevealed) await controller.perform('reveal');
+        }}
+      />
       <progress
         className="study-progress"
         value={session.index}

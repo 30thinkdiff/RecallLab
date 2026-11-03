@@ -60,6 +60,7 @@ for (const taskId of tasks)
           await click(page.getByRole('button', { name: '添加问答题', exact: true }).first());
           await fill(page.getByLabel('问题', { exact: false }), u.acceptableQuestions[0]!);
           await fill(page.getByLabel('标准答案'), u.quote);
+          await click(page.getByText('提示、核对要点与更多设置', { exact: true }));
           await fill(page.getByLabel('核对要点', { exact: false }), criteria(i).join('\n'));
           await click(page.getByRole('button', { name: '保存题目', exact: true }));
           await expect(page.getByRole('dialog')).toHaveCount(0);

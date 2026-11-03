@@ -120,6 +120,10 @@ export function buildPlan(
   if (mode === 'custom') pool = pool.filter((c) => options.customIds?.includes(c.id));
   if (mode === 'daily') pool = pool.filter((c) => due(c) || retry(c) || c.focus || fresh(c));
   const rank = (c: PracticeItem) => (due(c) ? 0 : retry(c) ? 1 : c.focus ? 2 : 3);
+  if (!options.extraPractice && options.mode !== 'custom')
+    pool = pool.filter(
+      (c) => !c.answerExposedAt || Date.parse(c.answerExposedAt) + 600000 <= now.getTime(),
+    );
   pool.sort(
     (a, b) =>
       rank(a) - rank(b) ||

@@ -1,8 +1,10 @@
 export function promptProblem(item: {
+  paused?: boolean;
   question: string;
   standardAnswer: string;
   learningIssue?: { reason: string };
 }): string | null {
+  if (item.paused) return '这道题已暂停';
   if (item.learningIssue) return '题目已标记待核对：' + item.learningIssue.reason;
   const q = item.question.trim(),
     a = item.standardAnswer.trim();

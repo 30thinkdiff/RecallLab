@@ -44,12 +44,12 @@ export async function seedScale(page: Page, count: number, rounds = 10) {
           const c = await db.practiceItems.get(id);
           await repository.saveCard(
             c.projectId,
-            { ...input, standardAnswer: input.standardAnswer.replace('公开虚构', '公开 虚构') },
+            { ...input, hints: '公开虚构辅助提示；考核内容不变' },
             id,
             {
               expectedRevisionId: c.currentRevisionId,
               changeType: 'cosmetic',
-              changeSummary: '仅插入空白的虚构修订',
+              changeSummary: '仅更新辅助提示的虚构修订',
               impactOnLearningState: 'preserve',
             },
           );

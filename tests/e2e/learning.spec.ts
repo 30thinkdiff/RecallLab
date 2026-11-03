@@ -80,8 +80,8 @@ test('project and card CRUD, cancellation, project isolation and historical answ
   await page.getByRole('link', { name: '返回题库', exact: true }).click();
   await page.getByRole('button', { name: '编辑题目：第 1 题：什么是主动回忆？' }).click();
   await page.getByLabel('标准答案').fill('修改后的标准答案');
-  await page.getByLabel('修改原因').fill('更正测试资料');
   await page.getByRole('button', { name: '保存题目' }).click();
+  await page.getByRole('button', { name: '确认更新并重新安排', exact: true }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await page.getByRole('link', { name: '学习记录', exact: true }).click();
   await page.locator('.history-entry summary').click();

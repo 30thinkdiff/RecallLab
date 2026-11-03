@@ -38,7 +38,7 @@ describe('backup and real v1 upgrade', () => {
     );
     const db = new RecallDatabase(name);
     await db.open();
-    expect(db.verno).toBe(8);
+    expect(db.verno).toBe(9);
     expect(await db.reviewEvents.toArray()).toEqual(
       [...legacyJson.data.reviewEvents].sort((a, b) => a.id.localeCompare(b.id)),
     );
@@ -58,7 +58,7 @@ describe('backup and real v1 upgrade', () => {
       )
       .first();
     expect(JSON.parse(copy!.json).data.reviewEvents).toEqual(before?.data.reviewEvents);
-    await expect(exportBackup(db)).resolves.toMatchObject({ databaseVersion: 8 });
+    await expect(exportBackup(db)).resolves.toMatchObject({ databaseVersion: 9 });
     db.close();
   });
 
@@ -193,14 +193,13 @@ describe('backup and real v1 upgrade', () => {
     });
     await old.open();
     for (const [table, rows] of Object.entries(data))
-      if (!['sourceDocuments', 'memoryStates', 'schedulingLogs', 'aiDrafts'].includes(table))
-        await old.table(table).bulkAdd(rows);
+      if (old.tables.some((t) => t.name === table)) await old.table(table).bulkAdd(rows);
     old.close();
     const before = await inspectBeforeUpgrade(name);
     expect(before?.databaseVersion).toBe(2);
     const current = new RecallDatabase(name);
     await current.open();
-    expect(current.verno).toBe(8);
+    expect(current.verno).toBe(9);
     expect((await exportBackup(current)).data.reviewEvents).toEqual(before?.data.reviewEvents);
     expect(await current.sourceDocuments.count()).toBe(0);
     await restoreBackup(current, before!);
@@ -224,8 +223,7 @@ describe('backup and real v1 upgrade', () => {
     await old.open();
     const data = migrateBackup(validateBackup(legacyJson));
     for (const [table, rows] of Object.entries(data))
-      if (!['sourceDocuments', 'memoryStates', 'schedulingLogs', 'aiDrafts'].includes(table))
-        await old.table(table).bulkAdd(rows);
+      if (old.tables.some((t) => t.name === table)) await old.table(table).bulkAdd(rows);
     await old.table('knowledgeUnits').update('k-q-long', { projectId: 'missing' });
     old.close();
     const current = new RecallDatabase(name);
@@ -259,8 +257,7 @@ it('v3 to v4 preserves old events, creates no FSRS evidence, protects a backup a
     });
     await old.open();
     for (const [table, rows] of Object.entries(data))
-      if (!['memoryStates', 'schedulingLogs', 'aiDrafts'].includes(table))
-        await old.table(table).bulkAdd(rows);
+      if (old.tables.some((t) => t.name === table)) await old.table(table).bulkAdd(rows);
     if (broken) await old.table('practiceItems').update('q-long', { projectId: 'missing' });
     old.close();
     expect((await inspectBeforeUpgrade(name))?.databaseVersion).toBe(3);
@@ -275,13 +272,13 @@ it('v3 to v4 preserves old events, creates no FSRS evidence, protects a backup a
       reopened.close();
     } else {
       await upgraded.open();
-      expect(upgraded.verno).toBe(8);
+      expect(upgraded.verno).toBe(9);
       expect(await upgraded.memoryStates.count()).toBe(0);
       expect(await upgraded.schedulingLogs.count()).toBe(0);
       expect(await upgraded.reviewEvents.toArray()).toEqual(
         [...data.reviewEvents].sort((a, b) => a.id.localeCompare(b.id)),
       );
-      expect(await upgraded.recoveryBackups.count()).toBe(5);
+      expect(await upgraded.recoveryBackups.count()).toBe(6);
       upgraded.close();
     }
   }
@@ -370,26 +367,26 @@ it('upgrades real v4 scheduling data to v5 without changing evidence, exports a 
   old.version(4).stores(schema);
   await old.open();
   for (const [table, rows] of Object.entries(original.data))
-    if (table !== 'aiDrafts') await old.table(table).bulkAdd(rows);
+    if (old.tables.some((t) => t.name === table)) await old.table(table).bulkAdd(rows);
   old.close();
   const before = (await inspectBeforeUpgrade(name))!;
   expect(before.databaseVersion).toBe(4);
   expect(before.data.memoryStates).toHaveLength(1);
   const current = new RecallDatabase(name);
   await current.open();
-  expect(current.verno).toBe(8);
+  expect(current.verno).toBe(9);
   expect((await exportBackup(current)).data).toEqual(before.data);
   const protectedCopy = JSON.parse(
     (await current.recoveryBackups.toArray()).find((c) => JSON.parse(c.json).databaseVersion === 4)!
       .json,
   );
-  expect(await current.recoveryBackups.count()).toBe(4);
+  expect(await current.recoveryBackups.count()).toBe(5);
   expect(protectedCopy.databaseVersion).toBe(4);
   expect(validateBackup(protectedCopy).data).toEqual(before.data);
   expect(protectedCopy.data).not.toHaveProperty('aiDrafts');
   await restoreBackup(current, before);
   const restored = await exportBackup(current);
-  expect(restored.databaseVersion).toBe(8);
+  expect(restored.databaseVersion).toBe(9);
   expect(restored.data.reviewEvents).toEqual(before.data.reviewEvents);
   expect(restored.data.memoryStates).toEqual(before.data.memoryStates);
   expect(restored.data.schedulingLogs).toEqual(before.data.schedulingLogs);
@@ -398,7 +395,7 @@ it('upgrades real v4 scheduling data to v5 without changing evidence, exports a 
   oldWriter.version(4).stores(schema);
   // Dexie 4 automatically retries VersionError without a requested version. Never claim the bump alone blocks old clients.
   await oldWriter.open();
-  expect(oldWriter.backendDB().version).toBe(80);
+  expect(oldWriter.backendDB().version).toBe(90);
   expect(await oldWriter.table('reviewEvents').toArray()).toEqual(before.data.reviewEvents);
   oldWriter.close();
 });
@@ -425,7 +422,7 @@ it.each(['broken-reference', 'interrupted-backup'])(
     await old.open();
     const data = migrateBackup(validateBackup(legacyJson));
     for (const [table, rows] of Object.entries(data))
-      if (table !== 'aiDrafts') await old.table(table).bulkAdd(rows);
+      if (old.tables.some((t) => t.name === table)) await old.table(table).bulkAdd(rows);
     if (failure === 'broken-reference')
       await old.table('practiceItems').update('q-long', { projectId: 'missing' });
     const events = await old.table('reviewEvents').toArray();
@@ -450,7 +447,7 @@ it('refuses a future database before normal access without deleting its records'
   const name = `future-${crypto.randomUUID()}`;
   names.push(name);
   const future = new Dexie(name);
-  future.version(9).stores({ projects: 'id' });
+  future.version(10).stores({ projects: 'id' });
   await future.open();
   await future.table('projects').add({ id: 'future-evidence', text: '公开虚构的未来记录' });
   future.close();
@@ -464,7 +461,7 @@ it('refuses a future database before normal access without deleting its records'
     id: 'future-evidence',
     text: '公开虚构的未来记录',
   });
-  expect(Math.floor(original.backendDB().version / 10)).toBe(9);
+  expect(Math.floor(original.backendDB().version / 10)).toBe(10);
   original.close();
 });
 
@@ -488,7 +485,7 @@ it.each([false, true])(
     await old.open();
     const data = migrateBackup(validateBackup(legacyJson));
     for (const [table, rows] of Object.entries(data))
-      if (table !== 'aiDrafts') await old.table(table).bulkAdd(rows);
+      if (old.tables.some((t) => t.name === table)) await old.table(table).bulkAdd(rows);
     if (broken) await old.table('practiceItems').update('q-long', { projectId: 'missing' });
     old.close();
     expect((await inspectBeforeUpgrade(name))?.databaseVersion).toBe(5);
@@ -504,7 +501,7 @@ it.each([false, true])(
       reopened.close();
     } else {
       await current.open();
-      expect(current.verno).toBe(8);
+      expect(current.verno).toBe(9);
       expect(await current.aiDrafts.count()).toBe(0);
       const before = JSON.parse(
         (await current.recoveryBackups.toArray()).find(
@@ -574,7 +571,8 @@ it.each([false, true])(
     const old = new Dexie(name);
     old.version(6).stores(schema);
     await old.open();
-    for (const [table, rows] of Object.entries(backup.data)) await old.table(table).bulkAdd(rows);
+    for (const [table, rows] of Object.entries(backup.data))
+      if (old.tables.some((t) => t.name === table)) await old.table(table).bulkAdd(rows);
     if (broken) await old.table('practiceItems').update(card.id, { projectId: 'missing' });
     old.close();
     expect((await inspectBeforeUpgrade(name))?.databaseVersion).toBe(6);
@@ -594,8 +592,8 @@ it.each([false, true])(
       const after = await exportBackup(upgraded);
       expect(after.data).toEqual(backup.data);
       const copies = await upgraded.recoveryBackups.toArray();
-      expect(copies).toHaveLength(2);
-      expect(copies.map((c) => JSON.parse(c.json).databaseVersion).sort()).toEqual([6, 7]);
+      expect(copies).toHaveLength(3);
+      expect(copies.map((c) => JSON.parse(c.json).databaseVersion).sort()).toEqual([6, 7, 8]);
       upgraded.close();
     }
     seed.close();

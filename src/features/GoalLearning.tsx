@@ -38,6 +38,9 @@ export function LearningHome({
         给出资料、目标和每天可用时间，系统安排练习。你负责回忆，遇到不准确的内容随时更正。
       </p>
       <div className="button-row">
+        <a className="button" href="#compose">
+          直接创建问答
+        </a>
         <a className="button" href="#import-task">
           创建学习任务
         </a>
@@ -303,7 +306,10 @@ function GoalPanel({
             </p>
           )}
           {plan.delayed > 0 && (
-            <p>{plan.delayed}道近期失败/提示题等待至少10分钟后无提示复测，刚看完答案不算掌握。</p>
+            <p>
+              {plan.delayed}
+              道近期失败、提示或更正后见过答案的题等待至少10分钟后无提示复测，刚看完答案不算掌握。
+            </p>
           )}
           {plan.attention > 0 && (
             <p>{plan.attention}道今天反复失败，暂停自动重复；建议对照来源、检查要点或拆小任务。</p>

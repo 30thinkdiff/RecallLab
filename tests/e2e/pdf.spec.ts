@@ -46,8 +46,8 @@ test('text PDF page selection, source trace, learning, revision and backup round
   await page
     .getByLabel('标准答案')
     .fill('A user-corrected explanation, separate from original text.');
-  await page.getByLabel('修改原因').fill('Clarify the fictional material');
   await page.getByRole('button', { name: '保存题目', exact: true }).click();
+  await page.getByRole('button', { name: '确认更新并重新安排', exact: true }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await page.getByRole('link', { name: '查看学习历史与版本', exact: true }).click();
   await expect(page.locator('.diff-table')).toContainText('A user-corrected explanation');

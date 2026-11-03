@@ -171,12 +171,12 @@ describe('repository transitions and revision evidence', () => {
     const old = (await db.practiceItems.get(items[0]!))!;
     await repo.saveCard(
       projectId,
-      { ...card, question: old.question, standardAnswer: '旧答案 红色' },
+      { ...card, question: old.question, standardAnswer: '旧答案红色', hints: '辅助说明' },
       old.id,
       {
         expectedRevisionId: old.currentRevisionId,
         changeType: 'cosmetic',
-        changeSummary: '调整空格',
+        changeSummary: '调整辅助提示',
         impactOnLearningState: 'preserve',
       },
     );
@@ -218,18 +218,18 @@ describe('repository transitions and revision evidence', () => {
     expect((await db.practiceItems.get(itemId))?.currentRevisionId).toBe(current.currentRevisionId);
     expect(await db.revisions.count()).toBe(1);
   });
-  it('allows formatting-only adjustments to retain learning evidence', async () => {
+  it('allows auxiliary hint changes to retain learning evidence', async () => {
     const { projectId, items } = await setup();
     const itemId = items[0]!;
     const current = (await db.practiceItems.get(itemId))!;
     await repo.saveCard(
       projectId,
-      { ...card, question: current.question, standardAnswer: '旧答案 红色' },
+      { ...card, question: current.question, standardAnswer: '旧答案红色', hints: '辅助说明' },
       itemId,
       {
         expectedRevisionId: current.currentRevisionId,
         changeType: 'cosmetic',
-        changeSummary: '插入空格',
+        changeSummary: '修改辅助提示',
         impactOnLearningState: 'preserve',
       },
     );

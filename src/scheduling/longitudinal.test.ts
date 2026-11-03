@@ -54,13 +54,14 @@ it('simulates 30 days, three projects, DST, competing budgets and revisions with
           {
             ...input,
             question: c.question,
-            standardAnswer: preserve ? `${c.standardAnswer}  ` : '更正：丙与丁两个必需内容。',
+            standardAnswer: preserve ? c.standardAnswer : '更正：丙与丁两个必需内容。',
+            hints: preserve ? '新增辅助提示，不改变考核要求' : input.hints,
           },
           c.id,
           {
             expectedRevisionId: c.currentRevisionId,
             changeType: preserve ? 'cosmetic' : 'substantive',
-            changeSummary: preserve ? '仅调整空白' : '更正错误答案',
+            changeSummary: preserve ? '更新辅助提示' : '更正错误答案',
             impactOnLearningState: preserve ? 'preserve' : 'reset',
           },
         );

@@ -1,4 +1,10 @@
-import { exactShort, timingSchema, assertLearningEvidence } from '../learning/evidence';
+import { cardEditToken, displayText } from '../domain/editing';
+import {
+  exactCurrentShort,
+  exactShort,
+  timingSchema,
+  assertLearningEvidence,
+} from '../learning/evidence';
 import { assertAiAnchors, type AiConfirmation, type AiProvenance } from '../ai/provenance';
 import {
   assessmentSchema,
@@ -83,7 +89,7 @@ export class Repository {
     if (validateContent) {
       const snapshot = session.queue[index];
       const current = snapshot && (await this.db.practiceItems.get(snapshot.id));
-      if (!current || current.archivedAt)
+      if (!current || current.archivedAt || current.paused)
         throw new ConflictError('当前题目已归档，请更新本轮题目。');
       if (current.currentRevisionId !== token.revisionId)
         throw new ConflictError('当前题目已更新，请载入最新版并重新作答。');
@@ -157,7 +163,7 @@ export class Repository {
       const impact = change?.impactOnLearningState ?? 'reset';
       // A user-supplied label is not sufficient proof that a revision is only cosmetic.
       // Never carry earlier recall evidence over to a different question, answer, or rubric.
-      const comparable = (value: string) => value.replace(/\s+/g, '').replace(/。$/u, '');
+      const comparable = displayText;
       if (existing && impact === 'preserve') {
         const unchangedQuestion = comparable(existing.question) === comparable(input.question);
         const unchangedAnswer =
@@ -260,6 +266,18 @@ export class Repository {
         practiceType: 'free_recall',
         ...(existing?.focus === undefined ? {} : { focus: existing.focus }),
         verificationStatus: 'user_authored',
+        ...(existing?.answerExposedAt ? { answerExposedAt: existing.answerExposedAt } : {}),
+        ...(existing?.learningIssue && impact === 'preserve'
+          ? { learningIssue: existing.learningIssue }
+          : {}),
+        importance: input.importance ?? existing?.importance ?? 2,
+        paused: input.paused ?? existing?.paused ?? false,
+        editVersion: (existing?.editVersion ?? 0) + 1,
+        creationOrigin:
+          existing?.creationOrigin ??
+          (importedSources?.length || existing?.sourceReferences.some((ref) => ref.documentId)
+            ? 'source'
+            : 'user'),
         revision: number,
         currentRevisionId: revisionId(itemId, number),
         learningStateId:
@@ -270,6 +288,7 @@ export class Repository {
         updatedAt: now,
       };
       await this.db.revisions.add({
+        equivalencePolicy: 'literal-v1',
         id: item.currentRevisionId,
         practiceItemId: item.id,
         revisionNumber: number,
@@ -282,22 +301,23 @@ export class Repository {
         snapshot: snapshotOf(item),
       });
       const unit = await this.db.knowledgeUnits.get(knowledgeUnitId);
-      await this.db.knowledgeUnits.put({
-        id: knowledgeUnitId,
-        projectId,
-        title: item.question,
-        knowledgeType: unit?.knowledgeType ?? 'fact',
-        canonicalContent: item.standardAnswer,
-        ...(item.learningObjective ? { learningObjective: item.learningObjective } : {}),
-        ...(item.aiProvenance ? { aiProvenance: item.aiProvenance } : {}),
-        sourceReferences: item.sourceReferences,
-        importance: unit?.importance ?? 1,
-        difficulty: unit?.difficulty ?? null,
-        tags: unit?.tags ?? [],
-        verificationStatus: 'user_authored',
-        createdAt: unit?.createdAt ?? now,
-        updatedAt: now,
-      });
+      if (!unit)
+        await this.db.knowledgeUnits.put({
+          id: knowledgeUnitId,
+          projectId,
+          title: item.question,
+          knowledgeType: 'fact',
+          canonicalContent: item.standardAnswer,
+          ...(item.learningObjective ? { learningObjective: item.learningObjective } : {}),
+          ...(item.aiProvenance ? { aiProvenance: item.aiProvenance } : {}),
+          sourceReferences: item.sourceReferences,
+          importance: 1,
+          difficulty: null,
+          tags: [],
+          verificationStatus: 'user_authored',
+          createdAt: now,
+          updatedAt: now,
+        });
       await this.db.practiceItems.put(item);
       return item.id;
     });
@@ -338,20 +358,30 @@ export class Repository {
       return changes.length;
     });
   }
-  async archiveCard(projectId: string, id: string) {
+  async archiveCard(projectId: string, id: string, expectedToken?: string) {
     await this.write(async () => {
       await this.requireProject(projectId);
       const item = await this.db.practiceItems.get(id);
       if (!item || item.projectId !== projectId) throw new Error('题目不存在');
-      await this.db.practiceItems.update(id, { archivedAt: new Date().toISOString() });
+      if (expectedToken && expectedToken !== cardEditToken(item))
+        throw new ConflictError('题目已在另一页面变化，请载入最新后删除');
+      await this.db.practiceItems.update(id, {
+        archivedAt: new Date().toISOString(),
+        editVersion: (item.editVersion ?? 0) + 1,
+      });
     });
   }
-  async restoreCard(projectId: string, id: string) {
+  async restoreCard(projectId: string, id: string, expectedToken?: string) {
     await this.write(async () => {
       await this.requireProject(projectId);
       const item = await this.db.practiceItems.get(id);
       if (!item || item.projectId !== projectId) throw new Error('题目不存在');
-      await this.db.practiceItems.update(id, { archivedAt: undefined });
+      if (expectedToken && expectedToken !== cardEditToken(item))
+        throw new ConflictError('题目已在另一页面变化，请载入最新后恢复');
+      await this.db.practiceItems.update(id, {
+        archivedAt: undefined,
+        editVersion: (item.editVersion ?? 0) + 1,
+      });
     });
   }
   private async available(projectId: string) {
@@ -573,6 +603,49 @@ export class Repository {
       return this.startSession(session.projectId);
     });
   }
+  async correctInStudy<T extends { id: string }>(
+    sessionId: string,
+    index: number,
+    token: SessionToken,
+    commit: () => Promise<T>,
+  ) {
+    const scheduling = await this.schedulingHooks(sessionId);
+    return this.write(async () => {
+      const session = await this.requireSession(sessionId, index, token);
+      if (!session.draft.wasAnswerRevealed) throw new Error('请先记录答案已显示，再打开编辑');
+      const snapshot = session.queue[index]!,
+        now = new Date().toISOString();
+      await this.retain(session, '学习中纠正前的原回答与暂存核对（未评分）');
+      // Preserve tentative marks in recovery, never turn them into a grade during correction.
+      const teaching = { ...session, draft: { ...session.draft, assessment: undefined } };
+      let event = buildReviewEvent(teaching, snapshot, 'ungraded', null, now);
+      if (session.reviewPlan && scheduling)
+        event = await scheduling.applyScheduling(this.db, teaching, event, 'good', new Date(now));
+      await this.db.reviewEvents.add(event);
+      const result = await commit();
+      await this.db.practiceItems.update(result.id, { answerExposedAt: now });
+      const nextIndex = index + 1,
+        available = new Map((await this.available(session.projectId)).map((c) => [c.id, c]));
+      const remaining = session.queue.slice(nextIndex).flatMap((old) => {
+        const current = available.get(old.id);
+        return current ? [snapshotOf(current)] : [];
+      });
+      const updated: StudySession = {
+        ...session,
+        queue: [...session.queue.slice(0, nextIndex), ...remaining],
+        index: nextIndex,
+        status: remaining.length ? 'active' : 'completed',
+        completedAt: remaining.length ? null : now,
+        draft: freshDraft(now, session.draft.responseMode),
+        planVersion: session.planVersion + 1,
+        draftVersion: session.draftVersion + 1,
+        lastWriterId: token.writerId,
+      };
+      if (scheduling) await scheduling.refreshReviewPlan(this.db, updated, new Date(now));
+      await this.db.sessions.put(updated);
+      return result;
+    });
+  }
   async submitReview(
     sessionId: string,
     index: number,
@@ -604,10 +677,11 @@ export class Repository {
             d.pages.every((p) => p.method !== 'ocr' && p.status === 'ready'),
         );
         const literalMatch = exactShort(item, session.draft.userResponse);
+        const currentMatch = exactCurrentShort(item, session.draft.userResponse);
         if (
           automaticCheck &&
           (!sourceReady ||
-            !literalMatch ||
+            !currentMatch ||
             performance !== 'correct' ||
             !event.wasIndependentRecall ||
             event.hintLevelUsed)
@@ -621,7 +695,7 @@ export class Repository {
             literalMatch,
             overridden:
               !automaticCheck &&
-              literalMatch &&
+              currentMatch &&
               sourceReady &&
               event.wasIndependentRecall &&
               event.hintLevelUsed === 0 &&

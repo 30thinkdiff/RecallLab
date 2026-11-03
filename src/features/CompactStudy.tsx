@@ -1,10 +1,11 @@
+import { StudyCardEditor } from './StudyCardEditor';
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import type { Performance, PracticeItem, StudySession } from '../domain/models';
 import { StudyDraftController } from './study-draft';
 import { repository } from '../persistence/repository';
 import { db } from '../persistence/database';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { exactShort } from '../learning/evidence';
+import { exactCurrentShort } from '../learning/evidence';
 import { AttemptClock } from '../learning/timing';
 import { SourceLinks } from './Documents';
 import { tokenOf } from '../domain/revisions';
@@ -81,10 +82,11 @@ export function CompactStudy({ session, cards }: { session: StudySession; cards:
     view.conflict ||
     !current ||
     !!current.archivedAt ||
+    !!current.paused ||
     current.currentRevisionId !== item.revisionId;
   const blocked = action.busy || conflict;
   const revealed = session.draft.wasAnswerRevealed;
-  const match = exactShort(item, view.draft.userResponse);
+  const match = exactCurrentShort(item, view.draft.userResponse);
   const sourceReady =
     !!docs &&
     docs.every(
@@ -159,6 +161,15 @@ export function CompactStudy({ session, cards }: { session: StudySession; cards:
         </p>
       )}
       <h2>{item.question}</h2>
+      <StudyCardEditor
+        session={session}
+        card={current}
+        controller={controller}
+        blocked={blocked}
+        beforeOpen={async () => {
+          if (!controller.getSnapshot().draft.wasAnswerRevealed) await reveal();
+        }}
+      />
       <details className="study-context">
         <summary>为什么复习这题 · 时间与预算</summary>
         <p className="muted">

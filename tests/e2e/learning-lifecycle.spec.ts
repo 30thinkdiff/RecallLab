@@ -49,8 +49,8 @@ test('69-item learning lifecycle retains sources and isolates a corrected answer
     .getByRole('button', { name: `编辑题目：${first.snapshot.question}`, exact: true })
     .click();
   await page.getByLabel('标准答案').fill('公开虚构更正答案：此前答案有误。');
-  await page.getByLabel('修改原因').fill('完整生命周期验收：更正错误标准答案');
   await page.getByRole('button', { name: '保存题目', exact: true }).click();
+  await page.getByRole('button', { name: '确认更新并重新安排', exact: true }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await page.goto(`/#item/${itemId}`);
   await expect(page.getByRole('status')).toContainText('新版需要重新学习');

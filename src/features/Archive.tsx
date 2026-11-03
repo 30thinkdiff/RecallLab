@@ -1,3 +1,4 @@
+import { cardEditToken } from '../domain/editing';
 import type { LearningProject, PracticeItem } from '../domain/models';
 import { repository } from '../persistence/repository';
 import { useAction } from '../components/actions';
@@ -64,7 +65,11 @@ export function ArchivePage({
                 action.busy ||
                 !!projects.find((project) => project.id === card.projectId)?.archivedAt
               }
-              onClick={() => void action.run(() => repository.restoreCard(card.projectId, card.id))}
+              onClick={() =>
+                void action.run(() =>
+                  repository.restoreCard(card.projectId, card.id, cardEditToken(card)),
+                )
+              }
             >
               恢复题目
             </button>

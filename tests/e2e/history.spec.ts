@@ -67,7 +67,7 @@ test('question details keep current evidence for harmless revisions and expose d
   await page.getByRole('radio', { name: '3 基本掌握', exact: true }).click();
   await page.getByRole('button', { name: '保存并完成本轮', exact: true }).click();
   await editor.goto(projectUrl);
-  await editCard(editor, 1, '修正后的虚构答案。', 'cosmetic');
+  await editCard(editor, 1, '修正后的虚构答案', 'cosmetic');
   await editor.getByRole('link', { name: '查看学习历史与版本', exact: true }).click();
   await expect(
     editor.locator('.evidence-table tr').filter({ hasText: '总练习记录' }).locator('td').nth(1),

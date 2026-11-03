@@ -48,7 +48,7 @@ export function LearningWrapUp({ projectId }: { projectId: string }) {
         </p>
       ) : plan.delayed > 0 || progress.retestWaiting > 0 ? (
         <p role="status">
-          先休息一下。刚失败或用提示的题至少等待10分钟，再做无提示复测；刚看完答案不代表已经记住。
+          先休息一下。刚失败、用提示或更正后见过答案的题至少等待10分钟，再做无提示复测；刚看完答案不代表已经记住。
         </p>
       ) : plan.attention > 0 ? (
         <p role="status">

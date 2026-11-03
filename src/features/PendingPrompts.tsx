@@ -11,7 +11,7 @@ export function PendingPrompts({ projectId, cards }: { projectId: string; cards:
   const [saved, setSaved] = useState(0);
   const action = useAction();
   const pending = cards.filter(
-    (c) => c.projectId === projectId && !c.archivedAt && promptProblem(c),
+    (c) => c.projectId === projectId && !c.archivedAt && !c.paused && promptProblem(c),
   );
   return (
     <>

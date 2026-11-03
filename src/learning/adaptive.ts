@@ -122,6 +122,10 @@ export function buildAdaptivePlan(
     if (overdue) due++;
     if (retry) retest++;
     if (fresh) newCount++;
+    if (item.answerExposedAt && Date.parse(item.answerExposedAt) + 600000 > now.getTime()) {
+      delayed++;
+      return [];
+    }
     if (
       fresh &&
       memories.some(
@@ -185,8 +189,10 @@ export function buildAdaptivePlan(
       : 0;
     const recall = predictedRecall(memory, now);
     const importance =
-      Math.max(1, Math.min(5, options.importance?.[item.knowledgeUnitId] ?? 1)) *
-      (item.focus ? 1.5 : 1);
+      Math.max(
+        0.5,
+        Math.min(5, options.importance?.[item.knowledgeUnitId] ?? (item.importance ?? 2) / 2),
+      ) * (item.focus ? 1.5 : 1);
     const score =
       (fresh ? 25 : 45) +
       Math.min(30, overdueDays * 5) +
@@ -372,7 +378,7 @@ export function forecastGoal(
     total: cards.filter((c) => c.projectId === project.id && !c.archivedAt).length,
     ready: ready.length,
     qualityPending: cards.filter(
-      (c) => c.projectId === project.id && !c.archivedAt && promptProblem(c),
+      (c) => c.projectId === project.id && !c.archivedAt && !c.paused && promptProblem(c),
     ).length,
     outsideScope: cards.filter(
       (c) =>

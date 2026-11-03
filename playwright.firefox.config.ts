@@ -2,6 +2,7 @@ import { defineConfig } from '@playwright/test';
 export default defineConfig({
   testDir: './tests/e2e',
   testMatch: [
+    'editable-knowledge.spec.ts',
     'ai-workspace.spec.ts',
     'ai-units.spec.ts',
     'preparation-cost.spec.ts',
